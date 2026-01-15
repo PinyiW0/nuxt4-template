@@ -11,6 +11,7 @@ interface Template {
   description: string
   icon: string
   framework: string
+  category: string
   features: Array<{ title: string, icon: string }>
   deploy_links: Array<{ label: string, to: string, target: string, icon: string }>
   links: Array<{ label: string, to: string, target: string, icon: string }>
@@ -26,10 +27,11 @@ onMounted(async () => {
     // In a real scenario, this would be fetched from the NuxtUI API
     const allTemplates: Template[] = [
       {
-        title: 'Dashboard',
+        title: 'Dashboard (Nuxt)',
         description: 'A dashboard template with multi-column layout for building sophisticated admin interfaces.',
         icon: 'i-lucide-bar-chart-big',
         framework: 'nuxt',
+        category: 'dashboard',
         features: [
           { title: 'Works with SaaS template', icon: 'i-lucide-puzzle' },
           { title: 'Charts and date pickers', icon: 'i-lucide-bar-chart-big' },
@@ -55,10 +57,11 @@ onMounted(async () => {
         ],
       },
       {
-        title: 'Dashboard',
+        title: 'Dashboard (Vue)',
         description: 'A dashboard template with multi-column layout for building sophisticated admin interfaces.',
         icon: 'i-lucide-bar-chart-big',
         framework: 'vue',
+        category: 'dashboard',
         features: [
           { title: 'Charts and date pickers', icon: 'i-lucide-bar-chart-big' },
           { title: 'Multi-column layout', icon: 'i-lucide-columns-3' },
@@ -87,6 +90,7 @@ onMounted(async () => {
         description: 'A SaaS template with landing, pricing, docs and blog powered by Nuxt Content.',
         icon: 'i-lucide-cloud',
         framework: 'nuxt',
+        category: 'dashboard',
         features: [
           { title: 'Landing, pricing, docs & blog sections', icon: 'i-lucide-grid-2x2-plus' },
           { title: 'Authentication pages', icon: 'i-lucide-user-round-check' },
@@ -113,10 +117,8 @@ onMounted(async () => {
       },
     ]
 
-    // Filter for dashboard-related templates
-    templates.value = allTemplates.filter(t =>
-      t.title.toLowerCase().includes('dashboard') || t.title.toLowerCase().includes('saas'),
-    )
+    // Filter for dashboard-related templates using explicit category
+    templates.value = allTemplates.filter(t => t.category === 'dashboard')
   }
   catch (e) {
     error.value = e instanceof Error ? e.message : '載入範本時發生錯誤'
