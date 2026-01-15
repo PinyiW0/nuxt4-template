@@ -95,6 +95,152 @@ useHead({
           </a>
         </div>
       </div>
+
+      <!-- NuxtUI 按鈕元件示範 -->
+      <div class="mt-16">
+        <h2 class="mb-8 text-center text-3xl font-bold text-gray-800">
+          NuxtUI 按鈕元件示範
+        </h2>
+
+        <!-- 不同變體 (Variants) -->
+        <div class="mb-8 rounded-lg bg-white p-6 shadow-md">
+          <h3 class="mb-4 text-xl font-semibold text-gray-700">
+            不同變體
+          </h3>
+          <div class="flex flex-wrap gap-3">
+            <UButton variant="solid">
+              Solid
+            </UButton>
+            <UButton variant="outline">
+              Outline
+            </UButton>
+            <UButton variant="soft">
+              Soft
+            </UButton>
+            <UButton variant="subtle">
+              Subtle
+            </UButton>
+            <UButton variant="ghost">
+              Ghost
+            </UButton>
+            <UButton variant="link">
+              Link
+            </UButton>
+          </div>
+        </div>
+
+        <!-- 不同顏色 (Colors) -->
+        <div class="mb-8 rounded-lg bg-white p-6 shadow-md">
+          <h3 class="mb-4 text-xl font-semibold text-gray-700">
+            不同顏色
+          </h3>
+          <div class="flex flex-wrap gap-3">
+            <UButton color="primary">
+              Primary
+            </UButton>
+            <UButton color="secondary">
+              Secondary
+            </UButton>
+            <UButton color="success">
+              Success
+            </UButton>
+            <UButton color="info">
+              Info
+            </UButton>
+            <UButton color="warning">
+              Warning
+            </UButton>
+            <UButton color="error">
+              Error
+            </UButton>
+            <UButton color="neutral">
+              Neutral
+            </UButton>
+          </div>
+        </div>
+
+        <!-- 不同尺寸 (Sizes) -->
+        <div class="mb-8 rounded-lg bg-white p-6 shadow-md">
+          <h3 class="mb-4 text-xl font-semibold text-gray-700">
+            不同尺寸
+          </h3>
+          <div class="flex flex-wrap items-center gap-3">
+            <UButton size="xs">
+              Extra Small
+            </UButton>
+            <UButton size="sm">
+              Small
+            </UButton>
+            <UButton size="md">
+              Medium
+            </UButton>
+            <UButton size="lg">
+              Large
+            </UButton>
+            <UButton size="xl">
+              Extra Large
+            </UButton>
+          </div>
+        </div>
+
+        <!-- 帶圖標的按鈕 (With Icons) -->
+        <div class="mb-8 rounded-lg bg-white p-6 shadow-md">
+          <h3 class="mb-4 text-xl font-semibold text-gray-700">
+            帶圖標的按鈕
+          </h3>
+          <div class="flex flex-wrap gap-3">
+            <UButton icon="i-lucide-rocket">
+              Launch
+            </UButton>
+            <UButton leading-icon="i-lucide-download">
+              Download
+            </UButton>
+            <UButton trailing-icon="i-lucide-arrow-right">
+              Next
+            </UButton>
+            <UButton icon="i-lucide-search" square />
+            <UButton icon="i-lucide-heart" color="error" variant="outline" />
+            <UButton icon="i-lucide-star" color="warning" />
+          </div>
+        </div>
+
+        <!-- 不同狀態 (States) -->
+        <div class="mb-8 rounded-lg bg-white p-6 shadow-md">
+          <h3 class="mb-4 text-xl font-semibold text-gray-700">
+            不同狀態
+          </h3>
+          <div class="flex flex-wrap gap-3">
+            <UButton>
+              Normal
+            </UButton>
+            <UButton loading>
+              Loading
+            </UButton>
+            <UButton disabled>
+              Disabled
+            </UButton>
+          </div>
+        </div>
+
+        <!-- 組合範例 (Combined Examples) -->
+        <div class="rounded-lg bg-white p-6 shadow-md">
+          <h3 class="mb-4 text-xl font-semibold text-gray-700">
+            組合範例
+          </h3>
+          <div class="flex flex-wrap gap-3">
+            <UButton color="success" variant="outline" icon="i-lucide-check" size="lg">
+              Approve
+            </UButton>
+            <UButton color="error" variant="soft" leading-icon="i-lucide-trash-2">
+              Delete
+            </UButton>
+            <UButton color="info" variant="subtle" trailing-icon="i-lucide-external-link" size="sm">
+              Learn More
+            </UButton>
+            <UButton color="neutral" variant="ghost" icon="i-lucide-settings" square size="lg" />
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
