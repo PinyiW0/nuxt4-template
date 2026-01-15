@@ -81,6 +81,12 @@ useHead({
       <div class="text-center">
         <div class="space-y-4 sm:flex sm:justify-center sm:space-x-4 sm:space-y-0">
           <NuxtLink
+            to="/templates"
+            class="inline-block rounded-lg bg-blue-600 px-8 py-3 font-medium text-white transition-colors hover:bg-blue-700"
+          >
+            儀表板範本
+          </NuxtLink>
+          <NuxtLink
             to="/examples"
             class="inline-block rounded-lg bg-green-600 px-8 py-3 font-medium text-white transition-colors hover:bg-green-700"
           >
