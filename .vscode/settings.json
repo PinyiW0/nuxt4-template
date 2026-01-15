@@ -1,0 +1,67 @@
+{
+  "files.associations": {
+    "*.css": "tailwindcss"
+  },
+
+  // Disable the default formatter, use eslint instead
+  "editor.formatOnSave": false,
+
+  // Auto fix
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit",
+    "source.organizeImports": "never"
+  },
+
+  // Enable ESLint validation with warnings
+  "eslint.rules.customizations": [],
+
+  // Enable eslint for all supported languages
+  "eslint.validate": [
+    "javascript",
+    "javascriptreact",
+    "typescript",
+    "typescriptreact",
+    "vue",
+    "html",
+    "markdown",
+    "json",
+    "jsonc",
+    "yaml"
+  ],
+
+  // Disable Prettier
+  "[javascript]": {
+    "editor.defaultFormatter": null,
+    "editor.formatOnSave": false
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": null,
+    "editor.formatOnSave": false
+  },
+  "[javascriptreact]": {
+    "editor.defaultFormatter": null,
+    "editor.formatOnSave": false
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": null,
+    "editor.formatOnSave": false
+  },
+  "[vue]": {
+    "editor.defaultFormatter": null,
+    "editor.formatOnSave": false
+  },
+  "[json]": {
+    "editor.defaultFormatter": null,
+    "editor.formatOnSave": false
+  },
+  "[jsonc]": {
+    "editor.defaultFormatter": null,
+    "editor.formatOnSave": false
+  },
+
+  // Disable Prettier extension
+  "prettier.enable": false,
+  "[prettier]": {
+    "editor.formatOnSave": false
+  }
+}

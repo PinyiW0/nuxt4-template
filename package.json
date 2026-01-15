@@ -1,0 +1,35 @@
+{
+  "name": "nuxt4-template",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "nuxt dev",
+    "build": "nuxt build",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare",
+    "lint": "eslint .",
+    "typecheck": "nuxi typecheck",
+    "commitlint": "commitlint --edit",
+    "prepare": "husky"
+  },
+  "dependencies": {
+    "@nuxt/ui": "^4.3.0",
+    "@pinia/nuxt": "^0.11.3",
+    "@vueuse/core": "^14.1.0",
+    "@vueuse/nuxt": "^14.1.0",
+    "nuxt": "^4.2.1",
+    "pinia": "^3.0.4",
+    "tailwindcss": "^4.1.18"
+  },
+  "devDependencies": {
+    "@antfu/eslint-config": "^6.2.0",
+    "@commitlint/cli": "^20.1.0",
+    "@commitlint/config-conventional": "^20.0.0",
+    "@nuxt/eslint": "^1.11.0",
+    "@types/node": "^24.10.1",
+    "eslint-plugin-format": "^1.0.2",
+    "husky": "^9.1.7",
+    "vue-tsc": "^3.1.5"
+  }
+}
