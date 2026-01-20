@@ -1,0 +1,250 @@
+{
+  "userStoryId": "US-B1",
+  "readModels": [
+    {
+      "modelName": "TeamListViewModel",
+      "description": "球隊列表的視圖模型",
+      "type": "ListView",
+      "properties": [
+        {
+          "name": "teams",
+          "type": "Array<TeamSummary>",
+          "description": "球隊摘要列表"
+        },
+        {
+          "name": "totalCount",
+          "type": "number",
+          "description": "總筆數"
+        },
+        {
+          "name": "currentPage",
+          "type": "number",
+          "description": "當前頁碼"
+        },
+        {
+          "name": "pageSize",
+          "type": "number",
+          "description": "每頁筆數"
+        },
+        {
+          "name": "filters",
+          "type": "TeamFilters",
+          "description": "當前套用的篩選條件"
+        }
+      ],
+      "nestedTypes": [
+        {
+          "name": "TeamSummary",
+          "properties": [
+            { "name": "id", "type": "string" },
+            { "name": "name", "type": "string" },
+            { "name": "playerCount", "type": "number" },
+            { "name": "status", "type": "string" },
+            { "name": "lastUpdated", "type": "DateTime" }
+          ]
+        }
+      ],
+      "updatedBy": [
+        "TeamListRetrieved",
+        "TeamCreated",
+        "TeamUpdated",
+        "TeamDeleted"
+      ],
+      "queryEndpoint": {
+        "method": "GET",
+        "path": "/api/teams",
+        "queryParams": ["page", "pageSize", "filters"]
+      }
+    },
+    {
+      "modelName": "SelectedTeamViewModel",
+      "description": "當前選擇的球隊詳細資訊",
+      "type": "DetailView",
+      "properties": [
+        {
+          "name": "team",
+          "type": "TeamDetail",
+          "description": "球隊詳細資訊"
+        },
+        {
+          "name": "players",
+          "type": "Array<PlayerSummary>",
+          "description": "球隊球員列表"
+        },
+        {
+          "name": "isSelected",
+          "type": "boolean",
+          "description": "是否為當前選擇"
+        }
+      ],
+      "nestedTypes": [
+        {
+          "name": "TeamDetail",
+          "properties": [
+            { "name": "id", "type": "string" },
+            { "name": "name", "type": "string" },
+            { "name": "description", "type": "string" },
+            { "name": "status", "type": "string" },
+            { "name": "createdAt", "type": "DateTime" }
+          ]
+        },
+        {
+          "name": "PlayerSummary",
+          "properties": [
+            { "name": "id", "type": "string" },
+            { "name": "jerseyNumber", "type": "number" },
+            { "name": "name", "type": "string" },
+            { "name": "position", "type": "string" },
+            { "name": "sortOrder", "type": "number" }
+          ]
+        }
+      ],
+      "updatedBy": [
+        "TeamSelected",
+        "TeamContextEstablished",
+        "PlayerListRetrieved"
+      ],
+      "queryEndpoint": {
+        "method": "GET",
+        "path": "/api/teams/{teamId}",
+        "pathParams": ["teamId"]
+      }
+    }
+  ],
+  "uiViews": [
+    {
+      "viewName": "TeamManagementView",
+      "description": "球隊管理主頁面",
+      "route": "/teams",
+      "components": [
+        {
+          "componentName": "TeamListPanel",
+          "type": "Container",
+          "description": "球隊列表面板",
+          "children": [
+            {
+              "componentName": "SearchBar",
+              "type": "Input",
+              "emitsCommands": ["QueryTeamList"],
+              "localState": ["searchKeyword", "filters"]
+            },
+            {
+              "componentName": "TeamGrid",
+              "type": "DataGrid",
+              "subscribesTo": ["TeamListRetrieved", "TeamCreated", "TeamDeleted"],
+              "emitsCommands": ["SelectTeam"],
+              "readModel": "TeamListViewModel"
+            },
+            {
+              "componentName": "Pagination",
+              "type": "Navigation",
+              "subscribesTo": ["TeamListRetrieved"],
+              "emitsCommands": ["QueryTeamList"],
+              "localState": ["currentPage"]
+            }
+          ]
+        },
+        {
+          "componentName": "TeamDetailPanel",
+          "type": "Container",
+          "description": "選中球隊的詳細資訊",
+          "children": [
+            {
+              "componentName": "TeamInfo",
+              "type": "Display",
+              "subscribesTo": ["TeamSelected"],
+              "readModel": "SelectedTeamViewModel"
+            },
+            {
+              "componentName": "PlayerList",
+              "type": "DataList",
+              "subscribesTo": ["PlayerListRetrieved", "PlayerCreated"],
+              "readModel": "SelectedTeamViewModel.players"
+            }
+          ]
+        }
+      ],
+      "stateManagement": {
+        "localState": [
+          "selectedTeamId",
+          "searchFilters",
+          "currentPage"
+        ],
+        "globalState": [
+          "currentUser",
+          "teamListCache"
+        ]
+      },
+      "loadingStates": [
+        {
+          "state": "loadingTeamList",
+          "triggers": ["QueryTeamList"],
+          "clears": ["TeamListRetrieved"]
+        },
+        {
+          "state": "loadingTeamDetail",
+          "triggers": ["SelectTeam"],
+          "clears": ["TeamContextEstablished"]
+        },
+        {
+          "state": "loadingPlayerList",
+          "triggers": ["QueryPlayerList"],
+          "clears": ["PlayerListRetrieved"]
+        }
+      ],
+      "errorStates": [
+        {
+          "state": "teamListError",
+          "triggers": ["TeamListQueryFailed"],
+          "display": "ErrorBanner"
+        },
+        {
+          "state": "teamSelectionError",
+          "triggers": ["TeamSelectionFailed"],
+          "display": "ErrorToast"
+        }
+      ]
+    }
+  ],
+  "apiContracts": [
+    {
+      "endpoint": "/api/teams",
+      "method": "GET",
+      "description": "查詢球隊列表",
+      "queryParams": {
+        "page": { "type": "number", "required": false, "default": 1 },
+        "pageSize": { "type": "number", "required": false, "default": 20 },
+        "status": { "type": "string", "required": false },
+        "nameKeyword": { "type": "string", "required": false }
+      },
+      "response": {
+        "type": "TeamListViewModel",
+        "statusCode": 200
+      }
+    },
+    {
+      "endpoint": "/api/teams/{teamId}",
+      "method": "GET",
+      "description": "查詢球隊詳細資訊",
+      "pathParams": {
+        "teamId": { "type": "string", "required": true }
+      },
+      "response": {
+        "type": "SelectedTeamViewModel",
+        "statusCode": 200
+      }
+    },
+    {
+      "endpoint": "/api/teams/{teamId}/players",
+      "method": "GET",
+      "description": "查詢球隊的球員列表",
+      "pathParams": {
+        "teamId": { "type": "string", "required": true }
+      },
+      "response": {
+        "type": "Array<PlayerSummary>",
+        "statusCode": 200
+      }
+    }
+  ]
+}

@@ -1,0 +1,51 @@
+{
+  "userStoryId": "US-B1",
+  "userStoryTitle": "球隊列表查詢與選擇",
+  "domainEvents": [
+    {
+      "eventName": "TeamListQueried",
+      "description": "管理者發起球隊列表查詢",
+      "sequence": 1,
+      "source": "Actor",
+      "eventType": "Query",
+      "data": ["filters", "pagination", "userId", "timestamp"]
+    },
+    {
+      "eventName": "TeamListRetrieved",
+      "description": "系統回傳符合條件的球隊列表",
+      "sequence": 2,
+      "source": "System",
+      "eventType": "Query",
+      "data": ["teams", "totalCount", "currentPage", "pageSize"]
+    },
+    {
+      "eventName": "TeamSelected",
+      "description": "管理者選擇特定球隊",
+      "sequence": 3,
+      "source": "Actor",
+      "eventType": "Command",
+      "data": ["teamId", "teamName", "userId", "timestamp"]
+    },
+    {
+      "eventName": "TeamContextEstablished",
+      "description": "系統建立該球隊的操作上下文",
+      "sequence": 4,
+      "source": "System",
+      "eventType": "Command",
+      "data": ["teamId", "sessionId", "timestamp"]
+    },
+    {
+      "eventName": "PlayerListAutoLoadTriggered",
+      "description": "觸發自動載入球員列表的策略",
+      "sequence": 5,
+      "source": "System",
+      "eventType": "Command",
+      "data": ["teamId", "policyName"]
+    }
+  ],
+  "notes": [
+    "Query 型操作：TeamListQueried → TeamListRetrieved",
+    "Command 型操作：TeamSelected → TeamContextEstablished",
+    "PlayerListAutoLoadTriggered 是由 Policy 觸發的自動化操作"
+  ]
+}

@@ -1,0 +1,67 @@
+{
+  "userStoryId": "US-B1",
+  "commands": [
+    {
+      "commandName": "QueryTeamList",
+      "description": "查詢球隊列表資料",
+      "operationType": "Query",
+      "actor": "User",
+      "input": {
+        "required": ["userId"],
+        "optional": ["filters", "pagination", "sorting"]
+      },
+      "output": {
+        "events": ["TeamListQueried", "TeamListRetrieved"],
+        "data": ["teams", "totalCount", "currentPage", "pageSize"]
+      },
+      "sequence": 1
+    },
+    {
+      "commandName": "SelectTeam",
+      "description": "選擇特定球隊作為當前操作對象",
+      "operationType": "Command",
+      "actor": "User",
+      "input": {
+        "required": ["teamId", "userId"],
+        "optional": []
+      },
+      "output": {
+        "events": ["TeamSelected", "TeamContextEstablished"],
+        "data": ["teamId", "sessionId", "timestamp"]
+      },
+      "sequence": 2
+    },
+    {
+      "commandName": "QueryPlayerList",
+      "description": "查詢特定球隊的球員列表（自動觸發）",
+      "operationType": "Query",
+      "actor": "System",
+      "input": {
+        "required": ["teamId"],
+        "optional": ["sorting"]
+      },
+      "output": {
+        "events": ["PlayerListRetrieved"],
+        "data": ["players", "teamId"]
+      },
+      "sequence": 3
+    }
+  ],
+  "commandEventMapping": [
+    {
+      "command": "QueryTeamList",
+      "events": ["TeamListQueried", "TeamListRetrieved"],
+      "operationType": "Query"
+    },
+    {
+      "command": "SelectTeam",
+      "events": ["TeamSelected", "TeamContextEstablished", "PlayerListAutoLoadTriggered"],
+      "operationType": "Command"
+    },
+    {
+      "command": "QueryPlayerList",
+      "events": ["PlayerListRetrieved"],
+      "operationType": "Query"
+    }
+  ]
+}
