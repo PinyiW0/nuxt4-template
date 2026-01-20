@@ -1,1 +1,0 @@
-{"root":["./nuxt.d.ts","../app/app.vue","../app/pages/index.vue","../app/pages/examples/index.vue","../app/pages/examples/pinia.vue","../app/pages/examples/vueuse.vue","../app/stores/examples.ts"],"version":"5.9.3"}
