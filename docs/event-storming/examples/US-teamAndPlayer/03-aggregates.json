@@ -1,9 +1,9 @@
 {
-  "userStoryId": "US-B1",
+  "epicId": "Epic-B",
   "aggregates": [
     {
       "aggregateName": "Team",
-      "description": "球隊聚合根，管理球隊基本資料和球員關聯",
+      "description": "球隊聚合根，管理球隊基本資料和生命週期",
       "aggregateRoot": {
         "name": "Team",
         "properties": [
@@ -23,9 +23,19 @@
             "description": "球隊描述"
           },
           {
+            "name": "logoUrl",
+            "type": "string",
+            "description": "球隊 Logo 網址"
+          },
+          {
             "name": "status",
             "type": "TeamStatus",
             "description": "球隊狀態（Active/Inactive）"
+          },
+          {
+            "name": "createdBy",
+            "type": "UserId",
+            "description": "建立者"
           },
           {
             "name": "createdAt",
@@ -39,65 +49,144 @@
           }
         ]
       },
-      "entities": [
-        {
-          "name": "Player",
-          "properties": [
-            {
-              "name": "id",
-              "type": "PlayerId",
-              "description": "球員唯一識別碼"
-            },
-            {
-              "name": "jerseyNumber",
-              "type": "number",
-              "description": "背號"
-            },
-            {
-              "name": "name",
-              "type": "string",
-              "description": "球員姓名"
-            },
-            {
-              "name": "height",
-              "type": "number",
-              "description": "身高（公分）"
-            },
-            {
-              "name": "position",
-              "type": "Position",
-              "description": "守備位置"
-            },
-            {
-              "name": "sortOrder",
-              "type": "number",
-              "description": "排序順序"
-            }
-          ]
-        }
-      ],
+      "entities": [],
       "valueObjects": [
         {
           "name": "TeamId",
-          "properties": ["value"]
-        },
-        {
-          "name": "Position",
-          "properties": ["code", "name"],
-          "description": "守備位置（投手、捕手、一壘手...）"
+          "properties": ["value"],
+          "description": "球隊識別碼值對象"
         },
         {
           "name": "TeamStatus",
           "properties": ["value"],
-          "allowedValues": ["Active", "Inactive"]
+          "allowedValues": ["Active", "Inactive"],
+          "description": "球隊狀態值對象"
         }
       ],
-      "handlesCommands": ["SelectTeam"],
-      "emitsEvents": ["TeamSelected", "TeamContextEstablished"]
+      "handlesCommands": [
+        "CreateTeam",
+        "UpdateTeam",
+        "DeleteTeam",
+        "SelectTeam"
+      ],
+      "emitsEvents": [
+        "TeamCreationRequested",
+        "TeamValidated",
+        "TeamCreated",
+        "TeamUpdateRequested",
+        "TeamUpdated",
+        "TeamDeletionRequested",
+        "TeamDeleted",
+        "TeamSelected",
+        "TeamContextEstablished"
+      ]
     },
     {
-      "aggregateName": "TeamQuery",
-      "description": "球隊查詢聚合，處理列表查詢邏輯",
+      "aggregateName": "Player",
+      "description": "球員聚合根，管理球員資料和排序",
+      "aggregateRoot": {
+        "name": "Player",
+        "properties": [
+          {
+            "name": "id",
+            "type": "PlayerId",
+            "description": "球員唯一識別碼"
+          },
+          {
+            "name": "teamId",
+            "type": "TeamId",
+            "description": "所屬球隊識別碼"
+          },
+          {
+            "name": "jerseyNumber",
+            "type": "number",
+            "description": "背號"
+          },
+          {
+            "name": "name",
+            "type": "string",
+            "description": "球員姓名"
+          },
+          {
+            "name": "height",
+            "type": "number",
+            "description": "身高（公分）"
+          },
+          {
+            "name": "position",
+            "type": "Position",
+            "description": "守備位置"
+          },
+          {
+            "name": "sortOrder",
+            "type": "number",
+            "description": "排序順序"
+          },
+          {
+            "name": "status",
+            "type": "PlayerStatus",
+            "description": "球員狀態"
+          },
+          {
+            "name": "createdBy",
+            "type": "UserId",
+            "description": "建立者"
+          },
+          {
+            "name": "createdAt",
+            "type": "DateTime",
+            "description": "建立時間"
+          },
+          {
+            "name": "updatedAt",
+            "type": "DateTime",
+            "description": "最後更新時間"
+          }
+        ]
+      },
+      "entities": [],
+      "valueObjects": [
+        {
+          "name": "PlayerId",
+          "properties": ["value"],
+          "description": "球員識別碼值對象"
+        },
+        {
+          "name": "Position",
+          "properties": ["code", "name"],
+          "allowedValues": ["P", "C", "1B", "2B", "3B", "SS", "LF", "CF", "RF"],
+          "description": "守備位置（投手、捕手、一壘手、二壘手、三壘手、游擊手、左外野手、中外野手、右外野手）"
+        },
+        {
+          "name": "PlayerStatus",
+          "properties": ["value"],
+          "allowedValues": ["Active", "Inactive", "Injured"],
+          "description": "球員狀態值對象"
+        }
+      ],
+      "handlesCommands": [
+        "CreatePlayer",
+        "UpdatePlayer",
+        "DeletePlayer",
+        "UpdatePlayerOrder"
+      ],
+      "emitsEvents": [
+        "PlayerCreationRequested",
+        "PlayerValidated",
+        "PlayerCreated",
+        "PlayerUpdateRequested",
+        "PlayerUpdated",
+        "PlayerDeletionRequested",
+        "PlayerDeleted",
+        "PlayerOrderChangeRequested",
+        "PlayerOrderValidated",
+        "PlayerOrderChanged",
+        "PlayerListRefreshed"
+      ]
+    },
+    {
+      "aggregateName": "TeamQueryService",
+      "description": "球隊查詢服務，處理列表查詢邏輯",
       "aggregateRoot": {
         "name": "TeamQueryRequest",
         "properties": [
@@ -105,6 +194,11 @@
             "name": "id",
             "type": "QueryId",
             "description": "查詢請求識別碼"
+          },
+          {
+            "name": "userId",
+            "type": "UserId",
+            "description": "查詢用戶"
           },
           {
             "name": "filters",
@@ -119,36 +213,154 @@
           {
             "name": "sorting",
             "type": "Sorting",
-            "description": "排序設定"
+            "description": "排序條件"
           }
         ]
       },
       "entities": [],
       "valueObjects": [
         {
+          "name": "QueryId",
+          "properties": ["value"],
+          "description": "查詢識別碼"
+        },
+        {
           "name": "TeamFilters",
-          "properties": ["status", "nameKeyword"]
+          "properties": ["status", "nameKeyword"],
+          "description": "球隊篩選條件"
         },
         {
           "name": "Pagination",
-          "properties": ["page", "pageSize"]
+          "properties": ["page", "pageSize"],
+          "description": "分頁設定"
         },
         {
           "name": "Sorting",
-          "properties": ["field", "direction"]
+          "properties": ["field", "order"],
+          "description": "排序設定"
         }
       ],
       "handlesCommands": ["QueryTeamList"],
       "emitsEvents": ["TeamListQueried", "TeamListRetrieved"]
+    },
+    {
+      "aggregateName": "PlayerQueryService",
+      "description": "球員查詢服務，處理球員列表查詢邏輯",
+      "aggregateRoot": {
+        "name": "PlayerQueryRequest",
+        "properties": [
+          {
+            "name": "id",
+            "type": "QueryId",
+            "description": "查詢請求識別碼"
+          },
+          {
+            "name": "teamId",
+            "type": "TeamId",
+            "description": "查詢的球隊識別碼"
+          },
+          {
+            "name": "userId",
+            "type": "UserId",
+            "description": "查詢用戶"
+          },
+          {
+            "name": "filters",
+            "type": "PlayerFilters",
+            "description": "查詢條件"
+          },
+          {
+            "name": "pagination",
+            "type": "Pagination",
+            "description": "分頁資訊"
+          },
+          {
+            "name": "sorting",
+            "type": "Sorting",
+            "description": "排序條件"
+          }
+        ]
+      },
+      "entities": [],
+      "valueObjects": [
+        {
+          "name": "PlayerFilters",
+          "properties": ["position", "nameKeyword", "status"],
+          "description": "球員篩選條件"
+        }
+      ],
+      "handlesCommands": ["QueryPlayerList"],
+      "emitsEvents": ["PlayerListQueried", "PlayerListRetrieved"]
+    },
+    {
+      "aggregateName": "TeamContext",
+      "description": "球隊操作上下文，管理當前選擇的球隊狀態",
+      "aggregateRoot": {
+        "name": "TeamContext",
+        "properties": [
+          {
+            "name": "sessionId",
+            "type": "SessionId",
+            "description": "會話識別碼"
+          },
+          {
+            "name": "userId",
+            "type": "UserId",
+            "description": "用戶識別碼"
+          },
+          {
+            "name": "currentTeamId",
+            "type": "TeamId",
+            "description": "當前選擇的球隊識別碼"
+          },
+          {
+            "name": "establishedAt",
+            "type": "DateTime",
+            "description": "上下文建立時間"
+          }
+        ]
+      },
+      "entities": [],
+      "valueObjects": [
+        {
+          "name": "SessionId",
+          "properties": ["value"],
+          "description": "會話識別碼"
+        }
+      ],
+      "handlesCommands": ["SelectTeam"],
+      "emitsEvents": ["TeamContextEstablished"]
     }
   ],
   "relationships": [
     {
-      "from": "Team",
-      "to": "Player",
-      "type": "contains",
-      "cardinality": "1:N",
-      "description": "一個球隊包含多個球員"
+      "from": "Player",
+      "to": "Team",
+      "type": "belongsTo",
+      "cardinality": "N:1",
+      "description": "球員屬於一個球隊（通過 teamId 引用）"
+    },
+    {
+      "from": "TeamContext",
+      "to": "Team",
+      "type": "references",
+      "cardinality": "1:1",
+      "description": "操作上下文引用當前選擇的球隊"
+    },
+    {
+      "from": "PlayerQueryRequest",
+      "to": "Team",
+      "type": "references",
+      "cardinality": "1:1",
+      "description": "球員查詢請求必須指定球隊"
     }
+  ],
+  "notes": [
+    "Team 和 Player 是主要的 Command Aggregates，負責處理修改型操作",
+    "TeamQueryService 和 PlayerQueryService 是 Query Aggregates，專門處理查詢操作",
+    "TeamContext 管理 Session State，追蹤用戶當前操作的球隊",
+    "Aggregate 之間通過 ID 引用（teamId），避免直接物件關聯",
+    "Position 值對象定義了棒球的標準守備位置",
+    "每個 Aggregate 都有獨立的生命週期和事務邊界"
   ]
 }

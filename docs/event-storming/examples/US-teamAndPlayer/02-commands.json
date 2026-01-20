@@ -1,11 +1,12 @@
 {
-  "userStoryId": "US-B1",
+  "epicId": "Epic-B",
   "commands": [
     {
       "commandName": "QueryTeamList",
       "description": "查詢球隊列表資料",
       "operationType": "Query",
       "actor": "User",
+      "userStoryId": "US-B1",
       "input": {
         "required": ["userId"],
         "optional": ["filters", "pagination", "sorting"]
@@ -21,6 +22,7 @@
       "description": "選擇特定球隊作為當前操作對象",
       "operationType": "Command",
       "actor": "User",
+      "userStoryId": "US-B1",
       "input": {
         "required": ["teamId", "userId"],
         "optional": []
@@ -32,19 +34,132 @@
       "sequence": 2
     },
     {
-      "commandName": "QueryPlayerList",
-      "description": "查詢特定球隊的球員列表（自動觸發）",
-      "operationType": "Query",
-      "actor": "System",
+      "commandName": "CreateTeam",
+      "description": "建立新的球隊",
+      "operationType": "Command",
+      "actor": "User",
+      "userStoryId": "US-B2",
       "input": {
-        "required": ["teamId"],
-        "optional": ["sorting"]
+        "required": ["teamName", "userId"],
+        "optional": ["description", "logoUrl"]
       },
       "output": {
-        "events": ["PlayerListRetrieved"],
-        "data": ["players", "teamId"]
+        "events": ["TeamCreationRequested", "TeamValidated", "TeamCreated"],
+        "data": ["teamId", "teamName", "description", "createdAt"]
       },
       "sequence": 3
+    },
+    {
+      "commandName": "UpdateTeam",
+      "description": "更新球隊資料",
+      "operationType": "Command",
+      "actor": "User",
+      "userStoryId": "US-B2",
+      "input": {
+        "required": ["teamId", "userId"],
+        "optional": ["teamName", "description", "logoUrl"]
+      },
+      "output": {
+        "events": ["TeamUpdateRequested", "TeamValidated", "TeamUpdated"],
+        "data": ["teamId", "updatedFields", "previousValues", "updatedAt"]
+      },
+      "sequence": 4
+    },
+    {
+      "commandName": "DeleteTeam",
+      "description": "刪除球隊",
+      "operationType": "Command",
+      "actor": "User",
+      "userStoryId": "US-B2",
+      "input": {
+        "required": ["teamId", "userId"],
+        "optional": []
+      },
+      "output": {
+        "events": ["TeamDeletionRequested", "TeamDeleted"],
+        "data": ["teamId", "deletedAt"]
+      },
+      "sequence": 5
+    },
+    {
+      "commandName": "QueryPlayerList",
+      "description": "查詢球隊的球員列表",
+      "operationType": "Query",
+      "actor": "User",
+      "userStoryId": "US-B3",
+      "input": {
+        "required": ["teamId", "userId"],
+        "optional": ["filters", "pagination", "sorting"]
+      },
+      "output": {
+        "events": ["PlayerListQueried", "PlayerListRetrieved"],
+        "data": ["players", "totalCount", "teamId"]
+      },
+      "sequence": 6
+    },
+    {
+      "commandName": "CreatePlayer",
+      "description": "新增球員至球隊",
+      "operationType": "Command",
+      "actor": "User",
+      "userStoryId": "US-B3",
+      "input": {
+        "required": ["teamId", "jerseyNumber", "name", "position", "userId"],
+        "optional": ["height", "sortOrder"]
+      },
+      "output": {
+        "events": ["PlayerCreationRequested", "PlayerValidated", "PlayerCreated"],
+        "data": ["playerId", "teamId", "jerseyNumber", "name", "height", "position", "sortOrder", "createdAt"]
+      },
+      "sequence": 7
+    },
+    {
+      "commandName": "UpdatePlayer",
+      "description": "更新球員資料",
+      "operationType": "Command",
+      "actor": "User",
+      "userStoryId": "US-B3",
+      "input": {
+        "required": ["playerId", "userId"],
+        "optional": ["jerseyNumber", "name", "height", "position"]
+      },
+      "output": {
+        "events": ["PlayerUpdateRequested", "PlayerValidated", "PlayerUpdated"],
+        "data": ["playerId", "updatedFields", "previousValues", "updatedAt"]
+      },
+      "sequence": 8
+    },
+    {
+      "commandName": "DeletePlayer",
+      "description": "刪除球員",
+      "operationType": "Command",
+      "actor": "User",
+      "userStoryId": "US-B3",
+      "input": {
+        "required": ["playerId", "userId"],
+        "optional": []
+      },
+      "output": {
+        "events": ["PlayerDeletionRequested", "PlayerDeleted"],
+        "data": ["playerId", "teamId", "deletedAt"]
+      },
+      "sequence": 9
+    },
+    {
+      "commandName": "UpdatePlayerOrder",
+      "description": "調整球員的排序順序",
+      "operationType": "Command",
+      "actor": "User",
+      "userStoryId": "US-B4",
+      "input": {
+        "required": ["teamId", "playerOrders", "userId"],
+        "optional": []
+      },
+      "output": {
+        "events": ["PlayerOrderChangeRequested", "PlayerOrderValidated", "PlayerOrderChanged", "PlayerListRefreshed"],
+        "data": ["teamId", "playerOrders", "updatedAt"]
+      },
+      "sequence": 10
     }
   ],
   "commandEventMapping": [
@@ -55,13 +170,55 @@
     },
     {
       "command": "SelectTeam",
-      "events": ["TeamSelected", "TeamContextEstablished", "PlayerListAutoLoadTriggered"],
+      "events": ["TeamSelected", "TeamContextEstablished"],
+      "operationType": "Command"
+    },
+    {
+      "command": "CreateTeam",
+      "events": ["TeamCreationRequested", "TeamValidated", "TeamCreated"],
+      "operationType": "Command"
+    },
+    {
+      "command": "UpdateTeam",
+      "events": ["TeamUpdateRequested", "TeamValidated", "TeamUpdated"],
+      "operationType": "Command"
+    },
+    {
+      "command": "DeleteTeam",
+      "events": ["TeamDeletionRequested", "TeamDeleted"],
       "operationType": "Command"
     },
     {
       "command": "QueryPlayerList",
-      "events": ["PlayerListRetrieved"],
+      "events": ["PlayerListQueried", "PlayerListRetrieved"],
       "operationType": "Query"
+    },
+    {
+      "command": "CreatePlayer",
+      "events": ["PlayerCreationRequested", "PlayerValidated", "PlayerCreated"],
+      "operationType": "Command"
+    },
+    {
+      "command": "UpdatePlayer",
+      "events": ["PlayerUpdateRequested", "PlayerValidated", "PlayerUpdated"],
+      "operationType": "Command"
+    },
+    {
+      "command": "DeletePlayer",
+      "events": ["PlayerDeletionRequested", "PlayerDeleted"],
+      "operationType": "Command"
+    },
+    {
+      "command": "UpdatePlayerOrder",
+      "events": ["PlayerOrderChangeRequested", "PlayerOrderValidated", "PlayerOrderChanged", "PlayerListRefreshed"],
+      "operationType": "Command"
     }
+  ],
+  "notes": [
+    "Query 操作（QueryTeamList, QueryPlayerList）不改變系統狀態，只回傳 Read Model",
+    "Command 操作都會產生對應的 Domain Event 並改變 Aggregate 狀態",
+    "所有修改型 Command 都經過 Validated Event 確保資料正確性",
+    "UpdatePlayerOrder 會觸發 PlayerListRefreshed，保持查詢模型的即時性",
+    "SelectTeam 雖是選擇操作，但會改變 Session State，故為 Command Operation"
   ]
 }
