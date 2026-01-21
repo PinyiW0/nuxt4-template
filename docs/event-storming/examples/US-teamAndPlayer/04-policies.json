@@ -1,717 +1,763 @@
 {
-  "epicId": "Epic-B",
+  "version": "1.0",
+  "generatedAt": "2026-01-21T10:30:00Z",
+  "sourceStages": {
+    "features": "00-features.json",
+    "events": "01-domain-events.json",
+    "commands": "02-commands.json",
+    "aggregates": "03-aggregates.json"
+  },
   "commandRules": [
     {
+      "commandId": "C-001",
       "commandName": "QueryTeamList",
-      "operationType": "Query",
       "preconditions": [
         {
-          "name": "UserAuthenticated",
-          "description": "用戶必須已登入",
-          "type": "Authorization",
-          "expression": "userId IS NOT NULL"
+          "ruleId": "PRE-C001-01",
+          "description": "用戶已登入系統",
+          "errorCode": "UNAUTHORIZED",
+          "errorMessage": "請先登入系統"
         },
         {
-          "name": "ValidPaginationParams",
-          "description": "分頁參數必須有效",
-          "type": "DataValidation",
-          "expression": "pagination.page > 0 AND pagination.pageSize BETWEEN 10 AND 100"
+          "ruleId": "PRE-C001-02",
+          "description": "用戶擁有 team:read 權限",
+          "errorCode": "FORBIDDEN",
+          "errorMessage": "沒有查詢球隊的權限"
+        }
+      ],
+      "validations": [
+        {
+          "ruleId": "VAL-C001-01",
+          "field": "page",
+          "description": "頁碼必須大於等於 1",
+          "errorCode": "INVALID_PAGE",
+          "errorMessage": "頁碼必須大於等於 1"
+        },
+        {
+          "ruleId": "VAL-C001-02",
+          "field": "pageSize",
+          "description": "每頁筆數必須在 10-100 之間",
+          "errorCode": "INVALID_PAGE_SIZE",
+          "errorMessage": "每頁筆數必須在 10-100 之間"
         }
       ],
       "postconditions": [
         {
-          "name": "TeamListReturned",
+          "ruleId": "POST-C001-01",
           "description": "回傳符合條件的球隊列表",
-          "type": "DataReturn",
-          "expression": "RETURN List<TeamSummary>"
-        },
-        {
-          "name": "QueryLogged",
-          "description": "記錄查詢行為（審計需求）",
-          "type": "EventEmission",
-          "event": "TeamListQueried"
+          "verifyBy": "E-002 (TeamListRetrieved)"
         }
       ]
     },
     {
+      "commandId": "C-002",
       "commandName": "SelectTeam",
-      "operationType": "Command",
       "preconditions": [
         {
-          "name": "UserAuthenticated",
-          "description": "用戶必須已登入",
-          "type": "Authorization",
-          "expression": "userId IS NOT NULL"
+          "ruleId": "PRE-C002-01",
+          "description": "用戶已登入系統",
+          "errorCode": "UNAUTHORIZED",
+          "errorMessage": "請先登入系統"
         },
         {
-          "name": "TeamExists",
-          "description": "球隊必須存在於系統中",
-          "type": "DataValidation",
-          "expression": "EXISTS(Team WHERE id = teamId)"
+          "ruleId": "PRE-C002-02",
+          "description": "用戶擁有 team:read 權限",
+          "errorCode": "FORBIDDEN",
+          "errorMessage": "沒有存取此球隊的權限"
         },
         {
-          "name": "UserHasTeamAccess",
-          "description": "用戶必須有權限存取該球隊",
-          "type": "Authorization",
-          "expression": "user.hasAccessTo(teamId)"
+          "ruleId": "PRE-C002-03",
+          "description": "球隊必須存在",
+          "errorCode": "TEAM_NOT_FOUND",
+          "errorMessage": "找不到指定的球隊"
+        }
+      ],
+      "validations": [
+        {
+          "ruleId": "VAL-C002-01",
+          "field": "teamId",
+          "description": "teamId 必須為有效的 UUID 格式",
+          "errorCode": "INVALID_TEAM_ID",
+          "errorMessage": "球隊 ID 格式不正確"
         }
       ],
       "postconditions": [
         {
-          "name": "TeamContextEstablished",
-          "description": "系統建立該球隊的操作上下文",
-          "type": "StateChange",
-          "expression": "session.currentTeamId = teamId"
+          "ruleId": "POST-C002-01",
+          "description": "系統建立球隊操作上下文",
+          "verifyBy": "E-004 (TeamContextEstablished)"
         },
         {
-          "name": "TeamSelectedEventEmitted",
-          "description": "發出 TeamSelected 事件",
-          "type": "EventEmission",
-          "event": "TeamSelected"
-        },
-        {
-          "name": "ContextEstablishedEventEmitted",
-          "description": "發出 TeamContextEstablished 事件",
-          "type": "EventEmission",
-          "event": "TeamContextEstablished"
+          "ruleId": "POST-C002-02",
+          "description": "後續操作都在此球隊範圍內",
+          "verifyBy": "Session state"
         }
       ]
     },
     {
+      "commandId": "C-003",
       "commandName": "CreateTeam",
-      "operationType": "Command",
       "preconditions": [
         {
-          "name": "UserAuthenticated",
-          "description": "用戶必須已登入",
-          "type": "Authorization",
-          "expression": "userId IS NOT NULL"
+          "ruleId": "PRE-C003-01",
+          "description": "用戶已登入系統",
+          "errorCode": "UNAUTHORIZED",
+          "errorMessage": "請先登入系統"
         },
         {
-          "name": "UserHasCreatePermission",
-          "description": "用戶必須有建立球隊的權限",
-          "type": "Authorization",
-          "expression": "user.hasPermission('team:create')"
+          "ruleId": "PRE-C003-02",
+          "description": "用戶擁有 team:create 權限",
+          "errorCode": "FORBIDDEN",
+          "errorMessage": "沒有建立球隊的權限"
         },
         {
-          "name": "TeamNameNotEmpty",
+          "ruleId": "PRE-C003-03",
+          "description": "球隊名稱不重複",
+          "errorCode": "TEAM_NAME_DUPLICATE",
+          "errorMessage": "球隊名稱已被使用"
+        }
+      ],
+      "validations": [
+        {
+          "ruleId": "VAL-C003-01",
+          "field": "teamName",
           "description": "球隊名稱不可為空",
-          "type": "DataValidation",
-          "expression": "teamName IS NOT NULL AND LENGTH(teamName) > 0"
+          "errorCode": "TEAM_NAME_REQUIRED",
+          "errorMessage": "球隊名稱不可為空"
         },
         {
-          "name": "UniqueTeamName",
-          "description": "球隊名稱不可重複",
-          "type": "BusinessRule",
-          "expression": "NOT EXISTS(Team WHERE name = teamName AND status = 'Active')"
+          "ruleId": "VAL-C003-02",
+          "field": "teamName",
+          "description": "球隊名稱長度必須在 2-50 字元之間",
+          "errorCode": "TEAM_NAME_INVALID_LENGTH",
+          "errorMessage": "球隊名稱長度必須在 2-50 字元之間"
+        },
+        {
+          "ruleId": "VAL-C003-03",
+          "field": "description",
+          "description": "描述長度不可超過 500 字元",
+          "errorCode": "DESCRIPTION_TOO_LONG",
+          "errorMessage": "描述長度不可超過 500 字元"
         }
       ],
       "postconditions": [
         {
-          "name": "TeamCreated",
-          "description": "新球隊成功建立",
-          "type": "StateChange",
-          "expression": "Team.status = 'Active'"
+          "ruleId": "POST-C003-01",
+          "description": "新球隊已建立且狀態為 Active",
+          "verifyBy": "E-007 (TeamCreated)"
         },
         {
-          "name": "TeamCreatedEventEmitted",
-          "description": "發出 TeamCreated 事件",
-          "type": "EventEmission",
-          "event": "TeamCreated"
-        },
-        {
-          "name": "TeamIdGenerated",
-          "description": "系統生成唯一的球隊識別碼",
-          "type": "StateChange",
-          "expression": "Team.id = UUID.generate()"
+          "ruleId": "POST-C003-02",
+          "description": "球隊快取已失效",
+          "verifyBy": "E-008 (TeamCacheInvalidated)"
         }
       ]
     },
     {
+      "commandId": "C-004",
       "commandName": "UpdateTeam",
-      "operationType": "Command",
       "preconditions": [
         {
-          "name": "UserAuthenticated",
-          "description": "用戶必須已登入",
-          "type": "Authorization",
-          "expression": "userId IS NOT NULL"
+          "ruleId": "PRE-C004-01",
+          "description": "用戶已登入系統",
+          "errorCode": "UNAUTHORIZED",
+          "errorMessage": "請先登入系統"
         },
         {
-          "name": "TeamExists",
+          "ruleId": "PRE-C004-02",
+          "description": "用戶擁有 team:update 權限",
+          "errorCode": "FORBIDDEN",
+          "errorMessage": "沒有編輯此球隊的權限"
+        },
+        {
+          "ruleId": "PRE-C004-03",
           "description": "球隊必須存在",
-          "type": "DataValidation",
-          "expression": "EXISTS(Team WHERE id = teamId)"
+          "errorCode": "TEAM_NOT_FOUND",
+          "errorMessage": "找不到指定的球隊"
         },
         {
-          "name": "UserHasUpdatePermission",
-          "description": "用戶必須有更新權限",
-          "type": "Authorization",
-          "expression": "user.hasPermission('team:update', teamId)"
+          "ruleId": "PRE-C004-04",
+          "description": "新名稱不與其他球隊重複",
+          "errorCode": "TEAM_NAME_DUPLICATE",
+          "errorMessage": "球隊名稱已被使用"
+        }
+      ],
+      "validations": [
+        {
+          "ruleId": "VAL-C004-01",
+          "field": "teamName",
+          "description": "球隊名稱長度必須在 2-50 字元之間",
+          "errorCode": "TEAM_NAME_INVALID_LENGTH",
+          "errorMessage": "球隊名稱長度必須在 2-50 字元之間"
         },
         {
-          "name": "UniqueTeamNameIfChanged",
-          "description": "如果修改名稱，新名稱不可重複",
-          "type": "BusinessRule",
-          "expression": "IF teamName IS NOT NULL THEN NOT EXISTS(Team WHERE name = teamName AND id != teamId)"
+          "ruleId": "VAL-C004-02",
+          "field": "description",
+          "description": "描述長度不可超過 500 字元",
+          "errorCode": "DESCRIPTION_TOO_LONG",
+          "errorMessage": "描述長度不可超過 500 字元"
         }
       ],
       "postconditions": [
         {
-          "name": "TeamUpdated",
-          "description": "球隊資料已更新",
-          "type": "StateChange",
-          "expression": "Team.updatedAt = NOW()"
+          "ruleId": "POST-C004-01",
+          "description": "球隊資訊已更新",
+          "verifyBy": "E-009 (TeamUpdated)"
         },
         {
-          "name": "TeamUpdatedEventEmitted",
-          "description": "發出 TeamUpdated 事件",
-          "type": "EventEmission",
-          "event": "TeamUpdated"
-        },
-        {
-          "name": "PreviousValuesStored",
-          "description": "保存修改前的值（用於審計）",
-          "type": "DataIntegrity",
-          "expression": "Event.previousValues = Team.snapshot()"
+          "ruleId": "POST-C004-02",
+          "description": "球隊快取已失效",
+          "verifyBy": "E-008 (TeamCacheInvalidated)"
         }
       ]
     },
     {
+      "commandId": "C-005",
       "commandName": "DeleteTeam",
-      "operationType": "Command",
       "preconditions": [
         {
-          "name": "UserAuthenticated",
-          "description": "用戶必須已登入",
-          "type": "Authorization",
-          "expression": "userId IS NOT NULL"
+          "ruleId": "PRE-C005-01",
+          "description": "用戶已登入系統",
+          "errorCode": "UNAUTHORIZED",
+          "errorMessage": "請先登入系統"
         },
         {
-          "name": "TeamExists",
+          "ruleId": "PRE-C005-02",
+          "description": "用戶擁有 team:delete 權限",
+          "errorCode": "FORBIDDEN",
+          "errorMessage": "沒有刪除球隊的權限"
+        },
+        {
+          "ruleId": "PRE-C005-03",
           "description": "球隊必須存在",
-          "type": "DataValidation",
-          "expression": "EXISTS(Team WHERE id = teamId)"
-        },
-        {
-          "name": "UserHasDeletePermission",
-          "description": "用戶必須有刪除權限",
-          "type": "Authorization",
-          "expression": "user.hasPermission('team:delete', teamId)"
-        },
-        {
-          "name": "NoActivePlayers",
-          "description": "球隊不可有球員時才能刪除（或採用軟刪除）",
-          "type": "BusinessRule",
-          "expression": "NOT EXISTS(Player WHERE teamId = teamId AND status = 'Active')"
+          "errorCode": "TEAM_NOT_FOUND",
+          "errorMessage": "找不到指定的球隊"
         }
       ],
+      "validations": [],
       "postconditions": [
         {
-          "name": "TeamDeleted",
-          "description": "球隊已刪除（軟刪除：狀態改為 Inactive）",
-          "type": "StateChange",
-          "expression": "Team.status = 'Inactive' OR Team.deletedAt = NOW()"
+          "ruleId": "POST-C005-01",
+          "description": "球隊已刪除",
+          "verifyBy": "E-010 (TeamDeleted)"
         },
         {
-          "name": "TeamDeletedEventEmitted",
-          "description": "發出 TeamDeleted 事件",
-          "type": "EventEmission",
-          "event": "TeamDeleted"
+          "ruleId": "POST-C005-02",
+          "description": "所有關聯球員已刪除（cascade delete）",
+          "verifyBy": "E-011 (TeamPlayersDeleted)"
+        },
+        {
+          "ruleId": "POST-C005-03",
+          "description": "球隊快取已失效",
+          "verifyBy": "E-008 (TeamCacheInvalidated)"
         }
       ]
     },
     {
+      "commandId": "C-006",
       "commandName": "QueryPlayerList",
-      "operationType": "Query",
       "preconditions": [
         {
-          "name": "UserAuthenticated",
-          "description": "用戶必須已登入",
-          "type": "Authorization",
-          "expression": "userId IS NOT NULL"
+          "ruleId": "PRE-C006-01",
+          "description": "用戶已登入系統",
+          "errorCode": "UNAUTHORIZED",
+          "errorMessage": "請先登入系統"
         },
         {
-          "name": "TeamExists",
+          "ruleId": "PRE-C006-02",
+          "description": "用戶擁有 player:read 權限",
+          "errorCode": "FORBIDDEN",
+          "errorMessage": "沒有查詢球員的權限"
+        },
+        {
+          "ruleId": "PRE-C006-03",
           "description": "球隊必須存在",
-          "type": "DataValidation",
-          "expression": "EXISTS(Team WHERE id = teamId)"
+          "errorCode": "TEAM_NOT_FOUND",
+          "errorMessage": "找不到指定的球隊"
         },
         {
-          "name": "UserHasTeamAccess",
-          "description": "用戶必須有權限存取該球隊",
-          "type": "Authorization",
-          "expression": "user.hasAccessTo(teamId)"
+          "ruleId": "PRE-C006-04",
+          "description": "已選擇球隊（依賴 F-B2）",
+          "errorCode": "NO_TEAM_SELECTED",
+          "errorMessage": "請先選擇球隊"
+        }
+      ],
+      "validations": [
+        {
+          "ruleId": "VAL-C006-01",
+          "field": "teamId",
+          "description": "teamId 必須為有效的 UUID 格式",
+          "errorCode": "INVALID_TEAM_ID",
+          "errorMessage": "球隊 ID 格式不正確"
         }
       ],
       "postconditions": [
         {
-          "name": "PlayerListReturned",
-          "description": "回傳該球隊的球員列表",
-          "type": "DataReturn",
-          "expression": "RETURN List<PlayerSummary> ORDER BY sortOrder"
+          "ruleId": "POST-C006-01",
+          "description": "回傳球隊的所有球員（依 sortOrder 排序）",
+          "verifyBy": "E-013 (PlayerListRetrieved)"
         }
       ]
     },
     {
+      "commandId": "C-007",
       "commandName": "CreatePlayer",
-      "operationType": "Command",
       "preconditions": [
         {
-          "name": "UserAuthenticated",
-          "description": "用戶必須已登入",
-          "type": "Authorization",
-          "expression": "userId IS NOT NULL"
+          "ruleId": "PRE-C007-01",
+          "description": "用戶已登入系統",
+          "errorCode": "UNAUTHORIZED",
+          "errorMessage": "請先登入系統"
         },
         {
-          "name": "TeamExists",
+          "ruleId": "PRE-C007-02",
+          "description": "用戶擁有 player:create 權限",
+          "errorCode": "FORBIDDEN",
+          "errorMessage": "沒有新增球員的權限"
+        },
+        {
+          "ruleId": "PRE-C007-03",
           "description": "球隊必須存在",
-          "type": "DataValidation",
-          "expression": "EXISTS(Team WHERE id = teamId)"
+          "errorCode": "TEAM_NOT_FOUND",
+          "errorMessage": "找不到指定的球隊"
         },
         {
-          "name": "UserHasCreatePlayerPermission",
-          "description": "用戶必須有新增球員權限",
-          "type": "Authorization",
-          "expression": "user.hasPermission('player:create', teamId)"
+          "ruleId": "PRE-C007-04",
+          "description": "背號在同球隊內不重複",
+          "errorCode": "JERSEY_NUMBER_DUPLICATE",
+          "errorMessage": "背號已被使用"
         },
         {
-          "name": "UniqueJerseyNumber",
-          "description": "同一球隊內背號不可重複",
-          "type": "BusinessRule",
-          "expression": "NOT EXISTS(Player WHERE teamId = input.teamId AND jerseyNumber = input.jerseyNumber AND status = 'Active')"
+          "ruleId": "PRE-C007-05",
+          "description": "已選擇球隊（依賴 F-B2）",
+          "errorCode": "NO_TEAM_SELECTED",
+          "errorMessage": "請先選擇球隊"
+        }
+      ],
+      "validations": [
+        {
+          "ruleId": "VAL-C007-01",
+          "field": "jerseyNumber",
+          "description": "背號必須在 0-99 之間",
+          "errorCode": "JERSEY_NUMBER_INVALID",
+          "errorMessage": "背號必須在 0-99 之間"
         },
         {
-          "name": "ValidJerseyNumber",
-          "description": "背號必須在有效範圍內",
-          "type": "DataValidation",
-          "expression": "jerseyNumber >= 0 AND jerseyNumber <= 99"
-        },
-        {
-          "name": "ValidHeight",
-          "description": "身高必須在合理範圍內",
-          "type": "DataValidation",
-          "expression": "height IS NULL OR (height >= 150 AND height <= 250)"
-        },
-        {
-          "name": "ValidPosition",
-          "description": "守備位置必須是有效值",
-          "type": "DataValidation",
-          "expression": "position IN ['P', 'C', '1B', '2B', '3B', 'SS', 'LF', 'CF', 'RF']"
-        },
-        {
-          "name": "PlayerNameNotEmpty",
+          "ruleId": "VAL-C007-02",
+          "field": "name",
           "description": "球員姓名不可為空",
-          "type": "DataValidation",
-          "expression": "name IS NOT NULL AND LENGTH(name) > 0"
+          "errorCode": "PLAYER_NAME_REQUIRED",
+          "errorMessage": "球員姓名不可為空"
+        },
+        {
+          "ruleId": "VAL-C007-03",
+          "field": "name",
+          "description": "球員姓名長度必須在 2-50 字元之間",
+          "errorCode": "PLAYER_NAME_INVALID_LENGTH",
+          "errorMessage": "球員姓名長度必須在 2-50 字元之間"
+        },
+        {
+          "ruleId": "VAL-C007-04",
+          "field": "position",
+          "description": "守備位置必須為標準棒球位置（P, C, 1B, 2B, 3B, SS, LF, CF, RF, DH）",
+          "errorCode": "POSITION_INVALID",
+          "errorMessage": "守備位置必須為標準棒球位置"
+        },
+        {
+          "ruleId": "VAL-C007-05",
+          "field": "height",
+          "description": "身高必須在 140-220 公分之間",
+          "errorCode": "HEIGHT_INVALID",
+          "errorMessage": "身高必須在 140-220 公分之間"
         }
       ],
       "postconditions": [
         {
-          "name": "PlayerCreated",
-          "description": "新球員成功加入球隊",
-          "type": "StateChange",
-          "expression": "Player.status = 'Active'"
+          "ruleId": "POST-C007-01",
+          "description": "新球員已建立",
+          "verifyBy": "E-014 (PlayerCreated)"
         },
         {
-          "name": "PlayerCreatedEventEmitted",
-          "description": "發出 PlayerCreated 事件",
-          "type": "EventEmission",
-          "event": "PlayerCreated"
+          "ruleId": "POST-C007-02",
+          "description": "球員 sortOrder 為目前最大值 + 1",
+          "verifyBy": "Player.sortOrder field"
         },
         {
-          "name": "SortOrderAssigned",
-          "description": "自動分配排序順序（若未提供）",
-          "type": "StateChange",
-          "expression": "Player.sortOrder = MAX(Player.sortOrder WHERE teamId) + 1"
+          "ruleId": "POST-C007-03",
+          "description": "球員列表已刷新",
+          "verifyBy": "E-015 (PlayerListRefreshed)"
         }
       ]
     },
     {
+      "commandId": "C-008",
       "commandName": "UpdatePlayer",
-      "operationType": "Command",
       "preconditions": [
         {
-          "name": "UserAuthenticated",
-          "description": "用戶必須已登入",
-          "type": "Authorization",
-          "expression": "userId IS NOT NULL"
+          "ruleId": "PRE-C008-01",
+          "description": "用戶已登入系統",
+          "errorCode": "UNAUTHORIZED",
+          "errorMessage": "請先登入系統"
         },
         {
-          "name": "PlayerExists",
+          "ruleId": "PRE-C008-02",
+          "description": "用戶擁有 player:update 權限",
+          "errorCode": "FORBIDDEN",
+          "errorMessage": "沒有編輯球員的權限"
+        },
+        {
+          "ruleId": "PRE-C008-03",
           "description": "球員必須存在",
-          "type": "DataValidation",
-          "expression": "EXISTS(Player WHERE id = playerId)"
+          "errorCode": "PLAYER_NOT_FOUND",
+          "errorMessage": "找不到指定的球員"
         },
         {
-          "name": "UserHasUpdatePlayerPermission",
-          "description": "用戶必須有更新球員權限",
-          "type": "Authorization",
-          "expression": "user.hasPermission('player:update', player.teamId)"
+          "ruleId": "PRE-C008-04",
+          "description": "新背號在同球隊內不重複",
+          "errorCode": "JERSEY_NUMBER_DUPLICATE",
+          "errorMessage": "背號已被使用"
+        }
+      ],
+      "validations": [
+        {
+          "ruleId": "VAL-C008-01",
+          "field": "jerseyNumber",
+          "description": "背號必須在 0-99 之間",
+          "errorCode": "JERSEY_NUMBER_INVALID",
+          "errorMessage": "背號必須在 0-99 之間"
         },
         {
-          "name": "UniqueJerseyNumberIfChanged",
-          "description": "如果修改背號，新背號不可重複",
-          "type": "BusinessRule",
-          "expression": "IF jerseyNumber IS NOT NULL THEN NOT EXISTS(Player WHERE teamId = player.teamId AND jerseyNumber = input.jerseyNumber AND id != playerId)"
+          "ruleId": "VAL-C008-02",
+          "field": "name",
+          "description": "球員姓名長度必須在 2-50 字元之間",
+          "errorCode": "PLAYER_NAME_INVALID_LENGTH",
+          "errorMessage": "球員姓名長度必須在 2-50 字元之間"
         },
         {
-          "name": "ValidHeightIfProvided",
-          "description": "如果提供身高，必須在合理範圍內",
-          "type": "DataValidation",
-          "expression": "height IS NULL OR (height >= 150 AND height <= 250)"
+          "ruleId": "VAL-C008-03",
+          "field": "position",
+          "description": "守備位置必須為標準棒球位置",
+          "errorCode": "POSITION_INVALID",
+          "errorMessage": "守備位置必須為標準棒球位置"
         },
         {
-          "name": "ValidPositionIfProvided",
-          "description": "如果提供守備位置，必須是有效值",
-          "type": "DataValidation",
-          "expression": "position IS NULL OR position IN ['P', 'C', '1B', '2B', '3B', 'SS', 'LF', 'CF', 'RF']"
+          "ruleId": "VAL-C008-04",
+          "field": "height",
+          "description": "身高必須在 140-220 公分之間",
+          "errorCode": "HEIGHT_INVALID",
+          "errorMessage": "身高必須在 140-220 公分之間"
         }
       ],
       "postconditions": [
         {
-          "name": "PlayerUpdated",
-          "description": "球員資料已更新",
-          "type": "StateChange",
-          "expression": "Player.updatedAt = NOW()"
+          "ruleId": "POST-C008-01",
+          "description": "球員資訊已更新",
+          "verifyBy": "E-016 (PlayerUpdated)"
         },
         {
-          "name": "PlayerUpdatedEventEmitted",
-          "description": "發出 PlayerUpdated 事件",
-          "type": "EventEmission",
-          "event": "PlayerUpdated"
+          "ruleId": "POST-C008-02",
+          "description": "球員列表已刷新",
+          "verifyBy": "E-015 (PlayerListRefreshed)"
         }
       ]
     },
     {
+      "commandId": "C-009",
       "commandName": "DeletePlayer",
-      "operationType": "Command",
       "preconditions": [
         {
-          "name": "UserAuthenticated",
-          "description": "用戶必須已登入",
-          "type": "Authorization",
-          "expression": "userId IS NOT NULL"
+          "ruleId": "PRE-C009-01",
+          "description": "用戶已登入系統",
+          "errorCode": "UNAUTHORIZED",
+          "errorMessage": "請先登入系統"
         },
         {
-          "name": "PlayerExists",
+          "ruleId": "PRE-C009-02",
+          "description": "用戶擁有 player:delete 權限",
+          "errorCode": "FORBIDDEN",
+          "errorMessage": "沒有刪除球員的權限"
+        },
+        {
+          "ruleId": "PRE-C009-03",
           "description": "球員必須存在",
-          "type": "DataValidation",
-          "expression": "EXISTS(Player WHERE id = playerId)"
-        },
-        {
-          "name": "UserHasDeletePlayerPermission",
-          "description": "用戶必須有刪除球員權限",
-          "type": "Authorization",
-          "expression": "user.hasPermission('player:delete', player.teamId)"
+          "errorCode": "PLAYER_NOT_FOUND",
+          "errorMessage": "找不到指定的球員"
         }
       ],
+      "validations": [],
       "postconditions": [
         {
-          "name": "PlayerDeleted",
-          "description": "球員已從球隊移除",
-          "type": "StateChange",
-          "expression": "Player.status = 'Inactive' OR Player.deletedAt = NOW()"
+          "ruleId": "POST-C009-01",
+          "description": "球員已刪除",
+          "verifyBy": "E-017 (PlayerDeleted)"
         },
         {
-          "name": "PlayerDeletedEventEmitted",
-          "description": "發出 PlayerDeleted 事件",
-          "type": "EventEmission",
-          "event": "PlayerDeleted"
-        },
-        {
-          "name": "SortOrderReorganized",
-          "description": "重新整理剩餘球員的排序順序",
-          "type": "StateChange",
-          "expression": "UPDATE Player SET sortOrder = sortOrder - 1 WHERE teamId = player.teamId AND sortOrder > deletedPlayer.sortOrder"
+          "ruleId": "POST-C009-02",
+          "description": "球員列表已刷新",
+          "verifyBy": "E-015 (PlayerListRefreshed)"
         }
       ]
     },
     {
+      "commandId": "C-010",
       "commandName": "UpdatePlayerOrder",
-      "operationType": "Command",
       "preconditions": [
         {
-          "name": "UserAuthenticated",
-          "description": "用戶必須已登入",
-          "type": "Authorization",
-          "expression": "userId IS NOT NULL"
+          "ruleId": "PRE-C010-01",
+          "description": "用戶已登入系統",
+          "errorCode": "UNAUTHORIZED",
+          "errorMessage": "請先登入系統"
         },
         {
-          "name": "TeamSelected",
-          "description": "必須先選擇球隊",
-          "type": "BusinessRule",
-          "expression": "session.currentTeamId IS NOT NULL"
+          "ruleId": "PRE-C010-02",
+          "description": "用戶擁有 player:update 權限",
+          "errorCode": "FORBIDDEN",
+          "errorMessage": "沒有調整球員排序的權限"
         },
         {
-          "name": "PlayersBelongToTeam",
-          "description": "所有球員必須屬於當前球隊",
-          "type": "DataValidation",
-          "expression": "ALL(playerIds IN Player WHERE teamId = session.currentTeamId)"
+          "ruleId": "PRE-C010-03",
+          "description": "所有球員必須存在",
+          "errorCode": "PLAYER_NOT_FOUND",
+          "errorMessage": "找不到指定的球員"
         },
         {
-          "name": "UniqueOrderValues",
-          "description": "排序值不可重複",
-          "type": "DataValidation",
-          "expression": "UNIQUE(input.playerOrders.map(o => o.sortOrder))"
+          "ruleId": "PRE-C010-04",
+          "description": "所有球員屬於同一球隊",
+          "errorCode": "PLAYER_TEAM_MISMATCH",
+          "errorMessage": "所有球員必須屬於同一球隊"
+        }
+      ],
+      "validations": [
+        {
+          "ruleId": "VAL-C010-01",
+          "field": "orderChanges",
+          "description": "orderChanges 不可為空陣列",
+          "errorCode": "ORDER_CHANGES_REQUIRED",
+          "errorMessage": "必須提供排序變更資料"
         },
         {
-          "name": "ConsecutiveOrdering",
-          "description": "排序值應該連續（1, 2, 3...）",
-          "type": "BusinessRule",
-          "expression": "input.playerOrders.map(o => o.sortOrder).sort() == range(1, playerCount)"
-        },
-        {
-          "name": "UserHasUpdateOrderPermission",
-          "description": "用戶必須有調整排序權限",
-          "type": "Authorization",
-          "expression": "user.hasPermission('player:updateOrder', session.currentTeamId)"
+          "ruleId": "VAL-C010-02",
+          "field": "orderChanges",
+          "description": "每個變更必須包含 playerId 和 newOrder",
+          "errorCode": "INVALID_ORDER_CHANGE",
+          "errorMessage": "排序變更格式不正確"
         }
       ],
       "postconditions": [
         {
-          "name": "PlayersReordered",
-          "description": "球員順序已更新",
-          "type": "StateChange",
-          "expression": "FORALL(playerOrders: player.sortOrder = newOrder)"
+          "ruleId": "POST-C010-01",
+          "description": "球員 sortOrder 已更新",
+          "verifyBy": "E-018 (PlayerOrderChanged)"
         },
         {
-          "name": "PlayerOrderChangedEventEmitted",
-          "description": "發出 PlayerOrderChanged 事件",
-          "type": "EventEmission",
-          "event": "PlayerOrderChanged"
-        },
-        {
-          "name": "PlayerListRefreshedEventEmitted",
-          "description": "觸發 PlayerListRefreshed 事件以更新 UI",
-          "type": "EventEmission",
-          "event": "PlayerListRefreshed"
+          "ruleId": "POST-C010-02",
+          "description": "球員列表已刷新",
+          "verifyBy": "E-015 (PlayerListRefreshed)"
         }
       ]
     }
   ],
   "policies": [
     {
+      "policyId": "POL-001",
       "policyName": "AutoLoadPlayersOnTeamSelection",
-      "description": "當球隊被選擇時，自動載入該球隊的球員列表",
+      "description": "當用戶選擇球隊時，自動載入該球隊的球員列表",
       "trigger": {
-        "type": "event",
-        "eventName": "TeamSelected"
+        "type": "Event",
+        "eventId": "E-004",
+        "eventName": "TeamContextEstablished"
       },
-      "actions": [
-        {
-          "type": "command",
-          "commandName": "QueryPlayerList",
-          "parameters": {
-            "teamId": "event.teamId",
-            "userId": "event.userId"
-          }
-        }
-      ],
-      "priority": 1
+      "action": {
+        "type": "Command",
+        "commandId": "C-006",
+        "commandName": "QueryPlayerList"
+      },
+      "enabled": true,
+      "priority": "High"
     },
     {
-      "policyName": "InvalidateTeamCacheOnUpdate",
-      "description": "當球隊資料更新時，清除相關快取",
+      "policyId": "POL-002",
+      "policyName": "InvalidateCacheOnTeamModification",
+      "description": "當球隊資料變更時，自動失效相關快取",
       "trigger": {
-        "type": "event",
-        "eventName": "TeamUpdated"
+        "type": "Event",
+        "eventIds": ["E-007", "E-009", "E-010"],
+        "eventNames": ["TeamCreated", "TeamUpdated", "TeamDeleted"]
       },
-      "actions": [
-        {
-          "type": "cache",
-          "action": "invalidate",
-          "cacheKeys": ["team:{event.teamId}", "teamList"]
-        }
-      ],
-      "priority": 2
+      "action": {
+        "type": "Event",
+        "eventId": "E-008",
+        "eventName": "TeamCacheInvalidated"
+      },
+      "enabled": true,
+      "priority": "Critical"
     },
     {
-      "policyName": "InvalidatePlayerCacheOnUpdate",
-      "description": "當球員資料更新時，清除相關快取",
+      "policyId": "POL-003",
+      "policyName": "RefreshPlayerListOnModification",
+      "description": "當球員資料變更時，自動刷新球員列表",
       "trigger": {
-        "type": "event",
-        "eventName": "PlayerUpdated"
+        "type": "Event",
+        "eventIds": ["E-014", "E-016", "E-017", "E-018"],
+        "eventNames": ["PlayerCreated", "PlayerUpdated", "PlayerDeleted", "PlayerOrderChanged"]
       },
-      "actions": [
-        {
-          "type": "cache",
-          "action": "invalidate",
-          "cacheKeys": ["player:{event.playerId}", "playerList:{player.teamId}"]
-        }
-      ],
-      "priority": 2
+      "action": {
+        "type": "Event",
+        "eventId": "E-015",
+        "eventName": "PlayerListRefreshed"
+      },
+      "enabled": true,
+      "priority": "High"
     },
     {
-      "policyName": "NotifyTeamMembersOnPlayerChange",
-      "description": "當球員異動時，通知球隊相關人員",
+      "policyId": "POL-004",
+      "policyName": "CascadeDeletePlayersOnTeamDeletion",
+      "description": "當球隊被刪除時，自動刪除所有關聯的球員",
       "trigger": {
-        "type": "event",
-        "eventName": "PlayerCreated, PlayerUpdated, PlayerDeleted"
+        "type": "Event",
+        "eventId": "E-010",
+        "eventName": "TeamDeleted"
       },
-      "actions": [
-        {
-          "type": "notification",
-          "action": "send",
-          "recipients": "team.members",
-          "messageTemplate": "球隊 {team.name} 的球員名單已更新"
-        }
-      ],
-      "priority": 3
+      "action": {
+        "type": "Event",
+        "eventId": "E-011",
+        "eventName": "TeamPlayersDeleted"
+      },
+      "enabled": true,
+      "priority": "Critical"
+    },
+    {
+      "policyId": "POL-005",
+      "policyName": "AutoAssignSortOrderOnPlayerCreation",
+      "description": "當建立新球員時，自動分配 sortOrder 為目前最大值 + 1",
+      "trigger": {
+        "type": "Command",
+        "commandId": "C-007",
+        "commandName": "CreatePlayer"
+      },
+      "action": {
+        "type": "System",
+        "description": "計算並分配 sortOrder = max(currentSortOrder) + 1"
+      },
+      "enabled": true,
+      "priority": "Medium"
     }
   ],
-  "validationRules": [
+  "invariants": [
     {
-      "appliesTo": "CreatePlayer",
-      "rules": [
-        {
-          "name": "UniqueJerseyNumber",
-          "description": "同一球隊內背號不可重複",
-          "expression": "NOT EXISTS(Player WHERE teamId = input.teamId AND jerseyNumber = input.jerseyNumber AND status = 'Active')",
-          "errorMessage": "背號 {jerseyNumber} 已被使用"
-        },
-        {
-          "name": "ValidJerseyNumber",
-          "description": "背號必須在 0-99 範圍內",
-          "expression": "input.jerseyNumber >= 0 AND input.jerseyNumber <= 99",
-          "errorMessage": "背號必須在 0-99 之間"
-        },
-        {
-          "name": "ValidHeight",
-          "description": "身高必須在合理範圍內",
-          "expression": "input.height IS NULL OR (input.height >= 150 AND input.height <= 250)",
-          "errorMessage": "身高必須在 150-250 公分之間"
-        },
-        {
-          "name": "ValidPosition",
-          "description": "守備位置必須是有效值",
-          "expression": "input.position IN ['P', 'C', '1B', '2B', '3B', 'SS', 'LF', 'CF', 'RF']",
-          "errorMessage": "無效的守備位置：{position}"
-        },
-        {
-          "name": "PlayerNameNotEmpty",
-          "description": "球員姓名不可為空",
-          "expression": "input.name IS NOT NULL AND LENGTH(TRIM(input.name)) > 0",
-          "errorMessage": "球員姓名不可為空"
-        }
-      ]
-    },
-    {
-      "appliesTo": "CreateTeam",
-      "rules": [
-        {
-          "name": "TeamNameNotEmpty",
-          "description": "球隊名稱不可為空",
-          "expression": "input.teamName IS NOT NULL AND LENGTH(TRIM(input.teamName)) > 0",
-          "errorMessage": "球隊名稱不可為空"
-        },
-        {
-          "name": "UniqueTeamName",
-          "description": "球隊名稱不可重複",
-          "expression": "NOT EXISTS(Team WHERE name = input.teamName AND status = 'Active')",
-          "errorMessage": "球隊名稱 {teamName} 已存在"
-        },
-        {
-          "name": "TeamNameLength",
-          "description": "球隊名稱長度限制",
-          "expression": "LENGTH(input.teamName) <= 50",
-          "errorMessage": "球隊名稱不可超過 50 個字元"
-        }
-      ]
-    },
-    {
-      "appliesTo": "UpdatePlayerOrder",
-      "rules": [
-        {
-          "name": "UniqueOrderValues",
-          "description": "排序值不可重複",
-          "expression": "UNIQUE(input.playerOrders.map(o => o.sortOrder))",
-          "errorMessage": "排序值不可重複"
-        },
-        {
-          "name": "ConsecutiveOrdering",
-          "description": "排序值應該連續（1, 2, 3...）",
-          "expression": "input.playerOrders.map(o => o.sortOrder).sort() == range(1, playerCount)",
-          "errorMessage": "排序值必須從 1 開始連續"
-        },
-        {
-          "name": "AllPlayersBelongToTeam",
-          "description": "所有球員必須屬於同一球隊",
-          "expression": "ALL(input.playerOrders.map(o => o.playerId) IN Player WHERE teamId = input.teamId)",
-          "errorMessage": "部分球員不屬於該球隊"
-        }
-      ]
-    },
-    {
-      "appliesTo": "QueryTeamList",
-      "rules": [
-        {
-          "name": "ValidPageNumber",
-          "description": "頁碼必須大於 0",
-          "expression": "input.pagination.page > 0",
-          "errorMessage": "頁碼必須大於 0"
-        },
-        {
-          "name": "ValidPageSize",
-          "description": "每頁筆數必須在合理範圍內",
-          "expression": "input.pagination.pageSize BETWEEN 10 AND 100",
-          "errorMessage": "每頁筆數必須在 10-100 之間"
-        }
-      ]
-    },
-    {
-      "appliesTo": "DeleteTeam",
-      "rules": [
-        {
-          "name": "NoActivePlayers",
-          "description": "球隊不可有啟用中的球員",
-          "expression": "NOT EXISTS(Player WHERE teamId = input.teamId AND status = 'Active')",
-          "errorMessage": "球隊仍有啟用中的球員，無法刪除"
-        }
-      ]
-    }
-  ],
-  "businessInvariants": [
-    {
+      "invariantId": "INV-001",
       "aggregateName": "Team",
-      "invariant": "球隊名稱在啟用狀態下必須唯一",
-      "constraint": "UNIQUE(Team.name WHERE status = 'Active')",
-      "enforcedAt": "CreateTeam, UpdateTeam"
+      "rule": "球隊名稱必須唯一",
+      "description": "系統內不可有重複的球隊名稱（不區分大小寫）",
+      "enforcedBy": ["PRE-C003-03", "PRE-C004-04"],
+      "violationAction": "拒絕 Command 執行"
     },
     {
-      "aggregateName": "Player",
-      "invariant": "同一球隊內球員的背號必須唯一",
-      "constraint": "UNIQUE(Player.jerseyNumber WHERE teamId = player.teamId AND status = 'Active')",
-      "enforcedAt": "CreatePlayer, UpdatePlayer"
-    },
-    {
-      "aggregateName": "Player",
-      "invariant": "同一球隊內球員的排序順序必須唯一且連續",
-      "constraint": "UNIQUE(Player.sortOrder WHERE teamId = player.teamId) AND CONSECUTIVE(Player.sortOrder)",
-      "enforcedAt": "CreatePlayer, DeletePlayer, UpdatePlayerOrder"
-    },
-    {
-      "aggregateName": "Player",
-      "invariant": "球員必須屬於存在的球隊",
-      "constraint": "FORALL(Player: EXISTS(Team WHERE id = player.teamId))",
-      "enforcedAt": "CreatePlayer"
-    },
-    {
+      "invariantId": "INV-002",
       "aggregateName": "Team",
-      "invariant": "球隊必須至少有 9 名啟用中的球員才能進行比賽（業務規則，非強制約束）",
-      "constraint": "COUNT(Player WHERE teamId = team.id AND status = 'Active') >= 9",
-      "enforcedAt": "PreGameValidation",
-      "level": "Warning"
+      "rule": "球隊名稱長度必須在 2-50 字元之間",
+      "description": "保證名稱可讀性和資料庫儲存",
+      "enforcedBy": ["VAL-C003-02", "VAL-C004-01"],
+      "violationAction": "拋出驗證錯誤"
+    },
+    {
+      "invariantId": "INV-003",
+      "aggregateName": "Player",
+      "rule": "背號在同一球隊內必須唯一",
+      "description": "同一球隊不可有重複的背號",
+      "enforcedBy": ["PRE-C007-04", "PRE-C008-04"],
+      "violationAction": "拒絕 Command 執行"
+    },
+    {
+      "invariantId": "INV-004",
+      "aggregateName": "Player",
+      "rule": "背號必須在 0-99 之間",
+      "description": "符合棒球規則的背號範圍",
+      "enforcedBy": ["VAL-C007-01", "VAL-C008-01"],
+      "violationAction": "拋出驗證錯誤"
+    },
+    {
+      "invariantId": "INV-005",
+      "aggregateName": "Player",
+      "rule": "守備位置必須為標準棒球位置",
+      "description": "只接受標準的 10 種棒球守備位置（P, C, 1B, 2B, 3B, SS, LF, CF, RF, DH）",
+      "enforcedBy": ["VAL-C007-04", "VAL-C008-03"],
+      "violationAction": "拋出驗證錯誤"
+    },
+    {
+      "invariantId": "INV-006",
+      "aggregateName": "Player",
+      "rule": "球員必須屬於一個存在的球隊",
+      "description": "Player.teamId 必須參照一個有效的 Team",
+      "enforcedBy": ["PRE-C007-03"],
+      "violationAction": "拒絕 Command 執行"
+    },
+    {
+      "invariantId": "INV-007",
+      "aggregateName": "Player",
+      "rule": "調整排序時所有球員必須屬於同一球隊",
+      "description": "UpdatePlayerOrder 操作中的所有球員必須屬於同一 teamId",
+      "enforcedBy": ["PRE-C010-04"],
+      "violationAction": "拒絕 Command 執行"
     }
   ],
-  "notes": [
-    "Query Operations 只需驗證權限和參數格式，不涉及複雜業務規則",
-    "Command Operations 需要完整的前後置條件驗證",
-    "所有修改型操作都產生對應的 Event 用於審計和同步",
-    "Policy 定義了 Event-driven 的自動化流程，如選擇球隊後自動載入球員",
-    "Validation Rules 包含明確的錯誤訊息，方便前端顯示",
-    "Business Invariants 定義了必須始終保持的業務約束",
-    "球員排序的一致性是重要的業務規則，確保 UI 顯示正確",
-    "刪除操作採用軟刪除（status = 'Inactive'）以保留歷史記錄"
-  ]
+  "permissions": [
+    {
+      "permissionId": "PERM-001",
+      "permission": "team:read",
+      "description": "查詢球隊資料",
+      "requiredBy": ["C-001", "C-002"]
+    },
+    {
+      "permissionId": "PERM-002",
+      "permission": "team:create",
+      "description": "建立新球隊",
+      "requiredBy": ["C-003"]
+    },
+    {
+      "permissionId": "PERM-003",
+      "permission": "team:update",
+      "description": "編輯球隊資料",
+      "requiredBy": ["C-004"]
+    },
+    {
+      "permissionId": "PERM-004",
+      "permission": "team:delete",
+      "description": "刪除球隊",
+      "requiredBy": ["C-005"]
+    },
+    {
+      "permissionId": "PERM-005",
+      "permission": "player:read",
+      "description": "查詢球員資料",
+      "requiredBy": ["C-006"]
+    },
+    {
+      "permissionId": "PERM-006",
+      "permission": "player:create",
+      "description": "新增球員",
+      "requiredBy": ["C-007"]
+    },
+    {
+      "permissionId": "PERM-007",
+      "permission": "player:update",
+      "description": "編輯球員資料或調整排序",
+      "requiredBy": ["C-008", "C-010"]
+    },
+    {
+      "permissionId": "PERM-008",
+      "permission": "player:delete",
+      "description": "刪除球員",
+      "requiredBy": ["C-009"]
+    }
+  ],
+  "summary": {
+    "totalCommandRules": 10,
+    "totalPreconditions": 38,
+    "totalValidations": 23,
+    "totalPostconditions": 21,
+    "totalPolicies": 5,
+    "totalInvariants": 7,
+    "totalPermissions": 8
+  }
 }

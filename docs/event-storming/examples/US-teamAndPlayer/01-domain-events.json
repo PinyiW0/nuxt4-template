@@ -1,230 +1,588 @@
 {
-  "userStoryId": "Epic-B",
-  "epicTitle": "球隊/球員資料管理",
-  "userStories": [
+  "version": "1.0",
+  "generatedAt": "2026-01-21T10:15:00Z",
+  "sourceFeatures": ["F-B1", "F-B2", "F-B3", "F-B4", "F-B5", "F-B6", "F-B7", "F-B8", "F-B9", "F-B10"],
+  "domainEvents": [
     {
-      "userStoryId": "US-B1",
-      "userStoryTitle": "球隊列表查詢與選擇",
-      "domainEvents": [
-        {
-          "eventName": "TeamListQueried",
-          "description": "管理者發起球隊列表查詢",
-          "sequence": 1,
-          "source": "Actor",
-          "eventType": "Query",
-          "data": ["filters", "pagination", "userId", "timestamp"]
-        },
-        {
-          "eventName": "TeamListRetrieved",
-          "description": "系統回傳符合條件的球隊列表",
-          "sequence": 2,
-          "source": "System",
-          "eventType": "Query",
-          "data": ["teams", "totalCount", "currentPage", "pageSize"]
-        },
-        {
-          "eventName": "TeamSelected",
-          "description": "管理者選擇特定球隊作為當前操作對象",
-          "sequence": 3,
-          "source": "Actor",
-          "eventType": "Command",
-          "data": ["teamId", "teamName", "userId", "timestamp"]
-        },
-        {
-          "eventName": "TeamContextEstablished",
-          "description": "系統建立該球隊的操作上下文",
-          "sequence": 4,
-          "source": "System",
-          "eventType": "Command",
-          "data": ["teamId", "sessionId", "timestamp"]
-        }
-      ]
+      "eventId": "E-001",
+      "eventName": "TeamListQueried",
+      "description": "用戶開始查詢球隊列表",
+      "category": "Query",
+      "source": "Actor",
+      "relatedFeature": "F-B1",
+      "triggeredBy": {
+        "type": "Command",
+        "commandName": "QueryTeamList"
+      },
+      "data": {
+        "required": [
+          { "field": "userId", "type": "string", "description": "執行查詢的用戶 ID" },
+          { "field": "filters", "type": "object", "description": "篩選條件（status, keyword）" },
+          { "field": "pagination", "type": "object", "description": "分頁參數（page, pageSize）" },
+          { "field": "timestamp", "type": "datetime", "description": "查詢時間" }
+        ],
+        "optional": []
+      },
+      "causes": ["E-002"]
     },
     {
-      "userStoryId": "US-B2",
-      "userStoryTitle": "球隊維護（建立/編輯/刪除）",
-      "domainEvents": [
-        {
-          "eventName": "TeamCreationRequested",
-          "description": "管理者發起建立新球隊的請求",
-          "sequence": 1,
-          "source": "Actor",
-          "eventType": "Command",
-          "data": ["teamName", "description", "userId", "timestamp"]
-        },
-        {
-          "eventName": "TeamValidated",
-          "description": "系統驗證球隊資料的合法性",
-          "sequence": 2,
-          "source": "System",
-          "eventType": "Command",
-          "data": ["validationResult", "teamData"]
-        },
-        {
-          "eventName": "TeamCreated",
-          "description": "新球隊成功建立於系統中",
-          "sequence": 3,
-          "source": "System",
-          "eventType": "Command",
-          "data": ["teamId", "teamName", "description", "createdBy", "createdAt"]
-        },
-        {
-          "eventName": "TeamUpdateRequested",
-          "description": "管理者發起更新球隊資料的請求",
-          "sequence": 4,
-          "source": "Actor",
-          "eventType": "Command",
-          "data": ["teamId", "updatedFields", "userId", "timestamp"]
-        },
-        {
-          "eventName": "TeamUpdated",
-          "description": "球隊資料成功更新",
-          "sequence": 5,
-          "source": "System",
-          "eventType": "Command",
-          "data": ["teamId", "updatedFields", "previousValues", "updatedAt"]
-        },
-        {
-          "eventName": "TeamDeletionRequested",
-          "description": "管理者發起刪除球隊的請求",
-          "sequence": 6,
-          "source": "Actor",
-          "eventType": "Command",
-          "data": ["teamId", "userId", "timestamp"]
-        },
-        {
-          "eventName": "TeamDeleted",
-          "description": "球隊成功從系統中刪除",
-          "sequence": 7,
-          "source": "System",
-          "eventType": "Command",
-          "data": ["teamId", "deletedBy", "deletedAt"]
-        }
-      ]
+      "eventId": "E-002",
+      "eventName": "TeamListRetrieved",
+      "description": "系統回傳球隊列表資料",
+      "category": "Query",
+      "source": "System",
+      "relatedFeature": "F-B1",
+      "triggeredBy": {
+        "type": "Event",
+        "eventName": "TeamListQueried"
+      },
+      "data": {
+        "required": [
+          { "field": "teams", "type": "Team[]", "description": "球隊列表" },
+          { "field": "totalCount", "type": "integer", "description": "總筆數" },
+          { "field": "page", "type": "integer", "description": "當前頁碼" },
+          { "field": "pageSize", "type": "integer", "description": "每頁筆數" },
+          { "field": "timestamp", "type": "datetime", "description": "回傳時間" }
+        ],
+        "optional": []
+      },
+      "causedBy": "E-001",
+      "causes": []
     },
     {
-      "userStoryId": "US-B3",
-      "userStoryTitle": "球員維護（列表/新增/編輯/刪除）",
-      "domainEvents": [
-        {
-          "eventName": "PlayerListQueried",
-          "description": "管理者發起球員列表查詢",
-          "sequence": 1,
-          "source": "Actor",
-          "eventType": "Query",
-          "data": ["teamId", "filters", "pagination", "userId", "timestamp"]
-        },
-        {
-          "eventName": "PlayerListRetrieved",
-          "description": "系統回傳該球隊的球員列表",
-          "sequence": 2,
-          "source": "System",
-          "eventType": "Query",
-          "data": ["players", "totalCount", "teamId"]
-        },
-        {
-          "eventName": "PlayerCreationRequested",
-          "description": "管理者發起新增球員的請求",
-          "sequence": 3,
-          "source": "Actor",
-          "eventType": "Command",
-          "data": ["teamId", "jerseyNumber", "name", "height", "position", "userId", "timestamp"]
-        },
-        {
-          "eventName": "PlayerValidated",
-          "description": "系統驗證球員資料的合法性（背號不重複、身高範圍等）",
-          "sequence": 4,
-          "source": "System",
-          "eventType": "Command",
-          "data": ["validationResult", "playerData"]
-        },
-        {
-          "eventName": "PlayerCreated",
-          "description": "新球員成功加入球隊",
-          "sequence": 5,
-          "source": "System",
-          "eventType": "Command",
-          "data": ["playerId", "teamId", "jerseyNumber", "name", "height", "position", "sortOrder", "createdAt"]
-        },
-        {
-          "eventName": "PlayerUpdateRequested",
-          "description": "管理者發起更新球員資料的請求",
-          "sequence": 6,
-          "source": "Actor",
-          "eventType": "Command",
-          "data": ["playerId", "updatedFields", "userId", "timestamp"]
-        },
-        {
-          "eventName": "PlayerUpdated",
-          "description": "球員資料成功更新",
-          "sequence": 7,
-          "source": "System",
-          "eventType": "Command",
-          "data": ["playerId", "updatedFields", "previousValues", "updatedAt"]
-        },
-        {
-          "eventName": "PlayerDeletionRequested",
-          "description": "管理者發起刪除球員的請求",
-          "sequence": 8,
-          "source": "Actor",
-          "eventType": "Command",
-          "data": ["playerId", "userId", "timestamp"]
-        },
-        {
-          "eventName": "PlayerDeleted",
-          "description": "球員成功從球隊中移除",
-          "sequence": 9,
-          "source": "System",
-          "eventType": "Command",
-          "data": ["playerId", "teamId", "deletedBy", "deletedAt"]
-        }
-      ]
+      "eventId": "E-003",
+      "eventName": "TeamSelected",
+      "description": "用戶選擇特定球隊",
+      "category": "Command",
+      "source": "Actor",
+      "relatedFeature": "F-B2",
+      "triggeredBy": {
+        "type": "Command",
+        "commandName": "SelectTeam"
+      },
+      "data": {
+        "required": [
+          { "field": "teamId", "type": "string", "description": "被選擇的球隊 ID" },
+          { "field": "teamName", "type": "string", "description": "球隊名稱" },
+          { "field": "userId", "type": "string", "description": "執行選擇的用戶 ID" },
+          { "field": "timestamp", "type": "datetime", "description": "選擇時間" }
+        ],
+        "optional": []
+      },
+      "causes": ["E-004"]
     },
     {
-      "userStoryId": "US-B4",
-      "userStoryTitle": "球員排序調整",
-      "domainEvents": [
-        {
-          "eventName": "PlayerOrderChangeRequested",
-          "description": "管理者發起調整球員排序的請求",
-          "sequence": 1,
-          "source": "Actor",
-          "eventType": "Command",
-          "data": ["teamId", "playerOrders", "userId", "timestamp"]
-        },
-        {
-          "eventName": "PlayerOrderValidated",
-          "description": "系統驗證排序資料的合法性（唯一性、連續性等）",
-          "sequence": 2,
-          "source": "System",
-          "eventType": "Command",
-          "data": ["validationResult", "playerOrders"]
-        },
-        {
-          "eventName": "PlayerOrderChanged",
-          "description": "球員排序成功更新",
-          "sequence": 3,
-          "source": "System",
-          "eventType": "Command",
-          "data": ["teamId", "playerOrders", "updatedBy", "updatedAt"]
-        },
-        {
-          "eventName": "PlayerListRefreshed",
-          "description": "球員列表根據新排序重新整理",
-          "sequence": 4,
-          "source": "System",
-          "eventType": "Command",
-          "data": ["teamId", "players", "timestamp"]
-        }
-      ]
+      "eventId": "E-004",
+      "eventName": "TeamContextEstablished",
+      "description": "系統建立球隊操作上下文",
+      "category": "System",
+      "source": "System",
+      "relatedFeature": "F-B2",
+      "triggeredBy": {
+        "type": "Event",
+        "eventName": "TeamSelected"
+      },
+      "data": {
+        "required": [
+          { "field": "teamId", "type": "string", "description": "球隊 ID" },
+          { "field": "userId", "type": "string", "description": "用戶 ID" },
+          { "field": "sessionId", "type": "string", "description": "Session ID" },
+          { "field": "timestamp", "type": "datetime", "description": "建立時間" }
+        ],
+        "optional": []
+      },
+      "causedBy": "E-003",
+      "causes": []
+    },
+    {
+      "eventId": "E-005",
+      "eventName": "TeamCreationRequested",
+      "description": "用戶請求建立新球隊",
+      "category": "Command",
+      "source": "Actor",
+      "relatedFeature": "F-B3",
+      "triggeredBy": {
+        "type": "Command",
+        "commandName": "CreateTeam"
+      },
+      "data": {
+        "required": [
+          { "field": "teamName", "type": "string", "description": "球隊名稱" },
+          { "field": "userId", "type": "string", "description": "建立者 ID" },
+          { "field": "timestamp", "type": "datetime", "description": "請求時間" }
+        ],
+        "optional": [
+          { "field": "description", "type": "string", "description": "球隊描述" }
+        ]
+      },
+      "causes": ["E-006"]
+    },
+    {
+      "eventId": "E-006",
+      "eventName": "TeamValidated",
+      "description": "球隊資料驗證完成",
+      "category": "System",
+      "source": "System",
+      "relatedFeature": "F-B3",
+      "triggeredBy": {
+        "type": "Event",
+        "eventName": "TeamCreationRequested"
+      },
+      "data": {
+        "required": [
+          { "field": "teamName", "type": "string", "description": "球隊名稱" },
+          { "field": "isValid", "type": "boolean", "description": "是否通過驗證" },
+          { "field": "validationErrors", "type": "string[]", "description": "驗證錯誤（如有）" },
+          { "field": "timestamp", "type": "datetime", "description": "驗證時間" }
+        ],
+        "optional": []
+      },
+      "causedBy": "E-005",
+      "causes": ["E-007"]
+    },
+    {
+      "eventId": "E-007",
+      "eventName": "TeamCreated",
+      "description": "新球隊已建立",
+      "category": "Command",
+      "source": "System",
+      "relatedFeature": "F-B3",
+      "triggeredBy": {
+        "type": "Event",
+        "eventName": "TeamValidated"
+      },
+      "data": {
+        "required": [
+          { "field": "teamId", "type": "string", "description": "球隊 ID" },
+          { "field": "teamName", "type": "string", "description": "球隊名稱" },
+          { "field": "status", "type": "string", "description": "球隊狀態（Active）" },
+          { "field": "createdAt", "type": "datetime", "description": "建立時間" },
+          { "field": "createdBy", "type": "string", "description": "建立者 ID" }
+        ],
+        "optional": [
+          { "field": "description", "type": "string", "description": "球隊描述" }
+        ]
+      },
+      "causedBy": "E-006",
+      "causes": ["E-008"]
+    },
+    {
+      "eventId": "E-008",
+      "eventName": "TeamCacheInvalidated",
+      "description": "球隊快取已失效",
+      "category": "System",
+      "source": "System",
+      "relatedFeature": "F-B3",
+      "triggeredBy": {
+        "type": "Event",
+        "eventName": "TeamCreated"
+      },
+      "data": {
+        "required": [
+          { "field": "cacheKey", "type": "string", "description": "失效的快取鍵" },
+          { "field": "timestamp", "type": "datetime", "description": "失效時間" }
+        ],
+        "optional": []
+      },
+      "causedBy": "E-007",
+      "causes": []
+    },
+    {
+      "eventId": "E-009",
+      "eventName": "TeamUpdated",
+      "description": "球隊資訊已更新",
+      "category": "Command",
+      "source": "System",
+      "relatedFeature": "F-B4",
+      "triggeredBy": {
+        "type": "Command",
+        "commandName": "UpdateTeam"
+      },
+      "data": {
+        "required": [
+          { "field": "teamId", "type": "string", "description": "球隊 ID" },
+          { "field": "teamName", "type": "string", "description": "球隊名稱" },
+          { "field": "updatedAt", "type": "datetime", "description": "更新時間" },
+          { "field": "updatedBy", "type": "string", "description": "更新者 ID" }
+        ],
+        "optional": [
+          { "field": "description", "type": "string", "description": "球隊描述" }
+        ]
+      },
+      "causes": ["E-008"]
+    },
+    {
+      "eventId": "E-010",
+      "eventName": "TeamDeleted",
+      "description": "球隊已刪除",
+      "category": "Command",
+      "source": "System",
+      "relatedFeature": "F-B5",
+      "triggeredBy": {
+        "type": "Command",
+        "commandName": "DeleteTeam"
+      },
+      "data": {
+        "required": [
+          { "field": "teamId", "type": "string", "description": "被刪除的球隊 ID" },
+          { "field": "teamName", "type": "string", "description": "球隊名稱" },
+          { "field": "deletedAt", "type": "datetime", "description": "刪除時間" },
+          { "field": "deletedBy", "type": "string", "description": "刪除者 ID" }
+        ],
+        "optional": []
+      },
+      "causes": ["E-011", "E-008"]
+    },
+    {
+      "eventId": "E-011",
+      "eventName": "TeamPlayersDeleted",
+      "description": "球隊的所有球員已刪除",
+      "category": "Command",
+      "source": "System",
+      "relatedFeature": "F-B5",
+      "triggeredBy": {
+        "type": "Event",
+        "eventName": "TeamDeleted"
+      },
+      "data": {
+        "required": [
+          { "field": "teamId", "type": "string", "description": "球隊 ID" },
+          { "field": "deletedPlayerIds", "type": "string[]", "description": "被刪除的球員 ID 列表" },
+          { "field": "deletedCount", "type": "integer", "description": "刪除的球員數量" },
+          { "field": "timestamp", "type": "datetime", "description": "刪除時間" }
+        ],
+        "optional": []
+      },
+      "causedBy": "E-010",
+      "causes": []
+    },
+    {
+      "eventId": "E-012",
+      "eventName": "PlayerListQueried",
+      "description": "用戶開始查詢球員列表",
+      "category": "Query",
+      "source": "Actor",
+      "relatedFeature": "F-B6",
+      "triggeredBy": {
+        "type": "Command",
+        "commandName": "QueryPlayerList"
+      },
+      "data": {
+        "required": [
+          { "field": "teamId", "type": "string", "description": "球隊 ID" },
+          { "field": "userId", "type": "string", "description": "執行查詢的用戶 ID" },
+          { "field": "timestamp", "type": "datetime", "description": "查詢時間" }
+        ],
+        "optional": []
+      },
+      "causes": ["E-013"]
+    },
+    {
+      "eventId": "E-013",
+      "eventName": "PlayerListRetrieved",
+      "description": "系統回傳球員列表資料",
+      "category": "Query",
+      "source": "System",
+      "relatedFeature": "F-B6",
+      "triggeredBy": {
+        "type": "Event",
+        "eventName": "PlayerListQueried"
+      },
+      "data": {
+        "required": [
+          { "field": "teamId", "type": "string", "description": "球隊 ID" },
+          { "field": "players", "type": "Player[]", "description": "球員列表" },
+          { "field": "totalCount", "type": "integer", "description": "總筆數" },
+          { "field": "timestamp", "type": "datetime", "description": "回傳時間" }
+        ],
+        "optional": []
+      },
+      "causedBy": "E-012",
+      "causes": []
+    },
+    {
+      "eventId": "E-014",
+      "eventName": "PlayerCreated",
+      "description": "新球員已建立",
+      "category": "Command",
+      "source": "System",
+      "relatedFeature": "F-B7",
+      "triggeredBy": {
+        "type": "Command",
+        "commandName": "CreatePlayer"
+      },
+      "data": {
+        "required": [
+          { "field": "playerId", "type": "string", "description": "球員 ID" },
+          { "field": "teamId", "type": "string", "description": "所屬球隊 ID" },
+          { "field": "jerseyNumber", "type": "integer", "description": "背號" },
+          { "field": "name", "type": "string", "description": "姓名" },
+          { "field": "position", "type": "string", "description": "守備位置" },
+          { "field": "sortOrder", "type": "integer", "description": "排序順序" },
+          { "field": "createdAt", "type": "datetime", "description": "建立時間" },
+          { "field": "createdBy", "type": "string", "description": "建立者 ID" }
+        ],
+        "optional": [
+          { "field": "height", "type": "integer", "description": "身高（cm）" }
+        ]
+      },
+      "causes": ["E-015"]
+    },
+    {
+      "eventId": "E-015",
+      "eventName": "PlayerListRefreshed",
+      "description": "球員列表需要重新整理",
+      "category": "System",
+      "source": "System",
+      "relatedFeature": "F-B7",
+      "triggeredBy": {
+        "type": "Event",
+        "eventName": "PlayerCreated"
+      },
+      "data": {
+        "required": [
+          { "field": "teamId", "type": "string", "description": "球隊 ID" },
+          { "field": "timestamp", "type": "datetime", "description": "觸發時間" }
+        ],
+        "optional": []
+      },
+      "causedBy": "E-014",
+      "causes": []
+    },
+    {
+      "eventId": "E-016",
+      "eventName": "PlayerUpdated",
+      "description": "球員資訊已更新",
+      "category": "Command",
+      "source": "System",
+      "relatedFeature": "F-B8",
+      "triggeredBy": {
+        "type": "Command",
+        "commandName": "UpdatePlayer"
+      },
+      "data": {
+        "required": [
+          { "field": "playerId", "type": "string", "description": "球員 ID" },
+          { "field": "teamId", "type": "string", "description": "所屬球隊 ID" },
+          { "field": "jerseyNumber", "type": "integer", "description": "背號" },
+          { "field": "name", "type": "string", "description": "姓名" },
+          { "field": "position", "type": "string", "description": "守備位置" },
+          { "field": "updatedAt", "type": "datetime", "description": "更新時間" },
+          { "field": "updatedBy", "type": "string", "description": "更新者 ID" }
+        ],
+        "optional": [
+          { "field": "height", "type": "integer", "description": "身高（cm）" }
+        ]
+      },
+      "causes": ["E-015"]
+    },
+    {
+      "eventId": "E-017",
+      "eventName": "PlayerDeleted",
+      "description": "球員已刪除",
+      "category": "Command",
+      "source": "System",
+      "relatedFeature": "F-B9",
+      "triggeredBy": {
+        "type": "Command",
+        "commandName": "DeletePlayer"
+      },
+      "data": {
+        "required": [
+          { "field": "playerId", "type": "string", "description": "被刪除的球員 ID" },
+          { "field": "teamId", "type": "string", "description": "所屬球隊 ID" },
+          { "field": "deletedAt", "type": "datetime", "description": "刪除時間" },
+          { "field": "deletedBy", "type": "string", "description": "刪除者 ID" }
+        ],
+        "optional": []
+      },
+      "causes": ["E-015"]
+    },
+    {
+      "eventId": "E-018",
+      "eventName": "PlayerOrderChanged",
+      "description": "球員排序已變更",
+      "category": "Command",
+      "source": "System",
+      "relatedFeature": "F-B10",
+      "triggeredBy": {
+        "type": "Command",
+        "commandName": "UpdatePlayerOrder"
+      },
+      "data": {
+        "required": [
+          { "field": "teamId", "type": "string", "description": "球隊 ID" },
+          { "field": "orderChanges", "type": "object[]", "description": "排序變更列表（playerId, oldOrder, newOrder）" },
+          { "field": "updatedAt", "type": "datetime", "description": "更新時間" },
+          { "field": "updatedBy", "type": "string", "description": "更新者 ID" }
+        ],
+        "optional": []
+      },
+      "causes": ["E-015"]
+    },
+    {
+      "eventId": "E-019",
+      "eventName": "ValidationFailed",
+      "description": "資料驗證失敗",
+      "category": "System",
+      "source": "System",
+      "relatedFeature": "All",
+      "triggeredBy": {
+        "type": "Command",
+        "commandName": "Any"
+      },
+      "data": {
+        "required": [
+          { "field": "commandName", "type": "string", "description": "失敗的 Command" },
+          { "field": "errorCode", "type": "string", "description": "錯誤代碼" },
+          { "field": "errorMessage", "type": "string", "description": "錯誤訊息" },
+          { "field": "validationErrors", "type": "object[]", "description": "驗證錯誤詳情" },
+          { "field": "timestamp", "type": "datetime", "description": "發生時間" }
+        ],
+        "optional": []
+      },
+      "causes": []
     }
   ],
-  "notes": [
-    "Query 型操作不改變系統狀態：TeamListQueried → TeamListRetrieved, PlayerListQueried → PlayerListRetrieved",
-    "Command 型操作改變系統狀態並產生 Event：TeamCreated, PlayerCreated, PlayerOrderChanged",
-    "所有修改型操作都經過驗證步驟：Validated events 確保資料正確性",
-    "TeamSelected 是修改型操作，會改變用戶的當前操作上下文（Session State）",
-    "每個 CRUD 操作都有對應的 Requested Event（用戶觸發）和 Completed Event（系統確認）",
-    "PlayerOrderChanged 會觸發 PlayerListRefreshed，確保 UI 顯示最新排序"
-  ]
+  "eventRelationships": {
+    "commandToEvents": [
+      {
+        "commandName": "QueryTeamList",
+        "events": ["E-001", "E-002"],
+        "relationType": "1:N",
+        "note": "查詢請求產生查詢事件和回傳事件"
+      },
+      {
+        "commandName": "SelectTeam",
+        "events": ["E-003", "E-004"],
+        "relationType": "1:N",
+        "note": "選擇球隊產生選擇事件和上下文建立事件"
+      },
+      {
+        "commandName": "CreateTeam",
+        "events": ["E-005", "E-006", "E-007", "E-008"],
+        "relationType": "1:N",
+        "note": "建立球隊產生一系列事件鏈"
+      },
+      {
+        "commandName": "UpdateTeam",
+        "events": ["E-009", "E-008"],
+        "relationType": "1:N",
+        "note": "更新球隊產生更新事件和快取失效事件"
+      },
+      {
+        "commandName": "DeleteTeam",
+        "events": ["E-010", "E-011", "E-008"],
+        "relationType": "1:N",
+        "note": "刪除球隊產生刪除事件、球員刪除事件和快取失效事件"
+      },
+      {
+        "commandName": "QueryPlayerList",
+        "events": ["E-012", "E-013"],
+        "relationType": "1:N",
+        "note": "查詢球員列表產生查詢事件和回傳事件"
+      },
+      {
+        "commandName": "CreatePlayer",
+        "events": ["E-014", "E-015"],
+        "relationType": "1:N",
+        "note": "建立球員產生建立事件和列表刷新事件"
+      },
+      {
+        "commandName": "UpdatePlayer",
+        "events": ["E-016", "E-015"],
+        "relationType": "1:N",
+        "note": "更新球員產生更新事件和列表刷新事件"
+      },
+      {
+        "commandName": "DeletePlayer",
+        "events": ["E-017", "E-015"],
+        "relationType": "1:N",
+        "note": "刪除球員產生刪除事件和列表刷新事件"
+      },
+      {
+        "commandName": "UpdatePlayerOrder",
+        "events": ["E-018", "E-015"],
+        "relationType": "1:N",
+        "note": "更新排序產生排序變更事件和列表刷新事件"
+      }
+    ],
+    "eventsToCommand": [
+      {
+        "eventName": "TeamCacheInvalidated",
+        "commands": ["CreateTeam", "UpdateTeam", "DeleteTeam"],
+        "relationType": "N:1",
+        "note": "多個球隊操作都會觸發快取失效"
+      },
+      {
+        "eventName": "PlayerListRefreshed",
+        "commands": ["CreatePlayer", "UpdatePlayer", "DeletePlayer", "UpdatePlayerOrder"],
+        "relationType": "N:1",
+        "note": "多個球員操作都會觸發列表刷新"
+      }
+    ],
+    "eventChains": [
+      {
+        "trigger": "E-001",
+        "chain": ["E-002"],
+        "description": "TeamListQueried → TeamListRetrieved"
+      },
+      {
+        "trigger": "E-003",
+        "chain": ["E-004"],
+        "description": "TeamSelected → TeamContextEstablished"
+      },
+      {
+        "trigger": "E-005",
+        "chain": ["E-006", "E-007", "E-008"],
+        "description": "TeamCreationRequested → TeamValidated → TeamCreated → TeamCacheInvalidated"
+      },
+      {
+        "trigger": "E-009",
+        "chain": ["E-008"],
+        "description": "TeamUpdated → TeamCacheInvalidated"
+      },
+      {
+        "trigger": "E-010",
+        "chain": ["E-011", "E-008"],
+        "description": "TeamDeleted → TeamPlayersDeleted + TeamCacheInvalidated"
+      },
+      {
+        "trigger": "E-012",
+        "chain": ["E-013"],
+        "description": "PlayerListQueried → PlayerListRetrieved"
+      },
+      {
+        "trigger": "E-014",
+        "chain": ["E-015"],
+        "description": "PlayerCreated → PlayerListRefreshed"
+      },
+      {
+        "trigger": "E-016",
+        "chain": ["E-015"],
+        "description": "PlayerUpdated → PlayerListRefreshed"
+      },
+      {
+        "trigger": "E-017",
+        "chain": ["E-015"],
+        "description": "PlayerDeleted → PlayerListRefreshed"
+      },
+      {
+        "trigger": "E-018",
+        "chain": ["E-015"],
+        "description": "PlayerOrderChanged → PlayerListRefreshed"
+      }
+    ]
+  },
+  "summary": {
+    "totalEvents": 19,
+    "commandEvents": 13,
+    "queryEvents": 4,
+    "systemEvents": 2,
+    "actorTriggered": 7,
+    "systemTriggered": 12,
+    "oneToOneMapping": 0,
+    "oneToManyMapping": 10,
+    "manyToOneMapping": 2
+  }
 }

@@ -1,0 +1,137 @@
+@startuml event-command-flow
+!theme plain
+skinparam backgroundColor #FEFEFE
+skinparam defaultFontName "Noto Sans TC"
+
+title Event-Command Flow Diagram
+caption 球隊/球員資料管理 - 事件指令流程圖
+
+' 定義樣式
+skinparam rectangle {
+  BackgroundColor<<Command>> #FFE4B5
+  BorderColor<<Command>> #FF8C00
+  BackgroundColor<<Event>> #E6F3FF
+  BorderColor<<Event>> #4169E1
+  BackgroundColor<<Policy>> #E8F5E9
+  BorderColor<<Policy>> #2E7D32
+  BackgroundColor<<Actor>> #FFF3E0
+  BorderColor<<Actor>> #E65100
+  BackgroundColor<<System>> #F5F5F5
+  BorderColor<<System>> #757575
+}
+
+' Actors
+rectangle "管理者/教練" <<Actor>> as Actor
+
+' === 球隊相關 Commands ===
+rectangle "QueryTeamList" <<Command>> as C001
+rectangle "SelectTeam" <<Command>> as C002
+rectangle "CreateTeam" <<Command>> as C003
+rectangle "UpdateTeam" <<Command>> as C004
+rectangle "DeleteTeam" <<Command>> as C005
+
+' === 球隊相關 Events ===
+rectangle "TeamListQueried" <<Event>> as E001
+rectangle "TeamListRetrieved" <<Event>> as E002
+rectangle "TeamSelected" <<Event>> as E003
+rectangle "TeamContextEstablished" <<Event>> as E004
+rectangle "TeamCreationRequested" <<Event>> as E005
+rectangle "TeamValidated" <<Event>> as E006
+rectangle "TeamCreated" <<Event>> as E007
+rectangle "TeamCacheInvalidated" <<Event>> as E008
+rectangle "TeamUpdated" <<Event>> as E009
+rectangle "TeamDeleted" <<Event>> as E010
+rectangle "TeamPlayersDeleted" <<Event>> as E011
+
+' === 球員相關 Commands ===
+rectangle "QueryPlayerList" <<Command>> as C006
+rectangle "CreatePlayer" <<Command>> as C007
+rectangle "UpdatePlayer" <<Command>> as C008
+rectangle "DeletePlayer" <<Command>> as C009
+rectangle "UpdatePlayerOrder" <<Command>> as C010
+
+' === 球員相關 Events ===
+rectangle "PlayerListQueried" <<Event>> as E012
+rectangle "PlayerListRetrieved" <<Event>> as E013
+rectangle "PlayerCreated" <<Event>> as E014
+rectangle "PlayerListRefreshed" <<Event>> as E015
+rectangle "PlayerUpdated" <<Event>> as E016
+rectangle "PlayerDeleted" <<Event>> as E017
+rectangle "PlayerOrderChanged" <<Event>> as E018
+
+' === Policies ===
+rectangle "AutoLoadPlayersOnTeamSelection" <<Policy>> as POL001
+rectangle "InvalidateCacheOnTeamModification" <<Policy>> as POL002
+rectangle "RefreshPlayerListOnModification" <<Policy>> as POL003
+rectangle "CascadeDeletePlayersOnTeamDeletion" <<Policy>> as POL004
+
+' === 球隊操作流程 ===
+Actor --> C001 : 執行
+C001 --> E001 : 產生
+E001 --> E002 : 觸發系統
+
+Actor --> C002 : 執行
+C002 --> E003 : 產生
+E003 --> E004 : 系統處理
+E004 --> POL001 : 觸發 Policy
+
+Actor --> C003 : 執行
+C003 --> E005 : 產生
+E005 --> E006 : 系統驗證
+E006 --> E007 : 驗證通過
+E007 --> POL002 : 觸發 Policy
+POL002 --> E008 : 執行
+
+Actor --> C004 : 執行
+C004 --> E009 : 產生
+E009 --> POL002 : 觸發 Policy
+
+Actor --> C005 : 執行
+C005 --> E010 : 產生
+E010 --> POL004 : 觸發 Policy
+POL004 --> E011 : 執行
+E010 --> POL002 : 觸發 Policy
+
+' === 球員操作流程 ===
+POL001 --> C006 : 自動執行
+Actor --> C006 : 執行
+C006 --> E012 : 產生
+E012 --> E013 : 觸發系統
+
+Actor --> C007 : 執行
+C007 --> E014 : 產生
+E014 --> POL003 : 觸發 Policy
+POL003 --> E015 : 執行
+
+Actor --> C008 : 執行
+C008 --> E016 : 產生
+E016 --> POL003 : 觸發 Policy
+
+Actor --> C009 : 執行
+C009 --> E017 : 產生
+E017 --> POL003 : 觸發 Policy
+
+Actor --> C010 : 執行
+C010 --> E018 : 產生
+E018 --> POL003 : 觸發 Policy
+
+' === 圖例 ===
+legend right
+  |= 元素類型 |= 說明 |
+  | <back:#FFF3E0>Actor</back> | 執行操作的用戶角色 |
+  | <back:#FFE4B5>Command</back> | 用戶發起的指令 |
+  | <back:#E6F3FF>Event</back> | 已發生的領域事件 |
+  | <back:#E8F5E9>Policy</back> | 事件驅動的自動化策略 |
+endlegend
+
+note right of POL002
+  POL-002: InvalidateCacheOnTeamModification
+  當球隊資料變更時自動失效快取
+end note
+
+note right of POL003
+  POL-003: RefreshPlayerListOnModification
+  當球員資料變更時自動刷新列表
+end note
+
+@enduml

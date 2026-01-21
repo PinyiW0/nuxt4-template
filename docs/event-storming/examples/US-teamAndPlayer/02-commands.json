@@ -1,224 +1,715 @@
 {
-  "epicId": "Epic-B",
+  "version": "1.0",
+  "generatedAt": "2026-01-21T10:20:00Z",
+  "sourceFeatures": ["F-B1", "F-B2", "F-B3", "F-B4", "F-B5", "F-B6", "F-B7", "F-B8", "F-B9", "F-B10"],
+  "sourceEvents": ["E-001", "E-002", "E-003", "E-004", "E-005", "E-006", "E-007", "E-008", "E-009", "E-010", "E-011", "E-012", "E-013", "E-014", "E-015", "E-016", "E-017", "E-018", "E-019"],
   "commands": [
     {
+      "commandId": "C-001",
       "commandName": "QueryTeamList",
-      "description": "查詢球隊列表資料",
-      "operationType": "Query",
-      "actor": "User",
-      "userStoryId": "US-B1",
+      "description": "查詢球隊列表",
+      "type": "Query",
+      "actor": ["管理者", "教練"],
+      "relatedFeature": "F-B1",
       "input": {
-        "required": ["userId"],
-        "optional": ["filters", "pagination", "sorting"]
+        "required": [],
+        "optional": [
+          {
+            "field": "status",
+            "type": "string",
+            "validation": "枚舉值：Active, Inactive",
+            "description": "球隊狀態"
+          },
+          {
+            "field": "keyword",
+            "type": "string",
+            "validation": "最大 100 字元",
+            "description": "名稱關鍵字"
+          },
+          {
+            "field": "page",
+            "type": "integer",
+            "validation": "最小值 1",
+            "description": "頁碼"
+          },
+          {
+            "field": "pageSize",
+            "type": "integer",
+            "validation": "範圍 10-100",
+            "description": "每頁筆數"
+          },
+          {
+            "field": "sortBy",
+            "type": "string",
+            "validation": "枚舉值：createdAt, name",
+            "description": "排序欄位"
+          },
+          {
+            "field": "sortOrder",
+            "type": "string",
+            "validation": "枚舉值：asc, desc",
+            "description": "排序方向"
+          }
+        ]
       },
       "output": {
-        "events": ["TeamListQueried", "TeamListRetrieved"],
-        "data": ["teams", "totalCount", "currentPage", "pageSize"]
+        "field": "teamList",
+        "type": "object",
+        "structure": {
+          "teams": "Team[]",
+          "totalCount": "integer",
+          "page": "integer",
+          "pageSize": "integer"
+        },
+        "description": "球隊列表資料"
       },
-      "sequence": 1
+      "preconditions": [
+        "用戶已登入",
+        "用戶擁有 team:read 權限"
+      ],
+      "postconditions": [
+        "回傳符合條件的球隊列表"
+      ],
+      "producedEvents": {
+        "events": ["E-001", "E-002"],
+        "relationType": "1:N"
+      },
+      "errorCases": [
+        {
+          "condition": "用戶未登入",
+          "errorCode": "UNAUTHORIZED",
+          "errorMessage": "請先登入系統"
+        },
+        {
+          "condition": "權限不足",
+          "errorCode": "FORBIDDEN",
+          "errorMessage": "沒有查詢球隊的權限"
+        }
+      ]
     },
     {
+      "commandId": "C-002",
       "commandName": "SelectTeam",
-      "description": "選擇特定球隊作為當前操作對象",
-      "operationType": "Command",
-      "actor": "User",
-      "userStoryId": "US-B1",
+      "description": "選擇特定球隊作為操作上下文",
+      "type": "Command",
+      "actor": ["管理者", "教練"],
+      "relatedFeature": "F-B2",
       "input": {
-        "required": ["teamId", "userId"],
+        "required": [
+          {
+            "field": "teamId",
+            "type": "string",
+            "validation": "非空，UUID 格式",
+            "description": "球隊 ID"
+          }
+        ],
         "optional": []
       },
-      "output": {
-        "events": ["TeamSelected", "TeamContextEstablished"],
-        "data": ["teamId", "sessionId", "timestamp"]
+      "output": null,
+      "preconditions": [
+        "用戶已登入",
+        "用戶擁有 team:read 權限",
+        "球隊必須存在"
+      ],
+      "postconditions": [
+        "系統建立球隊操作上下文",
+        "後續操作都在此球隊範圍內"
+      ],
+      "producedEvents": {
+        "events": ["E-003", "E-004"],
+        "relationType": "1:N"
       },
-      "sequence": 2
+      "errorCases": [
+        {
+          "condition": "球隊不存在",
+          "errorCode": "TEAM_NOT_FOUND",
+          "errorMessage": "找不到指定的球隊"
+        },
+        {
+          "condition": "權限不足",
+          "errorCode": "FORBIDDEN",
+          "errorMessage": "沒有存取此球隊的權限"
+        }
+      ]
     },
     {
+      "commandId": "C-003",
       "commandName": "CreateTeam",
-      "description": "建立新的球隊",
-      "operationType": "Command",
-      "actor": "User",
-      "userStoryId": "US-B2",
+      "description": "建立新球隊",
+      "type": "Command",
+      "actor": ["管理者"],
+      "relatedFeature": "F-B3",
       "input": {
-        "required": ["teamName", "userId"],
-        "optional": ["description", "logoUrl"]
+        "required": [
+          {
+            "field": "teamName",
+            "type": "string",
+            "validation": "非空，長度 2-50 字元",
+            "description": "球隊名稱"
+          }
+        ],
+        "optional": [
+          {
+            "field": "description",
+            "type": "string",
+            "validation": "最大 500 字元",
+            "description": "球隊描述"
+          }
+        ]
       },
-      "output": {
-        "events": ["TeamCreationRequested", "TeamValidated", "TeamCreated"],
-        "data": ["teamId", "teamName", "description", "createdAt"]
+      "output": null,
+      "preconditions": [
+        "用戶已登入",
+        "用戶擁有 team:create 權限",
+        "球隊名稱不重複"
+      ],
+      "postconditions": [
+        "新球隊已建立",
+        "球隊狀態為 Active",
+        "球隊快取已失效"
+      ],
+      "producedEvents": {
+        "events": ["E-005", "E-006", "E-007", "E-008"],
+        "relationType": "1:N"
       },
-      "sequence": 3
+      "errorCases": [
+        {
+          "condition": "球隊名稱已存在",
+          "errorCode": "TEAM_NAME_DUPLICATE",
+          "errorMessage": "球隊名稱已被使用"
+        },
+        {
+          "condition": "球隊名稱為空",
+          "errorCode": "TEAM_NAME_REQUIRED",
+          "errorMessage": "球隊名稱不可為空"
+        },
+        {
+          "condition": "球隊名稱過長",
+          "errorCode": "TEAM_NAME_TOO_LONG",
+          "errorMessage": "球隊名稱不可超過 50 字元"
+        },
+        {
+          "condition": "權限不足",
+          "errorCode": "FORBIDDEN",
+          "errorMessage": "沒有建立球隊的權限"
+        }
+      ]
     },
     {
+      "commandId": "C-004",
       "commandName": "UpdateTeam",
-      "description": "更新球隊資料",
-      "operationType": "Command",
-      "actor": "User",
-      "userStoryId": "US-B2",
+      "description": "更新球隊資訊",
+      "type": "Command",
+      "actor": ["管理者", "教練"],
+      "relatedFeature": "F-B4",
       "input": {
-        "required": ["teamId", "userId"],
-        "optional": ["teamName", "description", "logoUrl"]
+        "required": [
+          {
+            "field": "teamId",
+            "type": "string",
+            "validation": "非空，UUID 格式",
+            "description": "球隊 ID"
+          }
+        ],
+        "optional": [
+          {
+            "field": "teamName",
+            "type": "string",
+            "validation": "長度 2-50 字元",
+            "description": "球隊名稱"
+          },
+          {
+            "field": "description",
+            "type": "string",
+            "validation": "最大 500 字元",
+            "description": "球隊描述"
+          }
+        ]
       },
-      "output": {
-        "events": ["TeamUpdateRequested", "TeamValidated", "TeamUpdated"],
-        "data": ["teamId", "updatedFields", "previousValues", "updatedAt"]
+      "output": null,
+      "preconditions": [
+        "用戶已登入",
+        "用戶擁有 team:update 權限",
+        "球隊必須存在",
+        "新名稱不與其他球隊重複"
+      ],
+      "postconditions": [
+        "球隊資訊已更新",
+        "球隊快取已失效"
+      ],
+      "producedEvents": {
+        "events": ["E-009", "E-008"],
+        "relationType": "1:N"
       },
-      "sequence": 4
+      "errorCases": [
+        {
+          "condition": "球隊不存在",
+          "errorCode": "TEAM_NOT_FOUND",
+          "errorMessage": "找不到指定的球隊"
+        },
+        {
+          "condition": "球隊名稱已存在",
+          "errorCode": "TEAM_NAME_DUPLICATE",
+          "errorMessage": "球隊名稱已被使用"
+        },
+        {
+          "condition": "權限不足",
+          "errorCode": "FORBIDDEN",
+          "errorMessage": "沒有編輯此球隊的權限"
+        }
+      ]
     },
     {
+      "commandId": "C-005",
       "commandName": "DeleteTeam",
-      "description": "刪除球隊",
-      "operationType": "Command",
-      "actor": "User",
-      "userStoryId": "US-B2",
+      "description": "刪除球隊（cascade delete 所有球員）",
+      "type": "Command",
+      "actor": ["管理者"],
+      "relatedFeature": "F-B5",
       "input": {
-        "required": ["teamId", "userId"],
+        "required": [
+          {
+            "field": "teamId",
+            "type": "string",
+            "validation": "非空，UUID 格式",
+            "description": "球隊 ID"
+          }
+        ],
+        "optional": []
+      },
+      "output": null,
+      "preconditions": [
+        "用戶已登入",
+        "用戶擁有 team:delete 權限",
+        "球隊必須存在"
+      ],
+      "postconditions": [
+        "球隊已刪除",
+        "所有關聯球員已刪除",
+        "球隊快取已失效"
+      ],
+      "producedEvents": {
+        "events": ["E-010", "E-011", "E-008"],
+        "relationType": "1:N"
+      },
+      "errorCases": [
+        {
+          "condition": "球隊不存在",
+          "errorCode": "TEAM_NOT_FOUND",
+          "errorMessage": "找不到指定的球隊"
+        },
+        {
+          "condition": "權限不足",
+          "errorCode": "FORBIDDEN",
+          "errorMessage": "沒有刪除球隊的權限"
+        }
+      ]
+    },
+    {
+      "commandId": "C-006",
+      "commandName": "QueryPlayerList",
+      "description": "查詢特定球隊的球員列表",
+      "type": "Query",
+      "actor": ["管理者", "教練"],
+      "relatedFeature": "F-B6",
+      "input": {
+        "required": [
+          {
+            "field": "teamId",
+            "type": "string",
+            "validation": "非空，UUID 格式",
+            "description": "球隊 ID"
+          }
+        ],
         "optional": []
       },
       "output": {
-        "events": ["TeamDeletionRequested", "TeamDeleted"],
-        "data": ["teamId", "deletedAt"]
+        "field": "playerList",
+        "type": "object",
+        "structure": {
+          "players": "Player[]",
+          "totalCount": "integer"
+        },
+        "description": "球員列表資料（依 sortOrder 排序）"
       },
-      "sequence": 5
+      "preconditions": [
+        "用戶已登入",
+        "用戶擁有 player:read 權限",
+        "球隊必須存在",
+        "已選擇球隊（F-B2）"
+      ],
+      "postconditions": [
+        "回傳球隊的所有球員（依排序順序）"
+      ],
+      "producedEvents": {
+        "events": ["E-012", "E-013"],
+        "relationType": "1:N"
+      },
+      "errorCases": [
+        {
+          "condition": "球隊不存在",
+          "errorCode": "TEAM_NOT_FOUND",
+          "errorMessage": "找不到指定的球隊"
+        },
+        {
+          "condition": "權限不足",
+          "errorCode": "FORBIDDEN",
+          "errorMessage": "沒有查詢球員的權限"
+        }
+      ]
     },
     {
-      "commandName": "QueryPlayerList",
-      "description": "查詢球隊的球員列表",
-      "operationType": "Query",
-      "actor": "User",
-      "userStoryId": "US-B3",
-      "input": {
-        "required": ["teamId", "userId"],
-        "optional": ["filters", "pagination", "sorting"]
-      },
-      "output": {
-        "events": ["PlayerListQueried", "PlayerListRetrieved"],
-        "data": ["players", "totalCount", "teamId"]
-      },
-      "sequence": 6
-    },
-    {
+      "commandId": "C-007",
       "commandName": "CreatePlayer",
-      "description": "新增球員至球隊",
-      "operationType": "Command",
-      "actor": "User",
-      "userStoryId": "US-B3",
+      "description": "新增球員到球隊",
+      "type": "Command",
+      "actor": ["管理者", "教練"],
+      "relatedFeature": "F-B7",
       "input": {
-        "required": ["teamId", "jerseyNumber", "name", "position", "userId"],
-        "optional": ["height", "sortOrder"]
+        "required": [
+          {
+            "field": "teamId",
+            "type": "string",
+            "validation": "非空，UUID 格式",
+            "description": "球隊 ID"
+          },
+          {
+            "field": "jerseyNumber",
+            "type": "integer",
+            "validation": "範圍 0-99，同球隊內不重複",
+            "description": "背號"
+          },
+          {
+            "field": "name",
+            "type": "string",
+            "validation": "非空，長度 2-50 字元",
+            "description": "球員姓名"
+          },
+          {
+            "field": "position",
+            "type": "string",
+            "validation": "枚舉值：P, C, 1B, 2B, 3B, SS, LF, CF, RF, DH",
+            "description": "守備位置"
+          }
+        ],
+        "optional": [
+          {
+            "field": "height",
+            "type": "integer",
+            "validation": "範圍 140-220（公分）",
+            "description": "身高"
+          }
+        ]
       },
-      "output": {
-        "events": ["PlayerCreationRequested", "PlayerValidated", "PlayerCreated"],
-        "data": ["playerId", "teamId", "jerseyNumber", "name", "height", "position", "sortOrder", "createdAt"]
+      "output": null,
+      "preconditions": [
+        "用戶已登入",
+        "用戶擁有 player:create 權限",
+        "球隊必須存在",
+        "背號在同球隊內不重複",
+        "已選擇球隊（F-B2）"
+      ],
+      "postconditions": [
+        "新球員已建立",
+        "球員 sortOrder 為目前最大值 + 1",
+        "球員列表已刷新"
+      ],
+      "producedEvents": {
+        "events": ["E-014", "E-015"],
+        "relationType": "1:N"
       },
-      "sequence": 7
+      "errorCases": [
+        {
+          "condition": "球隊不存在",
+          "errorCode": "TEAM_NOT_FOUND",
+          "errorMessage": "找不到指定的球隊"
+        },
+        {
+          "condition": "背號重複",
+          "errorCode": "JERSEY_NUMBER_DUPLICATE",
+          "errorMessage": "背號已被使用"
+        },
+        {
+          "condition": "背號超出範圍",
+          "errorCode": "JERSEY_NUMBER_INVALID",
+          "errorMessage": "背號必須在 0-99 之間"
+        },
+        {
+          "condition": "守備位置無效",
+          "errorCode": "POSITION_INVALID",
+          "errorMessage": "守備位置必須為標準棒球位置"
+        },
+        {
+          "condition": "權限不足",
+          "errorCode": "FORBIDDEN",
+          "errorMessage": "沒有新增球員的權限"
+        }
+      ]
     },
     {
+      "commandId": "C-008",
       "commandName": "UpdatePlayer",
-      "description": "更新球員資料",
-      "operationType": "Command",
-      "actor": "User",
-      "userStoryId": "US-B3",
+      "description": "更新球員資訊",
+      "type": "Command",
+      "actor": ["管理者", "教練"],
+      "relatedFeature": "F-B8",
       "input": {
-        "required": ["playerId", "userId"],
-        "optional": ["jerseyNumber", "name", "height", "position"]
+        "required": [
+          {
+            "field": "playerId",
+            "type": "string",
+            "validation": "非空，UUID 格式",
+            "description": "球員 ID"
+          }
+        ],
+        "optional": [
+          {
+            "field": "jerseyNumber",
+            "type": "integer",
+            "validation": "範圍 0-99，同球隊內不重複",
+            "description": "背號"
+          },
+          {
+            "field": "name",
+            "type": "string",
+            "validation": "長度 2-50 字元",
+            "description": "球員姓名"
+          },
+          {
+            "field": "position",
+            "type": "string",
+            "validation": "枚舉值：P, C, 1B, 2B, 3B, SS, LF, CF, RF, DH",
+            "description": "守備位置"
+          },
+          {
+            "field": "height",
+            "type": "integer",
+            "validation": "範圍 140-220（公分）",
+            "description": "身高"
+          }
+        ]
       },
-      "output": {
-        "events": ["PlayerUpdateRequested", "PlayerValidated", "PlayerUpdated"],
-        "data": ["playerId", "updatedFields", "previousValues", "updatedAt"]
+      "output": null,
+      "preconditions": [
+        "用戶已登入",
+        "用戶擁有 player:update 權限",
+        "球員必須存在",
+        "新背號在同球隊內不重複"
+      ],
+      "postconditions": [
+        "球員資訊已更新",
+        "球員列表已刷新"
+      ],
+      "producedEvents": {
+        "events": ["E-016", "E-015"],
+        "relationType": "1:N"
       },
-      "sequence": 8
+      "errorCases": [
+        {
+          "condition": "球員不存在",
+          "errorCode": "PLAYER_NOT_FOUND",
+          "errorMessage": "找不到指定的球員"
+        },
+        {
+          "condition": "背號重複",
+          "errorCode": "JERSEY_NUMBER_DUPLICATE",
+          "errorMessage": "背號已被使用"
+        },
+        {
+          "condition": "權限不足",
+          "errorCode": "FORBIDDEN",
+          "errorMessage": "沒有編輯球員的權限"
+        }
+      ]
     },
     {
+      "commandId": "C-009",
       "commandName": "DeletePlayer",
       "description": "刪除球員",
-      "operationType": "Command",
-      "actor": "User",
-      "userStoryId": "US-B3",
+      "type": "Command",
+      "actor": ["管理者", "教練"],
+      "relatedFeature": "F-B9",
       "input": {
-        "required": ["playerId", "userId"],
+        "required": [
+          {
+            "field": "playerId",
+            "type": "string",
+            "validation": "非空，UUID 格式",
+            "description": "球員 ID"
+          }
+        ],
         "optional": []
       },
-      "output": {
-        "events": ["PlayerDeletionRequested", "PlayerDeleted"],
-        "data": ["playerId", "teamId", "deletedAt"]
+      "output": null,
+      "preconditions": [
+        "用戶已登入",
+        "用戶擁有 player:delete 權限",
+        "球員必須存在"
+      ],
+      "postconditions": [
+        "球員已刪除",
+        "球員列表已刷新"
+      ],
+      "producedEvents": {
+        "events": ["E-017", "E-015"],
+        "relationType": "1:N"
       },
-      "sequence": 9
+      "errorCases": [
+        {
+          "condition": "球員不存在",
+          "errorCode": "PLAYER_NOT_FOUND",
+          "errorMessage": "找不到指定的球員"
+        },
+        {
+          "condition": "權限不足",
+          "errorCode": "FORBIDDEN",
+          "errorMessage": "沒有刪除球員的權限"
+        }
+      ]
     },
     {
+      "commandId": "C-010",
       "commandName": "UpdatePlayerOrder",
-      "description": "調整球員的排序順序",
-      "operationType": "Command",
-      "actor": "User",
-      "userStoryId": "US-B4",
+      "description": "調整球員排序",
+      "type": "Command",
+      "actor": ["管理者", "教練"],
+      "relatedFeature": "F-B10",
       "input": {
-        "required": ["teamId", "playerOrders", "userId"],
+        "required": [
+          {
+            "field": "teamId",
+            "type": "string",
+            "validation": "非空，UUID 格式",
+            "description": "球隊 ID"
+          },
+          {
+            "field": "orderChanges",
+            "type": "array",
+            "validation": "非空陣列，每個元素包含 playerId, newOrder",
+            "description": "排序變更列表"
+          }
+        ],
         "optional": []
       },
-      "output": {
-        "events": ["PlayerOrderChangeRequested", "PlayerOrderValidated", "PlayerOrderChanged", "PlayerListRefreshed"],
-        "data": ["teamId", "playerOrders", "updatedAt"]
+      "output": null,
+      "preconditions": [
+        "用戶已登入",
+        "用戶擁有 player:update 權限",
+        "所有球員必須存在",
+        "所有球員屬於同一球隊"
+      ],
+      "postconditions": [
+        "球員 sortOrder 已更新",
+        "球員列表已刷新"
+      ],
+      "producedEvents": {
+        "events": ["E-018", "E-015"],
+        "relationType": "1:N"
       },
-      "sequence": 10
+      "errorCases": [
+        {
+          "condition": "球員不存在",
+          "errorCode": "PLAYER_NOT_FOUND",
+          "errorMessage": "找不到指定的球員"
+        },
+        {
+          "condition": "球員不屬於同一球隊",
+          "errorCode": "PLAYER_TEAM_MISMATCH",
+          "errorMessage": "所有球員必須屬於同一球隊"
+        },
+        {
+          "condition": "權限不足",
+          "errorCode": "FORBIDDEN",
+          "errorMessage": "沒有調整球員排序的權限"
+        }
+      ]
     }
   ],
-  "commandEventMapping": [
-    {
-      "command": "QueryTeamList",
-      "events": ["TeamListQueried", "TeamListRetrieved"],
-      "operationType": "Query"
-    },
-    {
-      "command": "SelectTeam",
-      "events": ["TeamSelected", "TeamContextEstablished"],
-      "operationType": "Command"
-    },
-    {
-      "command": "CreateTeam",
-      "events": ["TeamCreationRequested", "TeamValidated", "TeamCreated"],
-      "operationType": "Command"
-    },
-    {
-      "command": "UpdateTeam",
-      "events": ["TeamUpdateRequested", "TeamValidated", "TeamUpdated"],
-      "operationType": "Command"
-    },
-    {
-      "command": "DeleteTeam",
-      "events": ["TeamDeletionRequested", "TeamDeleted"],
-      "operationType": "Command"
-    },
-    {
-      "command": "QueryPlayerList",
-      "events": ["PlayerListQueried", "PlayerListRetrieved"],
-      "operationType": "Query"
-    },
-    {
-      "command": "CreatePlayer",
-      "events": ["PlayerCreationRequested", "PlayerValidated", "PlayerCreated"],
-      "operationType": "Command"
-    },
-    {
-      "command": "UpdatePlayer",
-      "events": ["PlayerUpdateRequested", "PlayerValidated", "PlayerUpdated"],
-      "operationType": "Command"
-    },
-    {
-      "command": "DeletePlayer",
-      "events": ["PlayerDeletionRequested", "PlayerDeleted"],
-      "operationType": "Command"
-    },
-    {
-      "command": "UpdatePlayerOrder",
-      "events": ["PlayerOrderChangeRequested", "PlayerOrderValidated", "PlayerOrderChanged", "PlayerListRefreshed"],
-      "operationType": "Command"
-    }
-  ],
-  "notes": [
-    "Query 操作（QueryTeamList, QueryPlayerList）不改變系統狀態，只回傳 Read Model",
-    "Command 操作都會產生對應的 Domain Event 並改變 Aggregate 狀態",
-    "所有修改型 Command 都經過 Validated Event 確保資料正確性",
-    "UpdatePlayerOrder 會觸發 PlayerListRefreshed，保持查詢模型的即時性",
-    "SelectTeam 雖是選擇操作，但會改變 Session State，故為 Command Operation"
-  ]
+  "commandEventMapping": {
+    "oneToOne": [],
+    "oneToMany": [
+      {
+        "commandId": "C-001",
+        "commandName": "QueryTeamList",
+        "events": ["E-001", "E-002"],
+        "note": "查詢請求產生查詢事件和回傳事件"
+      },
+      {
+        "commandId": "C-002",
+        "commandName": "SelectTeam",
+        "events": ["E-003", "E-004"],
+        "note": "選擇球隊產生選擇事件和上下文建立事件"
+      },
+      {
+        "commandId": "C-003",
+        "commandName": "CreateTeam",
+        "events": ["E-005", "E-006", "E-007", "E-008"],
+        "note": "建立球隊產生請求、驗證、建立和快取失效事件"
+      },
+      {
+        "commandId": "C-004",
+        "commandName": "UpdateTeam",
+        "events": ["E-009", "E-008"],
+        "note": "更新球隊產生更新和快取失效事件"
+      },
+      {
+        "commandId": "C-005",
+        "commandName": "DeleteTeam",
+        "events": ["E-010", "E-011", "E-008"],
+        "note": "刪除球隊產生刪除、球員刪除和快取失效事件"
+      },
+      {
+        "commandId": "C-006",
+        "commandName": "QueryPlayerList",
+        "events": ["E-012", "E-013"],
+        "note": "查詢球員產生查詢事件和回傳事件"
+      },
+      {
+        "commandId": "C-007",
+        "commandName": "CreatePlayer",
+        "events": ["E-014", "E-015"],
+        "note": "建立球員產生建立和列表刷新事件"
+      },
+      {
+        "commandId": "C-008",
+        "commandName": "UpdatePlayer",
+        "events": ["E-016", "E-015"],
+        "note": "更新球員產生更新和列表刷新事件"
+      },
+      {
+        "commandId": "C-009",
+        "commandName": "DeletePlayer",
+        "events": ["E-017", "E-015"],
+        "note": "刪除球員產生刪除和列表刷新事件"
+      },
+      {
+        "commandId": "C-010",
+        "commandName": "UpdatePlayerOrder",
+        "events": ["E-018", "E-015"],
+        "note": "更新排序產生排序變更和列表刷新事件"
+      }
+    ],
+    "manyToOne": [
+      {
+        "eventId": "E-008",
+        "eventName": "TeamCacheInvalidated",
+        "commands": ["C-003", "C-004", "C-005"],
+        "note": "多個球隊操作都會觸發快取失效"
+      },
+      {
+        "eventId": "E-015",
+        "eventName": "PlayerListRefreshed",
+        "commands": ["C-007", "C-008", "C-009", "C-010"],
+        "note": "多個球員操作都會觸發列表刷新"
+      }
+    ]
+  },
+  "summary": {
+    "totalCommands": 10,
+    "queryCommands": 2,
+    "mutationCommands": 8,
+    "oneToOneRelations": 0,
+    "oneToManyRelations": 10,
+    "manyToOneRelations": 2
+  }
 }

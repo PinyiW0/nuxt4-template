@@ -1,0 +1,429 @@
+{
+  "version": "1.0",
+  "generatedAt": "2026-01-21T10:00:00Z",
+  "sourceStory": {
+    "id": "US-B",
+    "title": "球隊/球員資料管理",
+    "completenessScore": 70,
+    "missingElements": [
+      "缺少詳細的 Acceptance Criteria",
+      "缺少錯誤處理說明",
+      "缺少權限定義"
+    ]
+  },
+  "features": [
+    {
+      "featureId": "F-B1",
+      "featureName": "球隊查詢",
+      "description": "查詢系統中的球隊列表，支援篩選和排序",
+      "sourceUserStory": "US-B1",
+      "actor": ["管理者", "教練"],
+      "type": "Query",
+      "preconditions": [
+        "用戶已登入系統",
+        "用戶擁有查詢球隊的權限"
+      ],
+      "mainFlow": [
+        "用戶進入球隊管理頁面",
+        "系統顯示球隊列表",
+        "用戶可以套用篩選條件（狀態、名稱關鍵字）",
+        "用戶可以排序（建立時間、名稱等）"
+      ],
+      "alternativeFlows": [
+        {
+          "name": "查無結果",
+          "trigger": "沒有符合條件的球隊",
+          "steps": ["系統顯示空狀態提示"]
+        },
+        {
+          "name": "載入錯誤",
+          "trigger": "API 請求失敗",
+          "steps": ["系統顯示錯誤訊息", "提供重試選項"]
+        }
+      ],
+      "businessRules": [
+        "預設只顯示 Active 狀態的球隊",
+        "支援分頁（每頁 10-100 筆）",
+        "預設按建立時間降序排列"
+      ],
+      "dependencies": [],
+      "estimatedComplexity": "Low"
+    },
+    {
+      "featureId": "F-B2",
+      "featureName": "球隊選擇",
+      "description": "選擇一個球隊作為當前操作的上下文",
+      "sourceUserStory": "US-B1",
+      "actor": ["管理者", "教練"],
+      "type": "Command",
+      "preconditions": [
+        "用戶已登入系統",
+        "球隊列表已載入"
+      ],
+      "mainFlow": [
+        "用戶從列表中點擊一個球隊",
+        "系統記錄選擇的球隊到 Session",
+        "系統建立球隊操作上下文",
+        "系統自動載入該球隊的球員列表"
+      ],
+      "alternativeFlows": [
+        {
+          "name": "球隊不存在",
+          "trigger": "選擇的球隊已被刪除",
+          "steps": ["系統顯示錯誤訊息", "返回球隊列表"]
+        }
+      ],
+      "businessRules": [
+        "一次只能選擇一個球隊",
+        "選擇球隊後自動載入球員列表（Policy）",
+        "Session 狀態保留到用戶登出"
+      ],
+      "dependencies": ["F-B1"],
+      "estimatedComplexity": "Medium"
+    },
+    {
+      "featureId": "F-B3",
+      "featureName": "球隊建立",
+      "description": "建立新的球隊",
+      "sourceUserStory": "US-B2",
+      "actor": ["管理者", "教練"],
+      "type": "Command",
+      "preconditions": [
+        "用戶已登入系統",
+        "用戶擁有 team:create 權限"
+      ],
+      "mainFlow": [
+        "用戶點擊「新增球隊」按鈕",
+        "系統顯示球隊表單",
+        "用戶輸入球隊名稱（必填）和描述（選填）",
+        "用戶提交表單",
+        "系統驗證資料",
+        "系統建立球隊",
+        "系統重新整理球隊列表"
+      ],
+      "alternativeFlows": [
+        {
+          "name": "球隊名稱重複",
+          "trigger": "系統中已存在相同名稱的球隊",
+          "steps": ["系統顯示錯誤訊息", "用戶修改球隊名稱"]
+        },
+        {
+          "name": "球隊名稱為空",
+          "trigger": "用戶未輸入球隊名稱",
+          "steps": ["系統顯示驗證錯誤", "用戶補填球隊名稱"]
+        }
+      ],
+      "businessRules": [
+        "球隊名稱必填，長度 2-50 字元",
+        "球隊名稱在系統中必須唯一",
+        "球隊描述選填，最大 500 字元",
+        "新建球隊預設狀態為 Active"
+      ],
+      "dependencies": [],
+      "estimatedComplexity": "Medium"
+    },
+    {
+      "featureId": "F-B4",
+      "featureName": "球隊編輯",
+      "description": "編輯現有球隊的資訊",
+      "sourceUserStory": "US-B2",
+      "actor": ["管理者", "教練"],
+      "type": "Command",
+      "preconditions": [
+        "用戶已登入系統",
+        "用戶擁有 team:update 權限",
+        "球隊存在於系統中"
+      ],
+      "mainFlow": [
+        "用戶選擇要編輯的球隊",
+        "系統顯示球隊表單（預填現有資料）",
+        "用戶修改球隊名稱或描述",
+        "用戶提交表單",
+        "系統驗證資料",
+        "系統更新球隊",
+        "系統重新整理球隊列表"
+      ],
+      "alternativeFlows": [
+        {
+          "name": "球隊名稱重複",
+          "trigger": "修改後的名稱與其他球隊重複",
+          "steps": ["系統顯示錯誤訊息", "用戶修改球隊名稱"]
+        }
+      ],
+      "businessRules": [
+        "球隊名稱必填，長度 2-50 字元",
+        "球隊名稱必須唯一（排除自己）",
+        "球隊描述選填，最大 500 字元"
+      ],
+      "dependencies": ["F-B1"],
+      "estimatedComplexity": "Medium"
+    },
+    {
+      "featureId": "F-B5",
+      "featureName": "球隊刪除",
+      "description": "刪除球隊及其所有球員",
+      "sourceUserStory": "US-B2",
+      "actor": ["管理者", "教練"],
+      "type": "Command",
+      "preconditions": [
+        "用戶已登入系統",
+        "用戶擁有 team:delete 權限",
+        "球隊存在於系統中"
+      ],
+      "mainFlow": [
+        "用戶選擇要刪除的球隊",
+        "系統顯示確認對話框（警告：將同時刪除所有球員）",
+        "用戶確認刪除",
+        "系統刪除球隊及其所有球員",
+        "系統重新整理球隊列表"
+      ],
+      "alternativeFlows": [
+        {
+          "name": "用戶取消刪除",
+          "trigger": "用戶在確認對話框中取消",
+          "steps": ["系統關閉對話框", "返回列表"]
+        }
+      ],
+      "businessRules": [
+        "刪除球隊會同時刪除該球隊的所有球員（硬刪除）",
+        "刪除前必須顯示確認對話框",
+        "刪除操作不可逆"
+      ],
+      "dependencies": ["F-B1"],
+      "estimatedComplexity": "High",
+      "notes": [
+        "使用者選擇 Q2: C - 同時刪除球隊和所有球員"
+      ]
+    },
+    {
+      "featureId": "F-B6",
+      "featureName": "球員查詢",
+      "description": "查詢特定球隊的球員列表",
+      "sourceUserStory": "US-B3",
+      "actor": ["管理者", "教練"],
+      "type": "Query",
+      "preconditions": [
+        "用戶已登入系統",
+        "用戶已選擇一個球隊"
+      ],
+      "mainFlow": [
+        "用戶進入球員管理頁面",
+        "系統顯示當前球隊的球員列表",
+        "列表顯示：背號、姓名、身高、守備位置、排序順序"
+      ],
+      "alternativeFlows": [
+        {
+          "name": "球隊無球員",
+          "trigger": "當前球隊沒有球員",
+          "steps": ["系統顯示空狀態提示", "提供「新增球員」快捷按鈕"]
+        }
+      ],
+      "businessRules": [
+        "預設按 sortOrder 欄位排序",
+        "只顯示當前選擇球隊的球員"
+      ],
+      "dependencies": ["F-B2"],
+      "estimatedComplexity": "Low"
+    },
+    {
+      "featureId": "F-B7",
+      "featureName": "球員新增",
+      "description": "新增球員到當前球隊",
+      "sourceUserStory": "US-B3",
+      "actor": ["管理者", "教練"],
+      "type": "Command",
+      "preconditions": [
+        "用戶已登入系統",
+        "用戶擁有 player:create 權限",
+        "用戶已選擇一個球隊"
+      ],
+      "mainFlow": [
+        "用戶點擊「新增球員」按鈕",
+        "系統顯示球員表單",
+        "用戶輸入：背號、姓名、身高、守備位置",
+        "用戶提交表單",
+        "系統驗證資料",
+        "系統建立球員",
+        "系統重新整理球員列表"
+      ],
+      "alternativeFlows": [
+        {
+          "name": "背號重複",
+          "trigger": "同一球隊內已有相同背號的球員",
+          "steps": ["系統顯示錯誤訊息", "用戶修改背號"]
+        },
+        {
+          "name": "守備位置無效",
+          "trigger": "用戶輸入的守備位置不在有效清單中",
+          "steps": ["系統顯示驗證錯誤", "用戶選擇有效的守備位置"]
+        }
+      ],
+      "businessRules": [
+        "背號必填，範圍 0-99，同一球隊內不可重複",
+        "姓名必填，長度 2-50 字元",
+        "身高選填，單位 cm",
+        "守備位置必填，有效值：P, C, 1B, 2B, 3B, SS, LF, CF, RF, DH",
+        "新球員的 sortOrder 自動設為當前最大值 + 1"
+      ],
+      "dependencies": ["F-B2", "F-B6"],
+      "estimatedComplexity": "Medium",
+      "notes": [
+        "使用者選擇 Q1: A - 同一球隊內背號不可重複",
+        "使用者選擇 Q3: A - 標準棒球位置"
+      ]
+    },
+    {
+      "featureId": "F-B8",
+      "featureName": "球員編輯",
+      "description": "編輯現有球員的資訊",
+      "sourceUserStory": "US-B3",
+      "actor": ["管理者", "教練"],
+      "type": "Command",
+      "preconditions": [
+        "用戶已登入系統",
+        "用戶擁有 player:update 權限",
+        "球員存在於系統中"
+      ],
+      "mainFlow": [
+        "用戶選擇要編輯的球員",
+        "系統顯示球員表單（預填現有資料）",
+        "用戶修改球員資訊",
+        "用戶提交表單",
+        "系統驗證資料",
+        "系統更新球員",
+        "系統重新整理球員列表"
+      ],
+      "alternativeFlows": [
+        {
+          "name": "背號重複",
+          "trigger": "修改後的背號與同隊其他球員重複",
+          "steps": ["系統顯示錯誤訊息", "用戶修改背號"]
+        }
+      ],
+      "businessRules": [
+        "背號必填，範圍 0-99，同一球隊內不可重複（排除自己）",
+        "姓名必填，長度 2-50 字元",
+        "守備位置必填，有效值：P, C, 1B, 2B, 3B, SS, LF, CF, RF, DH"
+      ],
+      "dependencies": ["F-B6"],
+      "estimatedComplexity": "Medium"
+    },
+    {
+      "featureId": "F-B9",
+      "featureName": "球員刪除",
+      "description": "刪除球員",
+      "sourceUserStory": "US-B3",
+      "actor": ["管理者", "教練"],
+      "type": "Command",
+      "preconditions": [
+        "用戶已登入系統",
+        "用戶擁有 player:delete 權限",
+        "球員存在於系統中"
+      ],
+      "mainFlow": [
+        "用戶選擇要刪除的球員",
+        "系統顯示確認對話框",
+        "用戶確認刪除",
+        "系統刪除球員",
+        "系統重新整理球員列表"
+      ],
+      "alternativeFlows": [
+        {
+          "name": "用戶取消刪除",
+          "trigger": "用戶在確認對話框中取消",
+          "steps": ["系統關閉對話框", "返回列表"]
+        }
+      ],
+      "businessRules": [
+        "刪除前必須顯示確認對話框",
+        "刪除操作不可逆"
+      ],
+      "dependencies": ["F-B6"],
+      "estimatedComplexity": "Low"
+    },
+    {
+      "featureId": "F-B10",
+      "featureName": "球員排序調整",
+      "description": "調整球員在列表中的顯示順序",
+      "sourceUserStory": "US-B4",
+      "actor": ["管理者", "教練"],
+      "type": "Command",
+      "preconditions": [
+        "用戶已登入系統",
+        "用戶擁有 player:update 權限",
+        "當前球隊有至少 2 名球員"
+      ],
+      "mainFlow": [
+        "用戶進入球員排序調整頁面",
+        "系統顯示可拖放的球員列表",
+        "用戶拖動球員改變順序",
+        "用戶點擊「儲存排序」",
+        "系統更新所有球員的 sortOrder",
+        "系統重新整理球員列表"
+      ],
+      "alternativeFlows": [
+        {
+          "name": "排序值不連續",
+          "trigger": "用戶提交的排序值不連續（例如：1, 3, 4）",
+          "steps": ["系統顯示驗證錯誤", "用戶重新調整"]
+        },
+        {
+          "name": "排序值重複",
+          "trigger": "多個球員有相同的排序值",
+          "steps": ["系統顯示驗證錯誤", "用戶重新調整"]
+        }
+      ],
+      "businessRules": [
+        "排序值必須從 1 開始連續",
+        "排序值不可重複",
+        "只能調整同一球隊內的球員順序"
+      ],
+      "dependencies": ["F-B6"],
+      "estimatedComplexity": "Medium"
+    }
+  ],
+  "dependencyGraph": {
+    "F-B1": [],
+    "F-B2": ["F-B1"],
+    "F-B3": [],
+    "F-B4": ["F-B1"],
+    "F-B5": ["F-B1"],
+    "F-B6": ["F-B2"],
+    "F-B7": ["F-B2", "F-B6"],
+    "F-B8": ["F-B6"],
+    "F-B9": ["F-B6"],
+    "F-B10": ["F-B6"]
+  },
+  "boundaryDecisions": [
+    {
+      "questionId": "BQ-1",
+      "question": "球員背號的唯一性範圍？",
+      "selectedOption": "A",
+      "decision": "同一球隊內背號不可重複",
+      "impact": "球員建立/編輯時需驗證同隊背號唯一性"
+    },
+    {
+      "questionId": "BQ-2",
+      "question": "刪除球隊時，球員資料如何處理？",
+      "selectedOption": "C",
+      "decision": "同時刪除球隊和所有球員",
+      "impact": "需在確認對話框中明確警告，刪除操作為硬刪除"
+    },
+    {
+      "questionId": "BQ-3",
+      "question": "守備位置的有效值？",
+      "selectedOption": "A",
+      "decision": "標準棒球位置：P, C, 1B, 2B, 3B, SS, LF, CF, RF, DH",
+      "impact": "表單需提供這些選項的下拉選單"
+    }
+  ],
+  "summary": {
+    "totalFeatures": 10,
+    "queryFeatures": 2,
+    "commandFeatures": 8,
+    "highComplexity": 1,
+    "mediumComplexity": 6,
+    "lowComplexity": 3,
+    "totalDependencies": 11
+  }
+}

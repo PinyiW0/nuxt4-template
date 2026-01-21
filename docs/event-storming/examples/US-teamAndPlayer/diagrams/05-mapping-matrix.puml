@@ -1,0 +1,58 @@
+@startuml mapping-matrix
+!theme plain
+skinparam backgroundColor #FEFEFE
+skinparam defaultFontName "Noto Sans TC"
+
+title Mapping Matrix
+caption 球隊/球員資料管理 - 對應矩陣圖
+
+' 定義顏色
+!define HEADER_COLOR #4A90E2
+!define ROW_EVEN #F5F5F5
+!define ROW_ODD #FFFFFF
+!define BORDER_COLOR #CCCCCC
+
+' 建立對應表格
+salt
+{#
+. | **Feature** | **Commands** | **Events** | **Aggregates** | **Policies** | **Read Models**
++ | F-B1\n球隊查詢 | QueryTeamList | TeamListQueried\nTeamListRetrieved | - | - | TeamListViewModel
++ | F-B2\n球隊選擇 | SelectTeam | TeamSelected\nTeamContextEstablished | - | POL-001\nAutoLoadPlayers | TeamDetailViewModel
++ | F-B3\n球隊建立 | CreateTeam | TeamCreationRequested\nTeamValidated\nTeamCreated\nTeamCacheInvalidated | Team | POL-002\nInvalidateCache | TeamListViewModel\nTeamDetailViewModel
++ | F-B4\n球隊編輯 | UpdateTeam | TeamUpdated\nTeamCacheInvalidated | Team | POL-002\nInvalidateCache | TeamListViewModel\nTeamDetailViewModel
++ | F-B5\n球隊刪除 | DeleteTeam | TeamDeleted\nTeamPlayersDeleted\nTeamCacheInvalidated | Team\nPlayer | POL-002 InvalidateCache\nPOL-004 CascadeDelete | TeamListViewModel\nTeamDetailViewModel\nPlayerListViewModel
++ | F-B6\n球員查詢 | QueryPlayerList | PlayerListQueried\nPlayerListRetrieved | - | - | PlayerListViewModel
++ | F-B7\n球員新增 | CreatePlayer | PlayerCreated\nPlayerListRefreshed | Player | POL-003\nRefreshPlayerList\nPOL-005 AutoAssignOrder | PlayerListViewModel\nPlayerDetailViewModel
++ | F-B8\n球員編輯 | UpdatePlayer | PlayerUpdated\nPlayerListRefreshed | Player | POL-003\nRefreshPlayerList | PlayerListViewModel\nPlayerDetailViewModel
++ | F-B9\n球員刪除 | DeletePlayer | PlayerDeleted\nPlayerListRefreshed | Player | POL-003\nRefreshPlayerList | PlayerListViewModel
++ | F-B10\n球員排序 | UpdatePlayerOrder | PlayerOrderChanged\nPlayerListRefreshed | Player | POL-003\nRefreshPlayerList | PlayerListViewModel
+}
+
+note bottom
+  **圖例說明**:
+  
+  **Features (F-B1 ~ F-B10)**: 從 User Story 拆解的可獨立測試功能
+  
+  **Commands**: 執行操作的指令（Query = 查詢型, Command = 修改型）
+  
+  **Events**: Domain Events，系統中已發生的事實
+  
+  **Aggregates**: 領域聚合，維護業務不變量的一致性邊界
+  - Team: 球隊聚合根
+  - Player: 球員聚合根
+  
+  **Policies**: Event-driven 自動化策略
+  - POL-001: 選擇球隊後自動載入球員列表
+  - POL-002: 球隊變更時自動失效快取
+  - POL-003: 球員變更時自動刷新列表
+  - POL-004: 刪除球隊時 cascade delete 球員
+  - POL-005: 建立球員時自動分配 sortOrder
+  
+  **Read Models**: CQRS 查詢側的資料模型
+  - TeamListViewModel: 球隊列表查詢
+  - TeamDetailViewModel: 球隊詳情查詢
+  - PlayerListViewModel: 球員列表查詢
+  - PlayerDetailViewModel: 球員詳情查詢
+end note
+
+@enduml

@@ -1,0 +1,152 @@
+@startuml state-diagram
+!theme plain
+skinparam backgroundColor #FEFEFE
+skinparam defaultFontName "Noto Sans TC"
+
+title State Diagram
+caption 球隊/球員資料管理 - 狀態轉換圖
+
+' === 球隊狀態圖 ===
+state "球隊生命週期" as TeamLifecycle {
+  [*] --> Creating : CreateTeam
+
+  state Creating {
+    [*] --> Validating
+    Validating --> Validated : 驗證通過
+    Validating --> Invalid : 驗證失敗
+    Invalid --> [*]
+    Validated --> Created : TeamCreated
+  }
+
+  Creating --> Active : TeamCreated 事件
+  note on link
+    teamId 已分配
+    status = Active
+    playerCount = 0
+  end note
+
+  Active --> Active : UpdateTeam\n(TeamUpdated)
+  note on link
+    可更新 teamName, description
+    觸發 InvalidateCache Policy
+  end note
+
+  Active --> Inactive : 手動停用
+  Inactive --> Active : 手動啟用
+
+  Active --> Deleting : DeleteTeam
+  Inactive --> Deleting : DeleteTeam
+
+  state Deleting {
+    [*] --> DeletingPlayers
+    DeletingPlayers --> CachingInvalidating : TeamPlayersDeleted
+    CachingInvalidating --> [*]
+  }
+
+  Deleting --> [*] : TeamDeleted
+  note on link
+    所有球員已刪除
+    快取已失效
+  end note
+}
+
+' === 球員狀態圖 ===
+state "球員生命週期" as PlayerLifecycle {
+  [*] --> Creating : CreatePlayer
+
+  state Creating {
+    [*] --> ValidatingJerseyNumber
+    ValidatingJerseyNumber --> ValidatingPosition : 背號有效
+    ValidatingJerseyNumber --> Invalid : 背號無效或重複
+    ValidatingPosition --> ValidatingData : 位置有效
+    ValidatingPosition --> Invalid : 位置無效
+    ValidatingData --> Created : 驗證通過
+    ValidatingData --> Invalid : 資料無效
+    Invalid --> [*]
+  }
+
+  Creating --> Active : PlayerCreated 事件
+  note on link
+    playerId 已分配
+    sortOrder 自動分配 (max+1)
+    觸發 RefreshPlayerList Policy
+  end note
+
+  Active --> Active : UpdatePlayer\n(PlayerUpdated)
+  note on link
+    可更新所有欄位
+    觸發 RefreshPlayerList Policy
+  end note
+
+  Active --> Reordering : UpdatePlayerOrder
+  Reordering --> Active : PlayerOrderChanged
+  note on link
+    sortOrder 已更新
+    觸發 RefreshPlayerList Policy
+  end note
+
+  Active --> [*] : DeletePlayer\n(PlayerDeleted)
+  note on link
+    觸發 RefreshPlayerList Policy
+  end note
+
+  Active --> [*] : 所屬球隊被刪除\n(TeamPlayersDeleted)
+  note on link
+    Cascade Delete
+    由 CascadeDeletePlayers Policy 執行
+  end note
+}
+
+' === Policy 觸發狀態 ===
+state "Policy 執行狀態" as PolicyStates {
+  state "InvalidateCache Policy" as CachePolicy {
+    [*] --> Waiting
+    Waiting --> Executing : TeamCreated/Updated/Deleted
+    Executing --> [*] : TeamCacheInvalidated
+  }
+
+  state "RefreshPlayerList Policy" as RefreshPolicy {
+    [*] --> Waiting
+    Waiting --> Executing : PlayerCreated/Updated/Deleted/OrderChanged
+    Executing --> [*] : PlayerListRefreshed
+  }
+
+  state "AutoLoadPlayers Policy" as LoadPolicy {
+    [*] --> Waiting
+    Waiting --> Executing : TeamContextEstablished
+    Executing --> QueryingPlayers : QueryPlayerList
+    QueryingPlayers --> [*] : PlayerListRetrieved
+  }
+}
+
+' 圖例
+legend right
+  |= 狀態類型 |= 說明 |
+  | **Creating** | 建立中，執行驗證 |
+  | **Active** | 正常使用狀態 |
+  | **Inactive** | 停用狀態（僅球隊） |
+  | **Deleting** | 刪除中 |
+  | **[*]** | 終止狀態 |
+
+  **Event 觸發 Policy 的時機**:
+  - TeamCreated/Updated/Deleted → InvalidateCache
+  - PlayerCreated/Updated/Deleted/OrderChanged → RefreshPlayerList
+  - TeamContextEstablished → AutoLoadPlayers
+endlegend
+
+note right of TeamLifecycle
+  **Invariants**:
+  - 球隊名稱必須唯一
+  - 球隊名稱長度 2-50 字元
+  - 刪除球隊時會 cascade delete 所有球員
+end note
+
+note right of PlayerLifecycle
+  **Invariants**:
+  - 背號在同球隊內必須唯一 (0-99)
+  - 守備位置必須為標準棒球位置
+  - 球員必須屬於一個存在的球隊
+  - sortOrder 自動分配，不可手動設定
+end note
+
+@enduml
