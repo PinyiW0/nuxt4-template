@@ -1,0 +1,65 @@
+{
+  "_meta": {
+    "version": "1.0",
+    "generatedAt": "2026-01-22T16:30:00Z",
+    "epic": "A",
+    "epicName": "登入/登出與權限控管"
+  },
+  "commands": [
+    {
+      "commandId": "C-A001",
+      "commandName": "Login",
+      "description": "使用者登入",
+      "type": "Command",
+      "actor": ["USER"],
+      "entity": "Session",
+      "relatedUserStory": "A1",
+      "input": {
+        "required": [
+          { "field": "username", "type": "string" },
+          { "field": "password", "type": "string" }
+        ],
+        "optional": []
+      },
+      "output": {
+        "type": "LoginResult",
+        "fields": [
+          { "field": "token", "type": "string" },
+          { "field": "user", "type": "User" }
+        ]
+      },
+      "producedEvents": ["E-A001"],
+      "preconditions": [
+        { "rule": "帳號必須存在", "errorCode": "USER_NOT_FOUND" },
+        { "rule": "密碼必須正確", "errorCode": "INVALID_CREDENTIALS" }
+      ]
+    },
+    {
+      "commandId": "C-A002",
+      "commandName": "Logout",
+      "description": "使用者登出",
+      "type": "Command",
+      "actor": ["USER"],
+      "entity": "Session",
+      "relatedUserStory": "A2",
+      "input": {
+        "required": [],
+        "optional": []
+      },
+      "output": null,
+      "producedEvents": ["E-A003"],
+      "preconditions": [
+        { "rule": "使用者必須已登入", "errorCode": "UNAUTHORIZED" }
+      ]
+    }
+  ],
+  "commandEventMapping": [
+    { "command": "C-A001", "events": ["E-A001"], "relation": "1:1" },
+    { "command": "C-A002", "events": ["E-A003"], "relation": "1:1" }
+  ],
+  "summary": {
+    "totalCommands": 2,
+    "queries": 0,
+    "commands": 2
+  }
+}

@@ -1,0 +1,117 @@
+{
+  "_meta": {
+    "version": "1.0",
+    "generatedAt": "2026-01-22T16:30:00Z",
+    "epic": "E",
+    "epicName": "影像數據分析（歷史訓練）"
+  },
+  "commands": [
+    {
+      "commandId": "C-E001",
+      "commandName": "SwitchAnalysisTab",
+      "description": "切換分析頁籤",
+      "type": "Command",
+      "actor": ["ANALYST"],
+      "entity": "UI",
+      "relatedUserStory": "E1",
+      "input": {
+        "required": [
+          { "field": "tabName", "type": "enum", "values": ["TRAINING_RECORD", "PLAYER_RECORD"] }
+        ],
+        "optional": []
+      },
+      "output": null,
+      "producedEvents": ["E-E001"],
+      "preconditions": []
+    },
+    {
+      "commandId": "C-E002",
+      "commandName": "QueryHistoricalTrainings",
+      "description": "查詢歷史訓練列表",
+      "type": "Query",
+      "actor": ["ANALYST"],
+      "entity": "Training",
+      "relatedUserStory": "E2",
+      "input": {
+        "required": [],
+        "optional": [
+          { "field": "teamId", "type": "uuid" },
+          { "field": "startDate", "type": "date" },
+          { "field": "endDate", "type": "date" }
+        ]
+      },
+      "output": {
+        "type": "TrainingListResult",
+        "fields": [
+          { "field": "trainings", "type": "Training[]" },
+          { "field": "totalCount", "type": "integer" }
+        ]
+      },
+      "producedEvents": [],
+      "preconditions": []
+    },
+    {
+      "commandId": "C-E003",
+      "commandName": "BatchDeleteTrainings",
+      "description": "批次刪除訓練",
+      "type": "Command",
+      "actor": ["ANALYST"],
+      "entity": "Training",
+      "relatedUserStory": "E2",
+      "input": {
+        "required": [
+          { "field": "trainingIds", "type": "uuid[]" }
+        ],
+        "optional": []
+      },
+      "output": {
+        "type": "BatchDeleteResult",
+        "fields": [
+          { "field": "deletedCount", "type": "integer" }
+        ]
+      },
+      "producedEvents": ["E-E002"],
+      "preconditions": [
+        { "rule": "至少選擇一筆訓練", "errorCode": "INVALID_INPUT" }
+      ]
+    },
+    {
+      "commandId": "C-E004",
+      "commandName": "ViewStrikeZoneRecord",
+      "description": "查看電子好球帶記錄",
+      "type": "Query",
+      "actor": ["ANALYST"],
+      "entity": "Training",
+      "relatedUserStory": "E3",
+      "input": {
+        "required": [
+          { "field": "trainingId", "type": "uuid" }
+        ],
+        "optional": []
+      },
+      "output": {
+        "type": "StrikeZoneRecordResult",
+        "fields": [
+          { "field": "pitches", "type": "Pitch[]" },
+          { "field": "strikeZone", "type": "StrikeZone" },
+          { "field": "strikeCount", "type": "integer" },
+          { "field": "ballCount", "type": "integer" }
+        ]
+      },
+      "producedEvents": ["E-E003"],
+      "preconditions": [
+        { "rule": "訓練必須存在", "errorCode": "TRAINING_NOT_FOUND" }
+      ]
+    }
+  ],
+  "commandEventMapping": [
+    { "command": "C-E001", "events": ["E-E001"], "relation": "1:1" },
+    { "command": "C-E003", "events": ["E-E002"], "relation": "1:1" },
+    { "command": "C-E004", "events": ["E-E003"], "relation": "1:1" }
+  ],
+  "summary": {
+    "totalCommands": 4,
+    "queries": 2,
+    "commands": 2
+  }
+}

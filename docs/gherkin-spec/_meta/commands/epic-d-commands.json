@@ -1,0 +1,162 @@
+{
+  "_meta": {
+    "version": "1.0",
+    "generatedAt": "2026-01-22T16:30:00Z",
+    "epic": "D",
+    "epicName": "訓練紀錄頁（即時投球檢視）"
+  },
+  "commands": [
+    {
+      "commandId": "C-D001",
+      "commandName": "EnterTrainingRecord",
+      "description": "進入訓練紀錄模式",
+      "type": "Command",
+      "actor": ["COACH"],
+      "entity": "Training",
+      "relatedUserStory": "D1",
+      "input": {
+        "required": [
+          { "field": "trainingId", "type": "uuid" }
+        ],
+        "optional": []
+      },
+      "output": {
+        "type": "TrainingDetail",
+        "fields": [
+          { "field": "training", "type": "Training" },
+          { "field": "pitches", "type": "Pitch[]" }
+        ]
+      },
+      "producedEvents": ["E-D001"],
+      "preconditions": [
+        { "rule": "訓練必須存在", "errorCode": "TRAINING_NOT_FOUND" }
+      ]
+    },
+    {
+      "commandId": "C-D002",
+      "commandName": "ExitTrainingRecord",
+      "description": "退出訓練紀錄模式",
+      "type": "Command",
+      "actor": ["COACH"],
+      "entity": "Training",
+      "relatedUserStory": "D1",
+      "input": {
+        "required": [],
+        "optional": []
+      },
+      "output": null,
+      "producedEvents": ["E-D002"],
+      "preconditions": []
+    },
+    {
+      "commandId": "C-D003",
+      "commandName": "QueryPitchList",
+      "description": "查詢投球清單",
+      "type": "Query",
+      "actor": ["COACH"],
+      "entity": "Pitch",
+      "relatedUserStory": "D2",
+      "input": {
+        "required": [
+          { "field": "trainingId", "type": "uuid" }
+        ],
+        "optional": []
+      },
+      "output": {
+        "type": "PitchListResult",
+        "fields": [
+          { "field": "pitches", "type": "Pitch[]" },
+          { "field": "totalCount", "type": "integer" }
+        ]
+      },
+      "producedEvents": [],
+      "preconditions": [
+        { "rule": "訓練必須存在", "errorCode": "TRAINING_NOT_FOUND" }
+      ]
+    },
+    {
+      "commandId": "C-D004",
+      "commandName": "SelectPitch",
+      "description": "選擇單球檢視",
+      "type": "Command",
+      "actor": ["COACH"],
+      "entity": "Pitch",
+      "relatedUserStory": "D3",
+      "input": {
+        "required": [
+          { "field": "pitchId", "type": "uuid" }
+        ],
+        "optional": []
+      },
+      "output": {
+        "type": "PitchDetail",
+        "fields": [
+          { "field": "pitch", "type": "Pitch" },
+          { "field": "nineGridData", "type": "object" },
+          { "field": "trajectory3D", "type": "object" }
+        ]
+      },
+      "producedEvents": ["E-D004"],
+      "preconditions": []
+    },
+    {
+      "commandId": "C-D005",
+      "commandName": "SwitchViewMode",
+      "description": "切換檢視模式（九宮格/3D軌跡）",
+      "type": "Command",
+      "actor": ["COACH"],
+      "entity": "Pitch",
+      "relatedUserStory": "D3",
+      "input": {
+        "required": [
+          { "field": "viewMode", "type": "enum", "values": ["NINE_GRID", "TRAJECTORY_3D"] }
+        ],
+        "optional": []
+      },
+      "output": null,
+      "producedEvents": [],
+      "preconditions": []
+    },
+    {
+      "commandId": "C-D006",
+      "commandName": "AdjustStrikeZone",
+      "description": "調整好球帶範圍",
+      "type": "Command",
+      "actor": ["COACH"],
+      "entity": "StrikeZone",
+      "relatedUserStory": "D4",
+      "input": {
+        "required": [
+          { "field": "trainingId", "type": "uuid" }
+        ],
+        "optional": [
+          { "field": "topBoundary", "type": "decimal" },
+          { "field": "bottomBoundary", "type": "decimal" },
+          { "field": "leftBoundary", "type": "decimal" },
+          { "field": "rightBoundary", "type": "decimal" }
+        ]
+      },
+      "output": {
+        "type": "StrikeZone",
+        "fields": [
+          { "field": "strikeZone", "type": "StrikeZone" }
+        ]
+      },
+      "producedEvents": ["E-D005"],
+      "preconditions": [
+        { "rule": "訓練必須存在", "errorCode": "TRAINING_NOT_FOUND" }
+      ]
+    }
+  ],
+  "commandEventMapping": [
+    { "command": "C-D001", "events": ["E-D001"], "relation": "1:1" },
+    { "command": "C-D002", "events": ["E-D002"], "relation": "1:1" },
+    { "command": "C-D004", "events": ["E-D004"], "relation": "1:1" },
+    { "command": "C-D006", "events": ["E-D005"], "relation": "1:1" }
+  ],
+  "summary": {
+    "totalCommands": 6,
+    "queries": 1,
+    "commands": 5
+  }
+}

@@ -1,6 +1,6 @@
 {
   "_meta": {
-    "version": "1.0",
+    "version": "2.0",
     "lastUpdated": "2026-01-22",
     "source": "docs/user-stories/user-v1.md"
   },
@@ -12,10 +12,25 @@
       "primaryKey": "user_id",
       "fields": {
         "userId": { "zh": "使用者ID", "type": "uuid" },
+        "username": { "zh": "帳號", "type": "string" },
+        "password": { "zh": "密碼", "type": "string" },
         "name": { "zh": "姓名", "type": "string" },
         "email": { "zh": "電子郵件", "type": "string" },
-        "role": { "zh": "角色", "type": "enum", "values": ["ADMIN", "COACH", "ANALYST"] },
+        "role": { "zh": "角色", "type": "enum", "values": ["ADMIN", "COACH", "ANALYST", "OPERATOR"] },
         "status": { "zh": "狀態", "type": "enum", "values": ["ACTIVE", "INACTIVE"] }
+      }
+    },
+    "Session": {
+      "zh": "登入階段",
+      "en": "Session",
+      "table": "sessions",
+      "primaryKey": "session_id",
+      "fields": {
+        "sessionId": { "zh": "階段ID", "type": "uuid" },
+        "userId": { "zh": "使用者ID", "type": "uuid", "foreignKey": "User" },
+        "token": { "zh": "存取權杖", "type": "string" },
+        "expiresAt": { "zh": "過期時間", "type": "timestamp" },
+        "createdAt": { "zh": "建立時間", "type": "timestamp" }
       }
     },
     "Team": {
@@ -58,10 +73,12 @@
       "fields": {
         "trainingId": { "zh": "訓練ID", "type": "uuid" },
         "teamId": { "zh": "球隊ID", "type": "uuid", "foreignKey": "Team" },
-        "name": { "zh": "訓練名稱", "type": "string" },
-        "startTime": { "zh": "開始時間", "type": "timestamp" },
-        "endTime": { "zh": "結束時間", "type": "timestamp" },
-        "status": { "zh": "狀態", "type": "enum", "values": ["SCHEDULED", "IN_PROGRESS", "COMPLETED", "CANCELLED"] }
+        "playerId": { "zh": "受測選手ID", "type": "uuid", "foreignKey": "Player" },
+        "date": { "zh": "訓練日期", "type": "date" },
+        "strikeZoneHeight": { "zh": "好球帶身高", "type": "integer", "unit": "cm" },
+        "status": { "zh": "狀態", "type": "enum", "values": ["CREATED", "RECORDING", "COMPLETED", "DELETED"] },
+        "createdAt": { "zh": "建立時間", "type": "timestamp" },
+        "updatedAt": { "zh": "更新時間", "type": "timestamp" }
       }
     },
     "Pitch": {
@@ -72,11 +89,68 @@
       "fields": {
         "pitchId": { "zh": "投球ID", "type": "uuid" },
         "trainingId": { "zh": "訓練ID", "type": "uuid", "foreignKey": "Training" },
-        "pitcherId": { "zh": "投手ID", "type": "uuid", "foreignKey": "Player" },
-        "batterId": { "zh": "打者ID", "type": "uuid", "foreignKey": "Player" },
-        "pitchType": { "zh": "球種", "type": "enum", "values": ["FASTBALL", "CURVEBALL", "SLIDER", "CHANGEUP", "CUTTER"] },
+        "pitchNumber": { "zh": "投球序號", "type": "integer" },
+        "pitchType": { "zh": "球種", "type": "enum", "values": ["FASTBALL", "CURVEBALL", "SLIDER", "CHANGEUP", "CUTTER", "SINKER", "KNUCKLEBALL"] },
         "speed": { "zh": "球速", "type": "decimal", "unit": "km/h" },
+        "spinRate": { "zh": "轉速", "type": "integer", "unit": "rpm" },
+        "locationX": { "zh": "落點X座標", "type": "decimal" },
+        "locationY": { "zh": "落點Y座標", "type": "decimal" },
+        "isStrike": { "zh": "是否好球", "type": "boolean" },
         "timestamp": { "zh": "時間戳記", "type": "timestamp" }
+      }
+    },
+    "StrikeZone": {
+      "zh": "好球帶",
+      "en": "StrikeZone",
+      "table": "strike_zones",
+      "primaryKey": "strike_zone_id",
+      "fields": {
+        "strikeZoneId": { "zh": "好球帶ID", "type": "uuid" },
+        "trainingId": { "zh": "訓練ID", "type": "uuid", "foreignKey": "Training" },
+        "topBoundary": { "zh": "上邊界", "type": "decimal" },
+        "bottomBoundary": { "zh": "下邊界", "type": "decimal" },
+        "leftBoundary": { "zh": "左邊界", "type": "decimal" },
+        "rightBoundary": { "zh": "右邊界", "type": "decimal" }
+      }
+    },
+    "AISystem": {
+      "zh": "AI系統",
+      "en": "AISystem",
+      "table": null,
+      "primaryKey": null,
+      "fields": {
+        "status": { "zh": "系統狀態", "type": "enum", "values": ["OFFLINE", "STARTING", "RUNNING", "STOPPING", "ERROR"] },
+        "trainingId": { "zh": "綁定訓練ID", "type": "uuid", "foreignKey": "Training" }
+      }
+    },
+    "PlayerStats": {
+      "zh": "選手統計",
+      "en": "PlayerStats",
+      "table": "player_stats",
+      "primaryKey": "stats_id",
+      "fields": {
+        "statsId": { "zh": "統計ID", "type": "uuid" },
+        "playerId": { "zh": "選手ID", "type": "uuid", "foreignKey": "Player" },
+        "month": { "zh": "統計月份", "type": "string" },
+        "avgSpeed": { "zh": "平均球速", "type": "decimal" },
+        "avgSpinRate": { "zh": "平均轉速", "type": "decimal" },
+        "strikeRate": { "zh": "好球率", "type": "decimal" },
+        "totalPitches": { "zh": "總投球數", "type": "integer" }
+      }
+    },
+    "Video": {
+      "zh": "影片",
+      "en": "Video",
+      "table": "videos",
+      "primaryKey": "video_id",
+      "fields": {
+        "videoId": { "zh": "影片ID", "type": "uuid" },
+        "trainingId": { "zh": "訓練ID", "type": "uuid", "foreignKey": "Training" },
+        "pitchId": { "zh": "投球ID", "type": "uuid", "foreignKey": "Pitch" },
+        "angle": { "zh": "拍攝角度", "type": "enum", "values": ["FRONT", "SIDE", "TOP"] },
+        "videoUrl": { "zh": "影片URL", "type": "string" },
+        "hlsUrl": { "zh": "HLS串流URL", "type": "string" },
+        "type": { "zh": "類型", "type": "enum", "values": ["LIVE", "REPLAY"] }
       }
     }
   },
@@ -86,38 +160,56 @@
     "create": { "zh": "建立", "stepPattern": "建立{entity}" },
     "update": { "zh": "編輯", "stepPattern": "編輯{entity}" },
     "delete": { "zh": "刪除", "stepPattern": "刪除{entity}" },
+    "batchDelete": { "zh": "批次刪除", "stepPattern": "批次刪除{entity}" },
     "select": { "zh": "選擇", "stepPattern": "選擇{entity}" },
     "login": { "zh": "登入", "stepPattern": "登入系統" },
     "logout": { "zh": "登出", "stepPattern": "登出系統" },
-    "start": { "zh": "開始", "stepPattern": "開始{entity}" },
-    "stop": { "zh": "停止", "stepPattern": "停止{entity}" }
+    "start": { "zh": "啟動", "stepPattern": "啟動{entity}" },
+    "stop": { "zh": "關閉", "stepPattern": "關閉{entity}" },
+    "enter": { "zh": "進入", "stepPattern": "進入{entity}" },
+    "exit": { "zh": "退出", "stepPattern": "退出{entity}" },
+    "play": { "zh": "播放", "stepPattern": "播放{entity}" },
+    "pause": { "zh": "暫停", "stepPattern": "暫停{entity}" },
+    "switch": { "zh": "切換", "stepPattern": "切換{entity}" },
+    "adjust": { "zh": "調整", "stepPattern": "調整{entity}" }
   },
   "roles": {
     "ADMIN": { "zh": "系統管理者", "permissions": ["*"] },
-    "COACH": { "zh": "教練", "permissions": ["team:read", "team:write", "player:*", "training:*"] },
-    "ANALYST": { "zh": "數據分析師", "permissions": ["team:read", "player:read", "training:read", "analysis:*"] }
+    "COACH": { "zh": "教練", "permissions": ["team:*", "player:*", "training:*", "analysis:read"] },
+    "ANALYST": { "zh": "分析使用者", "permissions": ["training:read", "analysis:*"] },
+    "OPERATOR": { "zh": "場邊操作人員", "permissions": ["training:read", "video:*"] }
   },
   "status": {
     "ACTIVE": { "zh": "啟用" },
     "INACTIVE": { "zh": "停用" },
-    "SCHEDULED": { "zh": "已排程" },
-    "IN_PROGRESS": { "zh": "進行中" },
+    "CREATED": { "zh": "已建立" },
+    "RECORDING": { "zh": "記錄中" },
     "COMPLETED": { "zh": "已完成" },
-    "CANCELLED": { "zh": "已取消" }
+    "DELETED": { "zh": "已刪除" },
+    "OFFLINE": { "zh": "離線" },
+    "STARTING": { "zh": "啟動中" },
+    "RUNNING": { "zh": "運行中" },
+    "STOPPING": { "zh": "關閉中" },
+    "ERROR": { "zh": "錯誤" }
   },
   "errorCodes": {
     "UNAUTHORIZED": { "zh": "未授權的操作", "httpStatus": 401 },
+    "INVALID_CREDENTIALS": { "zh": "帳號或密碼錯誤", "httpStatus": 401 },
+    "SESSION_EXPIRED": { "zh": "登入階段已過期", "httpStatus": 401 },
     "FORBIDDEN": { "zh": "權限不足", "httpStatus": 403 },
     "NOT_FOUND": { "zh": "找不到資源", "httpStatus": 404 },
     "CONFLICT": { "zh": "資料衝突", "httpStatus": 409 },
+    "USER_NOT_FOUND": { "zh": "找不到指定的使用者", "httpStatus": 404 },
     "TEAM_NOT_FOUND": { "zh": "找不到指定的球隊", "httpStatus": 404 },
     "TEAM_NAME_DUPLICATE": { "zh": "球隊名稱已被使用", "httpStatus": 409 },
     "PLAYER_NOT_FOUND": { "zh": "找不到指定的球員", "httpStatus": 404 },
     "JERSEY_NUMBER_DUPLICATE": { "zh": "背號已被使用", "httpStatus": 409 },
     "TRAINING_NOT_FOUND": { "zh": "找不到指定的訓練", "httpStatus": 404 },
-    "TRAINING_ALREADY_STARTED": { "zh": "訓練已經開始", "httpStatus": 409 },
-    "TRAINING_NOT_STARTED": { "zh": "訓練尚未開始", "httpStatus": 409 },
-    "INVALID_CREDENTIALS": { "zh": "帳號或密碼錯誤", "httpStatus": 401 },
-    "SESSION_EXPIRED": { "zh": "登入階段已過期", "httpStatus": 401 }
+    "TRAINING_HAS_PITCHES": { "zh": "訓練已有投球紀錄", "httpStatus": 409 },
+    "AI_SYSTEM_ALREADY_RUNNING": { "zh": "AI系統已在運行中", "httpStatus": 409 },
+    "AI_SYSTEM_NOT_RUNNING": { "zh": "AI系統尚未啟動", "httpStatus": 409 },
+    "AI_SYSTEM_ERROR": { "zh": "AI系統錯誤", "httpStatus": 500 },
+    "VIDEO_NOT_FOUND": { "zh": "找不到指定的影片", "httpStatus": 404 },
+    "STREAM_NOT_AVAILABLE": { "zh": "串流暫時無法使用", "httpStatus": 503 }
   }
 }

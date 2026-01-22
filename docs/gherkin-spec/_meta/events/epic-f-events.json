@@ -1,0 +1,52 @@
+{
+  "_meta": {
+    "version": "1.0",
+    "generatedAt": "2026-01-22T16:30:00Z",
+    "epic": "F",
+    "epicName": "選手分析（長期表現追蹤）"
+  },
+  "domainEvents": [
+    {
+      "eventId": "E-F001",
+      "eventName": "PlayerRecordsBatchDeleted",
+      "description": "選手紀錄已批次刪除",
+      "source": "Actor",
+      "entity": "PlayerStats",
+      "data": {
+        "required": [
+          { "field": "playerIds", "type": "uuid[]", "description": "刪除的選手 ID 列表" },
+          { "field": "deletedCount", "type": "integer", "description": "刪除數量" },
+          { "field": "deletedAt", "type": "timestamp", "description": "刪除時間" }
+        ],
+        "optional": []
+      },
+      "relatedUserStory": "F1"
+    },
+    {
+      "eventId": "E-F002",
+      "eventName": "PlayerStatsViewed",
+      "description": "已檢視選手統計明細",
+      "source": "Actor",
+      "entity": "PlayerStats",
+      "data": {
+        "required": [
+          { "field": "playerId", "type": "uuid", "description": "選手 ID" },
+          { "field": "month", "type": "string", "description": "查看月份" },
+          { "field": "viewedAt", "type": "timestamp", "description": "檢視時間" }
+        ],
+        "optional": []
+      },
+      "relatedUserStory": "F2"
+    }
+  ],
+  "summary": {
+    "totalEvents": 2,
+    "byEntity": {
+      "PlayerStats": 2
+    },
+    "bySource": {
+      "Actor": 2,
+      "System": 0
+    }
+  }
+}
