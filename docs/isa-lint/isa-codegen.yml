@@ -1,0 +1,153 @@
+components:
+  configs:
+    # 共用的 entity/DDL 配置
+    entity_db_config:
+      entity_mapping_path: spec/data/entity_to_table_mapping.yml
+      sql_ddl_path: spec/data/schema.sql
+
+    # 變數系統 step type 檢查（不允許變數捕獲）
+    var_no_capture:
+      allow_var_capture: false
+
+  linters:
+    # Entity Mapping Linter（驗證 entity 對應）
+    entity_mapping_linter:
+      python_plugin_path: ../../../src/isa_linters/plugins/extensions/entity_validate/entity_mapping_linter.py
+      config:
+        $ref: '#/components/configs/entity_db_config'
+
+    # DB Columns Linter（驗證 DB 欄位）
+    db_columns_linter:
+      python_plugin_path: ../../../src/isa_linters/plugins/extensions/entity_validate/db_columns_linter.py
+      config:
+        $ref: '#/components/configs/entity_db_config'
+
+    # 變數系統 Step Type Linter（禁止變數捕獲）
+    var_step_type_no_capture:
+      python_plugin_path: ../../../src/isa_linters/plugins/default/cas_syntax/var_system_step_type_linter.py
+      config:
+        $ref: '#/components/configs/var_no_capture'
+
+    # CAS Syntax Linter
+    cas_syntax_linter:
+      python_plugin_path: ../../../src/isa_linters/plugins/default/cas_syntax/cas_syntax_linter.py
+
+  executors:
+    # Skip executor（不產生程式碼）
+    skip_executor:
+      type: skip
+
+    # Database validation executor
+    db_validation_executor:
+      type: plugin
+      plugin_python_path: ../../../src/features/executors/java/backend/validator/codegen/candidates/springjpa_pojo/executor.py
+
+    # Database non-existence validation executor
+    db_non_existence_executor:
+      type: plugin
+      plugin_python_path: ../../../src/features/executors/java/backend/validator/codegen/candidates/springjpa_pojo_non_existence/executor.py
+
+policies:
+  filter:
+    rules:
+      - name: Process incomplete steps only
+        type: plugin
+        rule:
+          plugin_python_path: ../../../src/features/rules/java/should_process_step.py
+          output_dir: src/test/java
+          app_pkg_path: org.waterballagent.agentHR
+          stepdef_pkg_path: stepdefs
+
+instructions:
+
+  - name: Time control
+    format: ^現在的時間是 "@time\(\\"([^"]+)\\"\)"$
+    step_type: Given
+    executor:
+      $ref: '#/components/executors/skip_executor'
+    situation: to set the current time for the test
+
+  - name: Data preparation
+    format: ^準備一個(?P<entity>[\u4e00-\u9fffa-zA-Z0-9_]+), with table:$
+    step_type: Given
+    executor:
+      $ref: '#/components/executors/skip_executor'
+    linters:
+      - $ref: '#/components/linters/entity_mapping_linter'
+    subpackage: given
+    situation: to prepare test data in the database with the given entity and properties
+
+  - name: API call
+    format: ^\((?:No Actor|UID="\$(?P<userId>[\w.]+)")\) (?P<summary>.+?), call table:$
+    step_type: When
+    executor:
+      type: plugin
+      plugin_python_path: ../../../src/features/executors/java/backend/api_call/codegen/candidates/mockmvc_openapi/executor.py
+    linters:
+      - python_plugin_path: ../../../src/isa_linters/plugins/extensions/api_call/api_call_linter.py
+        config:
+          api_spec_path: spec/api
+    subpackage: when
+    situation: to invoke the API endpoint with authentication and given parameters
+
+  - name: Response validation
+    format: ^回應, with table:$
+    step_type: Then
+    executor:
+      $ref: '#/components/executors/skip_executor'
+    linters:
+      - python_plugin_path: ../../../src/isa_linters/plugins/extensions/response_validation/response_validation_linter.py
+        config:
+          api_spec_path: spec/api/api-spec.yml
+      - $ref: '#/components/linters/cas_syntax_linter'
+    subpackage: then
+    situation: to validate the HTTP response body with the given parameters
+
+  - name: Response validation with JSON
+    format: ^回應為, with JSON:$
+    step_type: Then
+    executor:
+      $ref: '#/components/executors/skip_executor'
+    situation: to validate the HTTP response body contains the JSON structure
+
+  - name: Database validation
+    format: ^應該存在一個(?P<entity>[\u4e00-\u9fffa-zA-Z0-9_]+), with table:$
+    step_type: Then
+    constraints:
+      - <entity> must be a valid entity defined in entity_to_table_mapping.yml
+      - the entity's properties defined in the DataTable must match the SQL DDL schema
+      - DataTable headers must use camelCase (converted from snake_case in SQL DDL)
+      - First data row: primary key for search, other fields for value validation
+      - Subsequent rows: constraint assertions (&constraint) for additional validations
+    executor:
+      $ref: '#/components/executors/db_validation_executor'
+    linters:
+      - $ref: '#/components/linters/entity_mapping_linter'
+      - $ref: '#/components/linters/db_columns_linter'
+      - $ref: '#/components/linters/var_step_type_no_capture'
+    subpackage: then
+    situation: to validate the entity in the database matches the expected properties and constraints
+
+  - name: Database non-existence validation
+    format: ^應該不存在一個(?P<entity>[\u4e00-\u9fffa-zA-Z0-9_]+), with table:$
+    step_type: Then
+    constraints:
+      - <entity> must be a valid entity defined in entity_to_table_mapping.yml
+      - the entity's properties defined in the DataTable must match the SQL DDL schema
+      - DataTable headers must use camelCase (converted from snake_case in SQL DDL)
+      - DataTable should contain primary key or unique identifiers to search for the entity
+    executor:
+      $ref: '#/components/executors/db_non_existence_executor'
+    linters:
+      - $ref: '#/components/linters/db_columns_linter'
+      - $ref: '#/components/linters/var_step_type_no_capture'
+    subpackage: then
+    situation: to validate that the entity does not exist in the database
+
+  - name: Operation failure
+    format: ^操作失敗$
+    step_type: Then
+    executor:
+      $ref: '#/components/executors/skip_executor'
+    subpackage: then
+    situation: to validate that the API call returned a 4xx error status

@@ -1,0 +1,156 @@
+{
+  "_meta": {
+    "version": "1.0",
+    "generatedAt": "2026-01-22T10:00:00Z",
+    "epic": "B",
+    "epicName": "球隊/球員資料管理"
+  },
+  "domainEvents": [
+    {
+      "eventId": "E-B001",
+      "eventName": "TeamCreated",
+      "description": "新球隊已建立",
+      "source": "Actor",
+      "entity": "Team",
+      "data": {
+        "required": [
+          { "field": "teamId", "type": "uuid", "description": "球隊 ID" },
+          { "field": "teamName", "type": "string", "description": "球隊名稱" },
+          { "field": "createdAt", "type": "timestamp", "description": "建立時間" },
+          { "field": "createdBy", "type": "uuid", "description": "建立者 ID" }
+        ],
+        "optional": []
+      },
+      "relatedUserStory": "B2"
+    },
+    {
+      "eventId": "E-B002",
+      "eventName": "TeamUpdated",
+      "description": "球隊資料已更新",
+      "source": "Actor",
+      "entity": "Team",
+      "data": {
+        "required": [
+          { "field": "teamId", "type": "uuid", "description": "球隊 ID" },
+          { "field": "updatedAt", "type": "timestamp", "description": "更新時間" },
+          { "field": "updatedBy", "type": "uuid", "description": "更新者 ID" }
+        ],
+        "optional": [
+          { "field": "teamName", "type": "string", "description": "球隊名稱" }
+        ]
+      },
+      "relatedUserStory": "B2"
+    },
+    {
+      "eventId": "E-B003",
+      "eventName": "TeamDeleted",
+      "description": "球隊已刪除",
+      "source": "Actor",
+      "entity": "Team",
+      "data": {
+        "required": [
+          { "field": "teamId", "type": "uuid", "description": "球隊 ID" },
+          { "field": "deletedAt", "type": "timestamp", "description": "刪除時間" },
+          { "field": "deletedBy", "type": "uuid", "description": "刪除者 ID" }
+        ],
+        "optional": []
+      },
+      "relatedUserStory": "B2"
+    },
+    {
+      "eventId": "E-B004",
+      "eventName": "TeamSelected",
+      "description": "已選擇球隊",
+      "source": "Actor",
+      "entity": "Team",
+      "data": {
+        "required": [
+          { "field": "teamId", "type": "uuid", "description": "球隊 ID" },
+          { "field": "selectedBy", "type": "uuid", "description": "選擇者 ID" },
+          { "field": "selectedAt", "type": "timestamp", "description": "選擇時間" }
+        ],
+        "optional": []
+      },
+      "relatedUserStory": "B1"
+    },
+    {
+      "eventId": "E-B005",
+      "eventName": "PlayerCreated",
+      "description": "新球員已建立",
+      "source": "Actor",
+      "entity": "Player",
+      "data": {
+        "required": [
+          { "field": "playerId", "type": "uuid", "description": "球員 ID" },
+          { "field": "teamId", "type": "uuid", "description": "所屬球隊 ID" },
+          { "field": "jerseyNumber", "type": "integer", "description": "背號" },
+          { "field": "name", "type": "string", "description": "姓名" },
+          { "field": "position", "type": "string", "description": "守備位置" }
+        ],
+        "optional": [
+          { "field": "height", "type": "integer", "description": "身高(cm)" },
+          { "field": "weight", "type": "integer", "description": "體重(kg)" }
+        ]
+      },
+      "relatedUserStory": "B3"
+    },
+    {
+      "eventId": "E-B006",
+      "eventName": "PlayerUpdated",
+      "description": "球員資料已更新",
+      "source": "Actor",
+      "entity": "Player",
+      "data": {
+        "required": [
+          { "field": "playerId", "type": "uuid", "description": "球員 ID" },
+          { "field": "updatedAt", "type": "timestamp", "description": "更新時間" }
+        ],
+        "optional": []
+      },
+      "relatedUserStory": "B3"
+    },
+    {
+      "eventId": "E-B007",
+      "eventName": "PlayerDeleted",
+      "description": "球員已刪除",
+      "source": "Actor",
+      "entity": "Player",
+      "data": {
+        "required": [
+          { "field": "playerId", "type": "uuid", "description": "球員 ID" },
+          { "field": "deletedAt", "type": "timestamp", "description": "刪除時間" }
+        ],
+        "optional": []
+      },
+      "relatedUserStory": "B3"
+    },
+    {
+      "eventId": "E-B008",
+      "eventName": "PlayerOrderChanged",
+      "description": "球員排序已變更",
+      "source": "Actor",
+      "entity": "Player",
+      "data": {
+        "required": [
+          { "field": "playerId", "type": "uuid", "description": "球員 ID" },
+          { "field": "teamId", "type": "uuid", "description": "球隊 ID" },
+          { "field": "oldOrder", "type": "integer", "description": "原排序" },
+          { "field": "newOrder", "type": "integer", "description": "新排序" }
+        ],
+        "optional": []
+      },
+      "relatedUserStory": "B4"
+    }
+  ],
+  "summary": {
+    "totalEvents": 8,
+    "byEntity": {
+      "Team": 4,
+      "Player": 4
+    },
+    "bySource": {
+      "Actor": 8,
+      "System": 0
+    }
+  }
+}

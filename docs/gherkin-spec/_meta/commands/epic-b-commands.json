@@ -1,0 +1,271 @@
+{
+  "_meta": {
+    "version": "1.0",
+    "generatedAt": "2026-01-22T10:00:00Z",
+    "epic": "B",
+    "epicName": "球隊/球員資料管理"
+  },
+  "commands": [
+    {
+      "commandId": "C-B001",
+      "commandName": "QueryTeamList",
+      "description": "查詢球隊列表",
+      "type": "Query",
+      "actor": ["ADMIN", "COACH"],
+      "entity": "Team",
+      "relatedUserStory": "B1",
+      "input": {
+        "required": [],
+        "optional": [
+          { "field": "status", "type": "enum", "values": ["ACTIVE", "INACTIVE"], "default": "ACTIVE" }
+        ]
+      },
+      "output": {
+        "type": "TeamListResult",
+        "fields": [
+          { "field": "teams", "type": "Team[]" },
+          { "field": "totalCount", "type": "integer" }
+        ]
+      },
+      "producedEvents": []
+    },
+    {
+      "commandId": "C-B002",
+      "commandName": "SelectTeam",
+      "description": "選擇球隊",
+      "type": "Command",
+      "actor": ["ADMIN", "COACH"],
+      "entity": "Team",
+      "relatedUserStory": "B1",
+      "input": {
+        "required": [
+          { "field": "teamId", "type": "uuid" }
+        ],
+        "optional": []
+      },
+      "output": {
+        "type": "Team",
+        "fields": [
+          { "field": "teamId", "type": "uuid" },
+          { "field": "teamName", "type": "string" }
+        ]
+      },
+      "producedEvents": ["E-B004"],
+      "preconditions": [
+        { "rule": "球隊必須存在", "errorCode": "TEAM_NOT_FOUND" }
+      ]
+    },
+    {
+      "commandId": "C-B003",
+      "commandName": "CreateTeam",
+      "description": "建立球隊",
+      "type": "Command",
+      "actor": ["ADMIN", "COACH"],
+      "entity": "Team",
+      "relatedUserStory": "B2",
+      "input": {
+        "required": [
+          { "field": "teamName", "type": "string", "validation": "2-50 字元" }
+        ],
+        "optional": []
+      },
+      "output": {
+        "type": "Team",
+        "fields": [
+          { "field": "teamId", "type": "uuid" },
+          { "field": "teamName", "type": "string" }
+        ]
+      },
+      "producedEvents": ["E-B001"],
+      "preconditions": [
+        { "rule": "球隊名稱不可重複", "errorCode": "TEAM_NAME_DUPLICATE" }
+      ]
+    },
+    {
+      "commandId": "C-B004",
+      "commandName": "UpdateTeam",
+      "description": "編輯球隊",
+      "type": "Command",
+      "actor": ["ADMIN", "COACH"],
+      "entity": "Team",
+      "relatedUserStory": "B2",
+      "input": {
+        "required": [
+          { "field": "teamId", "type": "uuid" }
+        ],
+        "optional": [
+          { "field": "teamName", "type": "string" }
+        ]
+      },
+      "output": null,
+      "producedEvents": ["E-B002"],
+      "preconditions": [
+        { "rule": "球隊必須存在", "errorCode": "TEAM_NOT_FOUND" },
+        { "rule": "新名稱不可與其他球隊重複", "errorCode": "TEAM_NAME_DUPLICATE" }
+      ]
+    },
+    {
+      "commandId": "C-B005",
+      "commandName": "DeleteTeam",
+      "description": "刪除球隊",
+      "type": "Command",
+      "actor": ["ADMIN"],
+      "entity": "Team",
+      "relatedUserStory": "B2",
+      "input": {
+        "required": [
+          { "field": "teamId", "type": "uuid" }
+        ],
+        "optional": []
+      },
+      "output": null,
+      "producedEvents": ["E-B003"],
+      "preconditions": [
+        { "rule": "球隊必須存在", "errorCode": "TEAM_NOT_FOUND" },
+        { "rule": "球隊不可有球員", "errorCode": "TEAM_HAS_PLAYERS" }
+      ]
+    },
+    {
+      "commandId": "C-B006",
+      "commandName": "QueryPlayerList",
+      "description": "查詢球員列表",
+      "type": "Query",
+      "actor": ["ADMIN", "COACH"],
+      "entity": "Player",
+      "relatedUserStory": "B3",
+      "input": {
+        "required": [
+          { "field": "teamId", "type": "uuid" }
+        ],
+        "optional": []
+      },
+      "output": {
+        "type": "PlayerListResult",
+        "fields": [
+          { "field": "players", "type": "Player[]" },
+          { "field": "totalCount", "type": "integer" }
+        ]
+      },
+      "producedEvents": [],
+      "preconditions": [
+        { "rule": "球隊必須存在", "errorCode": "TEAM_NOT_FOUND" }
+      ]
+    },
+    {
+      "commandId": "C-B007",
+      "commandName": "CreatePlayer",
+      "description": "建立球員",
+      "type": "Command",
+      "actor": ["ADMIN", "COACH"],
+      "entity": "Player",
+      "relatedUserStory": "B3",
+      "input": {
+        "required": [
+          { "field": "teamId", "type": "uuid" },
+          { "field": "jerseyNumber", "type": "integer", "validation": "0-99" },
+          { "field": "name", "type": "string" },
+          { "field": "position", "type": "enum" }
+        ],
+        "optional": [
+          { "field": "height", "type": "integer" },
+          { "field": "weight", "type": "integer" }
+        ]
+      },
+      "output": {
+        "type": "Player",
+        "fields": [
+          { "field": "playerId", "type": "uuid" }
+        ]
+      },
+      "producedEvents": ["E-B005"],
+      "preconditions": [
+        { "rule": "球隊必須存在", "errorCode": "TEAM_NOT_FOUND" },
+        { "rule": "同隊背號不可重複", "errorCode": "JERSEY_NUMBER_DUPLICATE" }
+      ]
+    },
+    {
+      "commandId": "C-B008",
+      "commandName": "UpdatePlayer",
+      "description": "編輯球員",
+      "type": "Command",
+      "actor": ["ADMIN", "COACH"],
+      "entity": "Player",
+      "relatedUserStory": "B3",
+      "input": {
+        "required": [
+          { "field": "playerId", "type": "uuid" }
+        ],
+        "optional": [
+          { "field": "jerseyNumber", "type": "integer" },
+          { "field": "name", "type": "string" },
+          { "field": "position", "type": "enum" },
+          { "field": "height", "type": "integer" },
+          { "field": "weight", "type": "integer" }
+        ]
+      },
+      "output": null,
+      "producedEvents": ["E-B006"],
+      "preconditions": [
+        { "rule": "球員必須存在", "errorCode": "PLAYER_NOT_FOUND" },
+        { "rule": "新背號不可與同隊其他球員重複", "errorCode": "JERSEY_NUMBER_DUPLICATE" }
+      ]
+    },
+    {
+      "commandId": "C-B009",
+      "commandName": "DeletePlayer",
+      "description": "刪除球員",
+      "type": "Command",
+      "actor": ["ADMIN", "COACH"],
+      "entity": "Player",
+      "relatedUserStory": "B3",
+      "input": {
+        "required": [
+          { "field": "playerId", "type": "uuid" }
+        ],
+        "optional": []
+      },
+      "output": null,
+      "producedEvents": ["E-B007"],
+      "preconditions": [
+        { "rule": "球員必須存在", "errorCode": "PLAYER_NOT_FOUND" }
+      ]
+    },
+    {
+      "commandId": "C-B010",
+      "commandName": "UpdatePlayerOrder",
+      "description": "調整球員排序",
+      "type": "Command",
+      "actor": ["ADMIN", "COACH"],
+      "entity": "Player",
+      "relatedUserStory": "B4",
+      "input": {
+        "required": [
+          { "field": "teamId", "type": "uuid" },
+          { "field": "playerOrders", "type": "array", "items": { "playerId": "uuid", "sortOrder": "integer" } }
+        ],
+        "optional": []
+      },
+      "output": null,
+      "producedEvents": ["E-B008"],
+      "preconditions": [
+        { "rule": "球隊必須存在", "errorCode": "TEAM_NOT_FOUND" },
+        { "rule": "所有球員必須存在", "errorCode": "PLAYER_NOT_FOUND" }
+      ]
+    }
+  ],
+  "commandEventMapping": [
+    { "command": "C-B002", "events": ["E-B004"], "relation": "1:1" },
+    { "command": "C-B003", "events": ["E-B001"], "relation": "1:1" },
+    { "command": "C-B004", "events": ["E-B002"], "relation": "1:1" },
+    { "command": "C-B005", "events": ["E-B003"], "relation": "1:1" },
+    { "command": "C-B007", "events": ["E-B005"], "relation": "1:1" },
+    { "command": "C-B008", "events": ["E-B006"], "relation": "1:1" },
+    { "command": "C-B009", "events": ["E-B007"], "relation": "1:1" },
+    { "command": "C-B010", "events": ["E-B008"], "relation": "1:N" }
+  ],
+  "summary": {
+    "totalCommands": 10,
+    "queries": 2,
+    "commands": 8
+  }
+}

@@ -1,0 +1,123 @@
+{
+  "_meta": {
+    "version": "1.0",
+    "lastUpdated": "2026-01-22",
+    "source": "docs/user-stories/user-v1.md"
+  },
+  "entities": {
+    "User": {
+      "zh": "使用者",
+      "en": "User",
+      "table": "users",
+      "primaryKey": "user_id",
+      "fields": {
+        "userId": { "zh": "使用者ID", "type": "uuid" },
+        "name": { "zh": "姓名", "type": "string" },
+        "email": { "zh": "電子郵件", "type": "string" },
+        "role": { "zh": "角色", "type": "enum", "values": ["ADMIN", "COACH", "ANALYST"] },
+        "status": { "zh": "狀態", "type": "enum", "values": ["ACTIVE", "INACTIVE"] }
+      }
+    },
+    "Team": {
+      "zh": "球隊",
+      "en": "Team",
+      "table": "teams",
+      "primaryKey": "team_id",
+      "fields": {
+        "teamId": { "zh": "球隊ID", "type": "uuid" },
+        "teamName": { "zh": "球隊名稱", "type": "string" },
+        "status": { "zh": "狀態", "type": "enum", "values": ["ACTIVE", "INACTIVE"] },
+        "createdAt": { "zh": "建立時間", "type": "timestamp" },
+        "updatedAt": { "zh": "更新時間", "type": "timestamp" }
+      }
+    },
+    "Player": {
+      "zh": "球員",
+      "en": "Player",
+      "table": "players",
+      "primaryKey": "player_id",
+      "fields": {
+        "playerId": { "zh": "球員ID", "type": "uuid" },
+        "teamId": { "zh": "所屬球隊ID", "type": "uuid", "foreignKey": "Team" },
+        "jerseyNumber": { "zh": "背號", "type": "integer", "range": [0, 99] },
+        "name": { "zh": "姓名", "type": "string" },
+        "position": { "zh": "守備位置", "type": "enum", "values": ["P", "C", "1B", "2B", "3B", "SS", "LF", "CF", "RF", "DH"] },
+        "height": { "zh": "身高", "type": "integer", "unit": "cm" },
+        "weight": { "zh": "體重", "type": "integer", "unit": "kg" },
+        "throwingHand": { "zh": "投球慣用手", "type": "enum", "values": ["L", "R"] },
+        "battingHand": { "zh": "打擊慣用手", "type": "enum", "values": ["L", "R", "S"] },
+        "sortOrder": { "zh": "排序順序", "type": "integer" },
+        "status": { "zh": "狀態", "type": "enum", "values": ["ACTIVE", "INACTIVE"] }
+      }
+    },
+    "Training": {
+      "zh": "訓練",
+      "en": "Training",
+      "table": "trainings",
+      "primaryKey": "training_id",
+      "fields": {
+        "trainingId": { "zh": "訓練ID", "type": "uuid" },
+        "teamId": { "zh": "球隊ID", "type": "uuid", "foreignKey": "Team" },
+        "name": { "zh": "訓練名稱", "type": "string" },
+        "startTime": { "zh": "開始時間", "type": "timestamp" },
+        "endTime": { "zh": "結束時間", "type": "timestamp" },
+        "status": { "zh": "狀態", "type": "enum", "values": ["SCHEDULED", "IN_PROGRESS", "COMPLETED", "CANCELLED"] }
+      }
+    },
+    "Pitch": {
+      "zh": "投球",
+      "en": "Pitch",
+      "table": "pitches",
+      "primaryKey": "pitch_id",
+      "fields": {
+        "pitchId": { "zh": "投球ID", "type": "uuid" },
+        "trainingId": { "zh": "訓練ID", "type": "uuid", "foreignKey": "Training" },
+        "pitcherId": { "zh": "投手ID", "type": "uuid", "foreignKey": "Player" },
+        "batterId": { "zh": "打者ID", "type": "uuid", "foreignKey": "Player" },
+        "pitchType": { "zh": "球種", "type": "enum", "values": ["FASTBALL", "CURVEBALL", "SLIDER", "CHANGEUP", "CUTTER"] },
+        "speed": { "zh": "球速", "type": "decimal", "unit": "km/h" },
+        "timestamp": { "zh": "時間戳記", "type": "timestamp" }
+      }
+    }
+  },
+  "actions": {
+    "query": { "zh": "查詢", "stepPattern": "查詢{entity}列表" },
+    "get": { "zh": "取得", "stepPattern": "取得{entity}" },
+    "create": { "zh": "建立", "stepPattern": "建立{entity}" },
+    "update": { "zh": "編輯", "stepPattern": "編輯{entity}" },
+    "delete": { "zh": "刪除", "stepPattern": "刪除{entity}" },
+    "select": { "zh": "選擇", "stepPattern": "選擇{entity}" },
+    "login": { "zh": "登入", "stepPattern": "登入系統" },
+    "logout": { "zh": "登出", "stepPattern": "登出系統" },
+    "start": { "zh": "開始", "stepPattern": "開始{entity}" },
+    "stop": { "zh": "停止", "stepPattern": "停止{entity}" }
+  },
+  "roles": {
+    "ADMIN": { "zh": "系統管理者", "permissions": ["*"] },
+    "COACH": { "zh": "教練", "permissions": ["team:read", "team:write", "player:*", "training:*"] },
+    "ANALYST": { "zh": "數據分析師", "permissions": ["team:read", "player:read", "training:read", "analysis:*"] }
+  },
+  "status": {
+    "ACTIVE": { "zh": "啟用" },
+    "INACTIVE": { "zh": "停用" },
+    "SCHEDULED": { "zh": "已排程" },
+    "IN_PROGRESS": { "zh": "進行中" },
+    "COMPLETED": { "zh": "已完成" },
+    "CANCELLED": { "zh": "已取消" }
+  },
+  "errorCodes": {
+    "UNAUTHORIZED": { "zh": "未授權的操作", "httpStatus": 401 },
+    "FORBIDDEN": { "zh": "權限不足", "httpStatus": 403 },
+    "NOT_FOUND": { "zh": "找不到資源", "httpStatus": 404 },
+    "CONFLICT": { "zh": "資料衝突", "httpStatus": 409 },
+    "TEAM_NOT_FOUND": { "zh": "找不到指定的球隊", "httpStatus": 404 },
+    "TEAM_NAME_DUPLICATE": { "zh": "球隊名稱已被使用", "httpStatus": 409 },
+    "PLAYER_NOT_FOUND": { "zh": "找不到指定的球員", "httpStatus": 404 },
+    "JERSEY_NUMBER_DUPLICATE": { "zh": "背號已被使用", "httpStatus": 409 },
+    "TRAINING_NOT_FOUND": { "zh": "找不到指定的訓練", "httpStatus": 404 },
+    "TRAINING_ALREADY_STARTED": { "zh": "訓練已經開始", "httpStatus": 409 },
+    "TRAINING_NOT_STARTED": { "zh": "訓練尚未開始", "httpStatus": 409 },
+    "INVALID_CREDENTIALS": { "zh": "帳號或密碼錯誤", "httpStatus": 401 },
+    "SESSION_EXPIRED": { "zh": "登入階段已過期", "httpStatus": 401 }
+  }
+}

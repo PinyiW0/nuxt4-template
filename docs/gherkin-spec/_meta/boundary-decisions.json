@@ -1,0 +1,70 @@
+{
+  "_meta": {
+    "epic": "B",
+    "epicName": "球隊/球員資料管理",
+    "confirmedAt": "2026-01-22T10:00:00Z",
+    "source": "docs/user-stories/us-teamAndPlayer.md"
+  },
+  "decisions": [
+    {
+      "questionId": "Q1",
+      "entity": "Player",
+      "field": "jerseyNumber",
+      "type": "uniqueness",
+      "question": "背號唯一性範圍",
+      "answer": "A",
+      "decision": "同一球隊內唯一",
+      "description": "不同球隊可以有相同背號",
+      "appliedTo": ["us-b3-player-crud.feature"]
+    },
+    {
+      "questionId": "Q2",
+      "entity": ["Team", "Player"],
+      "field": "status",
+      "type": "delete_strategy",
+      "question": "刪除方式",
+      "answer": "A",
+      "decision": "軟刪除",
+      "description": "標記 status 為 DELETED，保留歷史紀錄",
+      "appliedTo": ["us-b2-team-crud.feature", "us-b3-player-crud.feature"]
+    },
+    {
+      "questionId": "Q3",
+      "entity": "Team",
+      "field": null,
+      "type": "cascade_behavior",
+      "question": "刪除球隊時球員處理方式",
+      "answer": "B",
+      "decision": "級聯刪除",
+      "description": "刪除球隊時一併刪除所有球員",
+      "appliedTo": ["us-b2-team-crud.feature"]
+    },
+    {
+      "questionId": "Q4",
+      "entity": "Team",
+      "field": "teamName",
+      "type": "identifier_rules",
+      "question": "球隊名稱大小寫比對",
+      "answer": "A",
+      "decision": "不區分大小寫",
+      "description": "\"TeamA\" 和 \"teama\" 視為相同",
+      "appliedTo": ["us-b2-team-crud.feature"]
+    },
+    {
+      "questionId": "Q5",
+      "entity": "Player",
+      "field": "sortOrder",
+      "type": "defaults",
+      "question": "新建球員預設排序",
+      "answer": "C",
+      "decision": "手動指定",
+      "description": "新增時必須指定排序",
+      "appliedTo": ["us-b3-player-crud.feature", "us-b4-player-order.feature"]
+    }
+  ],
+  "summary": {
+    "totalQuestions": 5,
+    "customDecisions": 2,
+    "notes": "Q3 選擇級聯刪除而非禁止刪除，Q5 選擇手動指定而非自動遞增"
+  }
+}

@@ -1,0 +1,97 @@
+{
+  "_meta": {
+    "version": "1.0",
+    "generatedAt": "2026-01-22T10:00:00Z",
+    "sourceFile": "docs/user-stories/us-teamAndPlayer.md"
+  },
+  "product": {
+    "name": "棒球訓練數據分析系統",
+    "background": "球隊和球員資料管理模組",
+    "goals": [
+      "管理球隊資料",
+      "管理球員名單",
+      "支援球員排序調整"
+    ],
+    "nonGoals": []
+  },
+  "roles": [
+    {
+      "roleId": "ADMIN",
+      "roleName": "系統管理者",
+      "description": "具有完整系統管理權限",
+      "permissions": ["*"]
+    },
+    {
+      "roleId": "COACH",
+      "roleName": "教練",
+      "description": "管理球隊和球員資料",
+      "permissions": ["team:*", "player:*"]
+    }
+  ],
+  "epics": [
+    {
+      "epicId": "B",
+      "epicName": "球隊/球員資料管理",
+      "description": "球隊和球員的 CRUD 操作",
+      "priority": "高",
+      "userStories": [
+        {
+          "storyId": "B1",
+          "title": "球隊列表查詢與選擇",
+          "asA": "管理者/教練",
+          "iWant": "查詢並選擇球隊",
+          "soThat": "管理該隊球員",
+          "acceptanceCriteria": [
+            "可以查詢所有球隊列表",
+            "可以選擇特定球隊",
+            "選擇後顯示該球隊資訊"
+          ]
+        },
+        {
+          "storyId": "B2",
+          "title": "球隊維護（建立/編輯/刪除）",
+          "asA": "管理者/教練",
+          "iWant": "維護球隊資料",
+          "soThat": "確保名單正確",
+          "acceptanceCriteria": [
+            "可以建立新球隊",
+            "可以編輯球隊名稱",
+            "可以刪除球隊"
+          ]
+        },
+        {
+          "storyId": "B3",
+          "title": "球員維護（列表/新增/編輯/刪除）",
+          "asA": "管理者/教練",
+          "iWant": "維護球員名單（背號、姓名、身高、守備位置）",
+          "soThat": "用於訓練與分析",
+          "acceptanceCriteria": [
+            "可以查詢球員列表",
+            "可以新增球員（背號、姓名、守備位置）",
+            "可以編輯球員資料",
+            "可以刪除球員"
+          ]
+        },
+        {
+          "storyId": "B4",
+          "title": "球員排序調整",
+          "asA": "管理者/教練",
+          "iWant": "調整球員排序",
+          "soThat": "符合教練習慣或出賽順序",
+          "acceptanceCriteria": [
+            "可以拖曳調整球員順序",
+            "排序變更後自動儲存"
+          ]
+        }
+      ]
+    }
+  ],
+  "flows": [
+    {
+      "flowId": "F1",
+      "flowName": "球隊球員管理流程",
+      "description": "選擇球隊後管理球員",
+      "steps": ["查詢球隊列表", "選擇球隊", "管理球員", "調整排序"]
+    }
+  ]
+}
