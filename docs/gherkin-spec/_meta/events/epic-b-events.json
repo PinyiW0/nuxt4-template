@@ -1,0 +1,117 @@
+{
+  "_meta": {
+    "version": "1.0",
+    "epic": "B",
+    "epicName": "球隊/球員資料管理",
+    "generatedAt": "2026-01-23T10:00:00Z"
+  },
+  "domainEvents": [
+    {
+      "eventId": "E-B001",
+      "eventName": "TeamCreated",
+      "zh": "球隊已建立",
+      "trigger": "教練成功建立新球隊",
+      "payload": {
+        "teamId": "uuid",
+        "teamName": "string",
+        "createdAt": "timestamp",
+        "createdBy": "uuid"
+      },
+      "relatedStories": ["B2"]
+    },
+    {
+      "eventId": "E-B002",
+      "eventName": "TeamUpdated",
+      "zh": "球隊已更新",
+      "trigger": "教練成功編輯球隊資料",
+      "payload": {
+        "teamId": "uuid",
+        "teamName": "string",
+        "updatedAt": "timestamp",
+        "updatedBy": "uuid"
+      },
+      "relatedStories": ["B2"]
+    },
+    {
+      "eventId": "E-B003",
+      "eventName": "TeamDeleted",
+      "zh": "球隊已刪除",
+      "trigger": "教練成功刪除球隊（含級聯刪除球員）",
+      "payload": {
+        "teamId": "uuid",
+        "deletedPlayerCount": "integer",
+        "deletedAt": "timestamp",
+        "deletedBy": "uuid"
+      },
+      "relatedStories": ["B2"]
+    },
+    {
+      "eventId": "E-B004",
+      "eventName": "TeamSelected",
+      "zh": "球隊已選擇",
+      "trigger": "教練選擇特定球隊",
+      "payload": {
+        "teamId": "uuid",
+        "selectedAt": "timestamp",
+        "selectedBy": "uuid"
+      },
+      "relatedStories": ["B1"]
+    },
+    {
+      "eventId": "E-B005",
+      "eventName": "PlayerCreated",
+      "zh": "球員已建立",
+      "trigger": "教練成功新增球員",
+      "payload": {
+        "playerId": "uuid",
+        "teamId": "uuid",
+        "name": "string",
+        "jerseyNumber": "integer",
+        "position": "string",
+        "height": "integer",
+        "sortOrder": "integer",
+        "createdAt": "timestamp"
+      },
+      "relatedStories": ["B3"]
+    },
+    {
+      "eventId": "E-B006",
+      "eventName": "PlayerUpdated",
+      "zh": "球員已更新",
+      "trigger": "教練成功編輯球員資料",
+      "payload": {
+        "playerId": "uuid",
+        "name": "string",
+        "jerseyNumber": "integer",
+        "position": "string",
+        "height": "integer",
+        "updatedAt": "timestamp"
+      },
+      "relatedStories": ["B3"]
+    },
+    {
+      "eventId": "E-B007",
+      "eventName": "PlayerDeleted",
+      "zh": "球員已刪除",
+      "trigger": "教練成功刪除球員",
+      "payload": {
+        "playerId": "uuid",
+        "teamId": "uuid",
+        "deletedAt": "timestamp"
+      },
+      "relatedStories": ["B3"]
+    },
+    {
+      "eventId": "E-B008",
+      "eventName": "PlayersReordered",
+      "zh": "球員排序已調整",
+      "trigger": "教練調整球員排序",
+      "payload": {
+        "teamId": "uuid",
+        "playerOrders": "array[{playerId, sortOrder}]",
+        "reorderedAt": "timestamp"
+      },
+      "relatedStories": ["B4"]
+    }
+  ]
+}

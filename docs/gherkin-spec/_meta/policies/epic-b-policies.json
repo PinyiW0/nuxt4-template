@@ -1,0 +1,60 @@
+{
+  "_meta": {
+    "version": "1.0",
+    "epic": "B",
+    "epicName": "球隊/球員資料管理",
+    "generatedAt": "2026-01-23T10:00:00Z"
+  },
+  "policies": [
+    {
+      "policyId": "P-B001",
+      "policyName": "UniqueTeamName",
+      "zh": "球隊名稱唯一性",
+      "trigger": "CreateTeam, UpdateTeam",
+      "rules": [
+        "球隊名稱不可為空",
+        "球隊名稱不可與現有球隊重複（不區分大小寫）"
+      ],
+      "onSuccess": "允許建立/更新球隊",
+      "onFailure": "回傳「球隊名稱已被使用」錯誤",
+      "boundaryDecisions": ["GD-005"]
+    },
+    {
+      "policyId": "P-B002",
+      "policyName": "CascadeDeleteTeam",
+      "zh": "球隊級聯刪除",
+      "trigger": "DeleteTeam",
+      "rules": [
+        "刪除球隊前必須確認",
+        "確認後刪除球隊及其下所有球員"
+      ],
+      "onSuccess": "刪除球隊和所有球員",
+      "onFailure": "若未確認則不刪除",
+      "boundaryDecisions": ["GD-001", "GD-002", "GD-003"]
+    },
+    {
+      "policyId": "P-B003",
+      "policyName": "UniqueJerseyNumber",
+      "zh": "背號唯一性",
+      "trigger": "CreatePlayer, UpdatePlayer",
+      "rules": [
+        "背號在同一球隊內必須唯一",
+        "背號範圍必須在 0-99 之間"
+      ],
+      "onSuccess": "允許建立/更新球員",
+      "onFailure": "回傳「背號已被使用」或「背號必須在 0-99 之間」錯誤",
+      "boundaryDecisions": ["Q1"]
+    },
+    {
+      "policyId": "P-B004",
+      "policyName": "PlayerBelongsToTeam",
+      "zh": "球員歸屬驗證",
+      "trigger": "ReorderPlayers",
+      "rules": [
+        "所有要調整排序的球員必須屬於指定球隊"
+      ],
+      "onSuccess": "允許調整排序",
+      "onFailure": "回傳「球員不屬於此球隊」錯誤"
+    }
+  ]
+}

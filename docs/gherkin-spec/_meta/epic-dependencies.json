@@ -1,0 +1,168 @@
+{
+  "_meta": {
+    "version": "1.0",
+    "generatedAt": "2026-01-23T10:00:00Z",
+    "sourceFile": "docs/gherkin-spec/_meta/prd-structure.json"
+  },
+  "dependencies": {
+    "A": {
+      "epicId": "A",
+      "epicName": "登入/登出與權限控管",
+      "dependsOn": [],
+      "priority": 1,
+      "reason": "所有功能的基礎，必須最先處理。無認證則無法使用任何功能"
+    },
+    "B": {
+      "epicId": "B",
+      "epicName": "球隊/球員資料管理",
+      "dependsOn": ["A"],
+      "priority": 2,
+      "reason": "需要登入才能操作。訓練功能需要球隊/球員資料作為前置條件"
+    },
+    "C": {
+      "epicId": "C",
+      "epicName": "訓練建立與 AI 系統控制",
+      "dependsOn": ["A", "B"],
+      "priority": 3,
+      "reason": "需要選擇球隊和球員才能建立訓練。是 Epic D/E 的前置條件"
+    },
+    "D": {
+      "epicId": "D",
+      "epicName": "訓練紀錄頁（即時投球檢視）",
+      "dependsOn": ["A", "B", "C"],
+      "priority": 4,
+      "reason": "需要有訓練資料才能進入紀錄頁。依賴 AI 系統產生投球數據"
+    },
+    "E": {
+      "epicId": "E",
+      "epicName": "影像數據分析（歷史訓練）",
+      "dependsOn": ["A", "B", "C"],
+      "priority": 4,
+      "reason": "需要歷史訓練資料才能進行分析。與 Epic D 同優先級可並行"
+    },
+    "F": {
+      "epicId": "F",
+      "epicName": "選手分析（長期表現追蹤）",
+      "dependsOn": ["A", "B", "C", "D"],
+      "priority": 5,
+      "reason": "需要累積投球數據才能產生選手統計。依賴 Epic D 的投球資料"
+    },
+    "G": {
+      "epicId": "G",
+      "epicName": "影像播放（Live / Replay）",
+      "dependsOn": ["A", "C"],
+      "priority": 4,
+      "reason": "直播需要 AI 系統運作中。回放需要訓練產生的影像資料"
+    }
+  },
+  "processingOrder": [
+    {
+      "order": 1,
+      "epicId": "A",
+      "epicName": "登入/登出與權限控管",
+      "priority": "必要"
+    },
+    {
+      "order": 2,
+      "epicId": "B",
+      "epicName": "球隊/球員資料管理",
+      "priority": "高"
+    },
+    {
+      "order": 3,
+      "epicId": "C",
+      "epicName": "訓練建立與 AI 系統控制",
+      "priority": "高"
+    },
+    {
+      "order": 4,
+      "epicId": "D",
+      "epicName": "訓練紀錄頁（即時投球檢視）",
+      "priority": "高"
+    },
+    {
+      "order": 5,
+      "epicId": "E",
+      "epicName": "影像數據分析（歷史訓練）",
+      "priority": "中"
+    },
+    {
+      "order": 6,
+      "epicId": "F",
+      "epicName": "選手分析（長期表現追蹤）",
+      "priority": "中"
+    },
+    {
+      "order": 7,
+      "epicId": "G",
+      "epicName": "影像播放（Live / Replay）",
+      "priority": "中"
+    }
+  ],
+  "sharedEntities": [
+    {
+      "entity": "User",
+      "usedByEpics": ["A", "B", "C", "D", "E", "F", "G"],
+      "description": "所有功能都需要識別當前使用者"
+    },
+    {
+      "entity": "Team",
+      "usedByEpics": ["B", "C", "D", "E", "F"],
+      "description": "球隊是訓練和分析的核心組織單位"
+    },
+    {
+      "entity": "Player",
+      "usedByEpics": ["B", "C", "D", "E", "F"],
+      "description": "球員是訓練的受測對象和分析的主體"
+    },
+    {
+      "entity": "Training",
+      "usedByEpics": ["C", "D", "E"],
+      "description": "訓練是投球數據的容器"
+    },
+    {
+      "entity": "Pitch",
+      "usedByEpics": ["D", "E", "F"],
+      "description": "投球是數據分析的基本單位"
+    }
+  ],
+  "riskAssessment": [
+    {
+      "risk": "Epic A 未完成會阻塞所有其他 Epic",
+      "mitigation": "優先處理 Epic A，確保認證機制可用",
+      "severity": "高"
+    },
+    {
+      "risk": "Epic B 未完成會阻塞 C/D/E/F",
+      "mitigation": "Epic A 完成後立即處理 Epic B",
+      "severity": "高"
+    },
+    {
+      "risk": "AI 系統整合可能有技術風險",
+      "mitigation": "Epic C 階段預留整合時間，考慮 Mock 替代方案",
+      "severity": "中"
+    },
+    {
+      "risk": "即時投球數據同步可能有延遲",
+      "mitigation": "Epic D 需考慮 Polling 或 WebSocket 方案",
+      "severity": "中"
+    }
+  ],
+  "dependencyGraph": {
+    "ascii": [
+      "A ─────────┬───────────────────────────┐",
+      "           │                           │",
+      "           V                           │",
+      "B ─────────┬───────────────────────────┤",
+      "           │                           │",
+      "           V                           V",
+      "C ─────────┼─────────> D             G",
+      "           │           │",
+      "           │           V",
+      "           └─────────> E",
+      "                       │",
+      "                       V",
+      "                       F"
+    ]
+  }
+}

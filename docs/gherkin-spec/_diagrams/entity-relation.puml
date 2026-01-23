@@ -1,0 +1,96 @@
+@startuml entity-relation
+!theme plain
+title Entity 關係圖
+
+entity "User\n使用者" as user {
+  * userId : uuid
+  --
+  * username : string
+  * name : string
+  * role : enum
+  * status : enum
+}
+
+entity "Team\n球隊" as team {
+  * teamId : uuid
+  --
+  * teamName : string
+  * status : enum
+}
+
+entity "Player\n球員" as player {
+  * playerId : uuid
+  --
+  * teamId : uuid <<FK>>
+  * jerseyNumber : integer
+  * name : string
+  * height : integer
+  * position : enum
+  * sortOrder : integer
+  * status : enum
+}
+
+entity "Training\n訓練" as training {
+  * trainingId : uuid
+  --
+  * teamId : uuid <<FK>>
+  * playerId : uuid <<FK>>
+  * trainingDate : date
+  * strikeZoneTop : decimal
+  * strikeZoneBottom : decimal
+  * status : enum
+}
+
+entity "Pitch\n投球" as pitch {
+  * pitchId : uuid
+  --
+  * trainingId : uuid <<FK>>
+  * speed : decimal
+  * spinRate : integer
+  * isStrike : boolean
+  * positionX : decimal
+  * positionY : decimal
+  * trajectory : json
+  * createdAt : timestamp
+}
+
+entity "PlayerStats\n選手統計" as stats {
+  * statsId : uuid
+  --
+  * playerId : uuid <<FK>>
+  * month : string
+  * avgSpeed : decimal
+  * avgSpinRate : integer
+  * strikeRate : decimal
+  * totalPitches : integer
+}
+
+user ||--o{ team : creates
+team ||--o{ player : contains
+team ||--o{ training : has
+
+player ||--o{ training : participates
+training ||--o{ pitch : contains
+player ||--o{ stats : analyzed
+
+note right of team
+  **刪除策略**: 硬刪除
+  **級聯**: 刪除所有球員
+  **名稱**: 不區分大小寫
+end note
+
+note right of player
+  **背號唯一性**: 同一球隊內
+  **刪除策略**: 級聯刪除
+end note
+
+note right of training
+  **刪除策略**: 硬刪除
+  **級聯**: 刪除所有投球
+end note
+
+note right of pitch
+  **刪除策略**: 隨訓練刪除
+end note
+
+@enduml

@@ -1,0 +1,43 @@
+@startuml epic-c-command-event
+!theme plain
+title Epic C: 訓練建立與 AI 系統控制 - Command-Event 對應
+
+left to right direction
+
+package "Training Commands" {
+  usecase "CreateTraining\n建立訓練" as C1
+  usecase "DeleteTraining\n刪除訓練" as C2
+}
+
+package "AI Commands" {
+  usecase "StartAISystem\n啟動 AI 系統" as C3
+  usecase "StopAISystem\n關閉 AI 系統" as C4
+}
+
+package "Training Events" {
+  usecase "TrainingCreated\n訓練已建立" as E1
+  usecase "TrainingDeleted\n訓練已刪除" as E2
+}
+
+package "AI Events" {
+  usecase "AISystemStarted\nAI 系統已啟動" as E3
+  usecase "AISystemStopped\nAI 系統已關閉" as E4
+}
+
+C1 --> E1
+C2 --> E2
+C3 --> E3
+C4 --> E4
+
+note bottom of E2
+  **硬刪除**:
+  刪除訓練時一併刪除
+  所有投球資料
+end note
+
+note bottom of E3
+  **前置條件**:
+  AI 系統未運作中
+end note
+
+@enduml

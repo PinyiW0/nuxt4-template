@@ -1,0 +1,34 @@
+@startuml epic-e-command-event
+!theme plain
+title Epic E: 影像數據分析（歷史訓練） - Command-Event 對應
+
+left to right direction
+
+package "Commands" {
+  usecase "SwitchAnalysisTab\n切換分析分頁" as C1
+  usecase "BatchDeleteTrainings\n批次刪除訓練" as C2
+}
+
+package "Events" {
+  usecase "AnalysisTabSwitched\n分析分頁已切換" as E1
+  usecase "TrainingsBatchDeleted\n訓練已批次刪除" as E2
+}
+
+C1 --> E1
+C2 --> E2
+
+note right of E1
+  **分頁類型**:
+  - training-records
+    (訓練記錄查詢)
+  - player-records
+    (選手紀錄查詢)
+end note
+
+note right of E2
+  **批次刪除**:
+  可同時刪除多筆訓練
+  及其投球資料
+end note
+
+@enduml

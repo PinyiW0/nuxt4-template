@@ -1,0 +1,63 @@
+{
+  "_meta": {
+    "version": "1.0",
+    "epic": "D",
+    "epicName": "訓練紀錄頁（即時投球檢視）",
+    "generatedAt": "2026-01-23T10:00:00Z"
+  },
+  "domainEvents": [
+    {
+      "eventId": "E-D001",
+      "eventName": "TrainingRecordEntered",
+      "zh": "已進入訓練紀錄模式",
+      "trigger": "教練進入訓練紀錄頁",
+      "payload": {
+        "trainingId": "uuid",
+        "enteredAt": "timestamp"
+      },
+      "relatedStories": ["D1"]
+    },
+    {
+      "eventId": "E-D002",
+      "eventName": "TrainingRecordExited",
+      "zh": "已退出訓練紀錄模式",
+      "trigger": "教練退出訓練紀錄頁",
+      "payload": {
+        "trainingId": "uuid",
+        "exitedAt": "timestamp"
+      },
+      "relatedStories": ["D1"]
+    },
+    {
+      "eventId": "E-D003",
+      "eventName": "PitchRecorded",
+      "zh": "投球已記錄",
+      "trigger": "AI 系統偵測到新投球",
+      "payload": {
+        "pitchId": "uuid",
+        "trainingId": "uuid",
+        "speed": "decimal",
+        "spinRate": "integer",
+        "isStrike": "boolean",
+        "positionX": "decimal",
+        "positionY": "decimal",
+        "trajectory": "json",
+        "recordedAt": "timestamp"
+      },
+      "relatedStories": ["D2"]
+    },
+    {
+      "eventId": "E-D004",
+      "eventName": "StrikeZoneAdjusted",
+      "zh": "好球帶已調整",
+      "trigger": "教練調整好球帶參數",
+      "payload": {
+        "trainingId": "uuid",
+        "top": "decimal",
+        "bottom": "decimal",
+        "adjustedAt": "timestamp"
+      },
+      "relatedStories": ["D4"]
+    }
+  ]
+}

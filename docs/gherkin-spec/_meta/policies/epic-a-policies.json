@@ -1,0 +1,36 @@
+{
+  "_meta": {
+    "version": "1.0",
+    "epic": "A",
+    "epicName": "登入/登出與權限控管",
+    "generatedAt": "2026-01-23T10:00:00Z"
+  },
+  "policies": [
+    {
+      "policyId": "P-A001",
+      "policyName": "ValidateCredentials",
+      "zh": "驗證帳號密碼",
+      "trigger": "Login command",
+      "rules": [
+        "帳號不可為空",
+        "密碼不可為空",
+        "帳號必須存在於系統中",
+        "密碼必須正確"
+      ],
+      "onSuccess": "發出 UserLoggedIn 事件",
+      "onFailure": "發出 UserLoginFailed 事件，回傳錯誤訊息"
+    },
+    {
+      "policyId": "P-A002",
+      "policyName": "RequireAuthentication",
+      "zh": "需要認證",
+      "trigger": "任何需要登入的操作",
+      "rules": [
+        "請求必須包含有效的 access token",
+        "token 必須未過期"
+      ],
+      "onSuccess": "允許執行操作",
+      "onFailure": "回傳 401 未授權錯誤"
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+@startuml epic-f-command-event
+!theme plain
+title Epic F: 選手分析（長期表現追蹤） - Command-Event 對應
+
+left to right direction
+
+package "Commands" {
+  usecase "BatchDeletePlayerRecords\n批次刪除選手紀錄" as C1
+}
+
+package "Events" {
+  usecase "PlayerRecordsBatchDeleted\n選手紀錄已批次刪除" as E1
+}
+
+C1 --> E1
+
+note right of E1
+  **刪除範圍**:
+  刪除選手的分析紀錄
+  (PlayerStats)
+end note
+
+note bottom
+  **主要為查詢功能**:
+  - QueryPlayerRecords
+    (查詢選手紀錄)
+  - GetPlayerStats
+    (取得選手統計明細)
+end note
+
+@enduml

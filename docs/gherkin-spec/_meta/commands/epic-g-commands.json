@@ -1,0 +1,62 @@
+{
+  "_meta": {
+    "version": "1.0",
+    "epic": "G",
+    "epicName": "影像播放（Live / Replay）",
+    "generatedAt": "2026-01-23T10:00:00Z"
+  },
+  "commands": [
+    {
+      "commandId": "C-G001",
+      "commandName": "PlayLiveStream",
+      "zh": "播放直播",
+      "actor": "場邊操作人員",
+      "input": {
+        "streamUrl": { "type": "string", "required": true }
+      },
+      "preconditions": [
+        "使用者已登入",
+        "直播串流可用"
+      ],
+      "postconditions": [
+        "開始播放直播"
+      ],
+      "emits": ["E-G001"],
+      "relatedStories": ["G1"]
+    },
+    {
+      "commandId": "C-G002",
+      "commandName": "PauseLiveStream",
+      "zh": "暫停直播",
+      "actor": "場邊操作人員",
+      "input": {},
+      "preconditions": [
+        "直播正在播放中"
+      ],
+      "postconditions": [
+        "直播暫停"
+      ],
+      "emits": ["E-G002"],
+      "relatedStories": ["G1"]
+    },
+    {
+      "commandId": "C-G003",
+      "commandName": "PlayDualReplay",
+      "zh": "播放雙畫面回放",
+      "actor": "分析使用者",
+      "input": {
+        "videoUrl1": { "type": "string", "required": true },
+        "videoUrl2": { "type": "string", "required": true }
+      },
+      "preconditions": [
+        "使用者已登入",
+        "回放影片可用"
+      ],
+      "postconditions": [
+        "雙畫面同步播放"
+      ],
+      "emits": ["E-G003", "E-G004"],
+      "relatedStories": ["G2"]
+    }
+  ]
+}

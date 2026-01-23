@@ -1,0 +1,55 @@
+@startuml epic-b-command-event
+!theme plain
+title Epic B: 球隊/球員資料管理 - Command-Event 對應
+
+left to right direction
+
+package "Team Commands" {
+  usecase "CreateTeam\n建立球隊" as C1
+  usecase "UpdateTeam\n編輯球隊" as C2
+  usecase "DeleteTeam\n刪除球隊" as C3
+  usecase "SelectTeam\n選擇球隊" as C4
+}
+
+package "Player Commands" {
+  usecase "CreatePlayer\n新增球員" as C5
+  usecase "UpdatePlayer\n編輯球員" as C6
+  usecase "DeletePlayer\n刪除球員" as C7
+  usecase "ReorderPlayers\n調整球員排序" as C8
+}
+
+package "Team Events" {
+  usecase "TeamCreated\n球隊已建立" as E1
+  usecase "TeamUpdated\n球隊已更新" as E2
+  usecase "TeamDeleted\n球隊已刪除" as E3
+  usecase "TeamSelected\n球隊已選擇" as E4
+}
+
+package "Player Events" {
+  usecase "PlayerCreated\n球員已建立" as E5
+  usecase "PlayerUpdated\n球員已更新" as E6
+  usecase "PlayerDeleted\n球員已刪除" as E7
+  usecase "PlayersReordered\n球員排序已調整" as E8
+}
+
+C1 --> E1
+C2 --> E2
+C3 --> E3
+C4 --> E4
+C5 --> E5
+C6 --> E6
+C7 --> E7
+C8 --> E8
+
+note bottom of E3
+  **級聯刪除**:
+  刪除球隊時一併刪除
+  所有球員 (需確認)
+end note
+
+note bottom of E5
+  **背號唯一性**:
+  同一球隊內唯一
+end note
+
+@enduml

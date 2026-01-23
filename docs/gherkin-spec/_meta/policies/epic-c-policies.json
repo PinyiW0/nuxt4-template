@@ -1,0 +1,36 @@
+{
+  "_meta": {
+    "version": "1.0",
+    "epic": "C",
+    "epicName": "訓練建立與 AI 系統控制",
+    "generatedAt": "2026-01-23T10:00:00Z"
+  },
+  "policies": [
+    {
+      "policyId": "P-C001",
+      "policyName": "ValidateTrainingCreation",
+      "zh": "訓練建立驗證",
+      "trigger": "CreateTraining",
+      "rules": [
+        "訓練日期為必填",
+        "受測球員為必填",
+        "球隊必須存在",
+        "球員必須存在且屬於該球隊"
+      ],
+      "onSuccess": "允許建立訓練",
+      "onFailure": "回傳對應的錯誤訊息"
+    },
+    {
+      "policyId": "P-C002",
+      "policyName": "AISystemStateCheck",
+      "zh": "AI 系統狀態檢查",
+      "trigger": "StartAISystem, StopAISystem",
+      "rules": [
+        "啟動時：AI 系統必須未運作中",
+        "關閉時：AI 系統必須運作中"
+      ],
+      "onSuccess": "允許變更狀態",
+      "onFailure": "回傳「AI 系統已在運作中」或「AI 系統未運作」錯誤"
+    }
+  ]
+}

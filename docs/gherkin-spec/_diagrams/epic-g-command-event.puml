@@ -1,0 +1,42 @@
+@startuml epic-g-command-event
+!theme plain
+title Epic G: 影像播放（Live / Replay） - Command-Event 對應
+
+left to right direction
+
+package "Live Stream Commands" {
+  usecase "PlayLiveStream\n播放直播" as C1
+  usecase "PauseLiveStream\n暫停直播" as C2
+}
+
+package "Replay Commands" {
+  usecase "PlayDualReplay\n播放雙畫面回放" as C3
+}
+
+package "Live Stream Events" {
+  usecase "LiveStreamStarted\n直播串流已開始" as E1
+  usecase "LiveStreamPaused\n直播串流已暫停" as E2
+}
+
+package "Replay Events" {
+  usecase "ReplayStarted\n回放已開始" as E3
+  usecase "ReplaySynced\n回放已同步" as E4
+}
+
+C1 --> E1
+C2 --> E2
+C3 --> E3
+C3 --> E4
+
+note right of E1
+  **HLS 串流**:
+  播放直播影像
+end note
+
+note right of E4
+  **雙畫面同步**:
+  兩個角度的影片
+  同步播放
+end note
+
+@enduml

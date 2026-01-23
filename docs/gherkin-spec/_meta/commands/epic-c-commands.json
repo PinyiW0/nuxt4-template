@@ -1,0 +1,113 @@
+{
+  "_meta": {
+    "version": "1.0",
+    "epic": "C",
+    "epicName": "訓練建立與 AI 系統控制",
+    "generatedAt": "2026-01-23T10:00:00Z"
+  },
+  "commands": [
+    {
+      "commandId": "C-C001",
+      "commandName": "CreateTraining",
+      "zh": "建立訓練",
+      "actor": "教練",
+      "input": {
+        "teamId": { "type": "uuid", "required": true },
+        "playerId": { "type": "uuid", "required": true },
+        "trainingDate": { "type": "date", "required": true },
+        "strikeZoneHeight": { "type": "decimal", "required": false }
+      },
+      "preconditions": [
+        "使用者已登入",
+        "球隊存在",
+        "球員存在且屬於該球隊"
+      ],
+      "postconditions": [
+        "訓練已建立"
+      ],
+      "emits": ["E-C001"],
+      "relatedStories": ["C2"]
+    },
+    {
+      "commandId": "C-C002",
+      "commandName": "DeleteTraining",
+      "zh": "刪除訓練",
+      "actor": "教練",
+      "input": {
+        "trainingId": { "type": "uuid", "required": true }
+      },
+      "preconditions": [
+        "使用者已登入",
+        "訓練存在"
+      ],
+      "postconditions": [
+        "訓練已刪除",
+        "所有投球資料已刪除"
+      ],
+      "emits": ["E-C002"],
+      "relatedStories": ["C3"],
+      "boundaryDecisions": ["GD-004"]
+    },
+    {
+      "commandId": "C-C003",
+      "commandName": "StartAISystem",
+      "zh": "啟動 AI 系統",
+      "actor": "教練",
+      "input": {},
+      "preconditions": [
+        "使用者已登入",
+        "AI 系統未運作中"
+      ],
+      "postconditions": [
+        "AI 系統開始運作"
+      ],
+      "emits": ["E-C003"],
+      "relatedStories": ["C4"]
+    },
+    {
+      "commandId": "C-C004",
+      "commandName": "StopAISystem",
+      "zh": "關閉 AI 系統",
+      "actor": "教練",
+      "input": {},
+      "preconditions": [
+        "使用者已登入",
+        "AI 系統運作中"
+      ],
+      "postconditions": [
+        "AI 系統停止運作"
+      ],
+      "emits": ["E-C004"],
+      "relatedStories": ["C4"]
+    }
+  ],
+  "queries": [
+    {
+      "queryId": "Q-C001",
+      "queryName": "QueryTrainings",
+      "zh": "查詢訓練列表",
+      "actor": "教練",
+      "input": {
+        "teamId": { "type": "uuid", "required": false },
+        "startDate": { "type": "date", "required": false },
+        "endDate": { "type": "date", "required": false }
+      },
+      "output": {
+        "trainings": "array[{trainingId, teamName, playerName, trainingDate}]"
+      },
+      "relatedStories": ["C1"]
+    },
+    {
+      "queryId": "Q-C002",
+      "queryName": "GetAISystemStatus",
+      "zh": "取得 AI 系統狀態",
+      "actor": "教練",
+      "input": {},
+      "output": {
+        "isRunning": "boolean",
+        "startedAt": "timestamp"
+      },
+      "relatedStories": ["C4"]
+    }
+  ]
+}
