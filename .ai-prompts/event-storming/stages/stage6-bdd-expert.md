@@ -344,6 +344,27 @@ Rule: 有球員的球隊不可刪除
 
 確認 `_meta/boundary-decisions.json` 存在且包含所需決策。
 
+### Step 1.5: 載入 Policy DSL 片段（重要）
+
+從 `_meta/policies/{epic-id}-policies.json` 載入 `dslFragments`，作為撰寫 Gherkin 的基礎：
+
+```json
+{
+  "dslFragments": {
+    "PRE-B003": {
+      "given": "系統中沒有球隊 \"{teamName}\"",
+      "errorWhen": "系統中存在球隊 \"{teamName}\"",
+      "errorThen": "應回傳錯誤 \"球隊名稱已被使用\""
+    }
+  }
+}
+```
+
+**優先使用 dslFragments**：
+- Given step 優先使用 `dslFragments[xxx].given`
+- Error scenario 優先使用 `dslFragments[xxx].errorGiven` + `errorThen`
+- 確保與 Policy Expert 產出一致
+
 ### Step 2: 從 Commands 產生 Feature 檔案
 
 每個 Command 獨立一個 Feature 檔案：
@@ -534,7 +555,13 @@ Feature: 查詢球隊列表
 ### 詞彙檢核
 - [ ] Entity 名稱與 Glossary 一致
 - [ ] Action 名稱與 Glossary 一致
-- [ ] 錯誤訊息與 Glossary 的 ErrorCode 中文描述一致
+- [ ] 錯誤訊息與 Glossary 的 `gherkinMessage` 一致
+
+### Policy 映射檢核（新增）
+- [ ] 每個 Invariant 至少對應一個 Rule
+- [ ] Given/When/Then 與 dslFragments 一致
+- [ ] appliedRules 中的 Rule 都存在於 .feature
+- [ ] 錯誤訊息與 dslFragments.errorThen 一致
 
 ### 邊界決策檢核
 - [ ] 所有邊界決策已套用至測試場景
@@ -545,6 +572,7 @@ Feature: 查詢球隊列表
 - [ ] 每個 Rule 至少一個 Happy Path
 - [ ] 每個錯誤情境有對應 Example
 - [ ] 邊界條件有對應 Example
+- [ ] 每個 User Story 驗收條件都有對應 Example
 
 ---
 

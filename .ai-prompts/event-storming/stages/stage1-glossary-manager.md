@@ -83,13 +83,62 @@
     "INACTIVE": { "zh": "停用" }
   },
   "errorCodes": {
-    "UNAUTHORIZED": { "zh": "未授權的操作", "httpStatus": 401 },
-    "FORBIDDEN": { "zh": "權限不足", "httpStatus": 403 },
-    "NOT_FOUND": { "zh": "找不到資源", "httpStatus": 404 },
-    "TEAM_NOT_FOUND": { "zh": "找不到指定的球隊", "httpStatus": 404 },
-    "TEAM_NAME_DUPLICATE": { "zh": "球隊名稱已被使用", "httpStatus": 409 },
-    "PLAYER_NOT_FOUND": { "zh": "找不到指定的球員", "httpStatus": 404 },
-    "JERSEY_NUMBER_DUPLICATE": { "zh": "背號已被使用", "httpStatus": 409 }
+    "UNAUTHORIZED": {
+      "httpStatus": 401,
+      "messages": {
+        "zh-TW": "未授權的操作",
+        "en": "Unauthorized operation"
+      },
+      "gherkinMessage": "未授權的操作"
+    },
+    "FORBIDDEN": {
+      "httpStatus": 403,
+      "messages": {
+        "zh-TW": "權限不足",
+        "en": "Permission denied"
+      },
+      "gherkinMessage": "權限不足"
+    },
+    "NOT_FOUND": {
+      "httpStatus": 404,
+      "messages": {
+        "zh-TW": "找不到資源",
+        "en": "Resource not found"
+      },
+      "gherkinMessage": "找不到資源"
+    },
+    "TEAM_NOT_FOUND": {
+      "httpStatus": 404,
+      "messages": {
+        "zh-TW": "找不到指定的球隊",
+        "en": "Team not found"
+      },
+      "gherkinMessage": "找不到指定的球隊"
+    },
+    "TEAM_NAME_DUPLICATE": {
+      "httpStatus": 409,
+      "messages": {
+        "zh-TW": "球隊名稱已被使用",
+        "en": "Team name already exists"
+      },
+      "gherkinMessage": "球隊名稱已被使用"
+    },
+    "PLAYER_NOT_FOUND": {
+      "httpStatus": 404,
+      "messages": {
+        "zh-TW": "找不到指定的球員",
+        "en": "Player not found"
+      },
+      "gherkinMessage": "找不到指定的球員"
+    },
+    "JERSEY_NUMBER_DUPLICATE": {
+      "httpStatus": 409,
+      "messages": {
+        "zh-TW": "背號已被使用",
+        "en": "Jersey number already in use"
+      },
+      "gherkinMessage": "背號已被使用"
+    }
   }
 }
 ```
@@ -122,6 +171,44 @@
 - 驗證錯誤
 - 權限錯誤
 - 業務邏輯錯誤
+
+#### ErrorCode 多語系映射結構
+
+每個 ErrorCode 應包含：
+
+```json
+{
+  "ERROR_CODE": {
+    "httpStatus": 400,
+    "messages": {
+      "zh-TW": "中文錯誤訊息",
+      "en": "English error message"
+    },
+    "gherkinMessage": "用於 Gherkin Then step 的訊息"
+  }
+}
+```
+
+| 欄位 | 說明 |
+|------|------|
+| `httpStatus` | HTTP 狀態碼 |
+| `messages` | 多語系訊息映射 |
+| `gherkinMessage` | Gherkin 中 `應回傳錯誤 "{message}"` 使用的訊息 |
+
+#### ErrorCode 一致性規則
+
+1. **Gherkin 必須使用 gherkinMessage**
+   - `Then 應回傳錯誤 "球隊名稱已被使用"` ✅
+   - `Then 應回傳錯誤 "TEAM_NAME_DUPLICATE"` ❌（除非特別要求）
+
+2. **新增 ErrorCode 時同步更新多語系**
+   - 至少提供 `zh-TW` 和 `en`
+   - gherkinMessage 預設使用 `zh-TW`
+
+3. **錯誤訊息命名規範**
+   - 使用業務語言，避免技術術語
+   - 描述「發生了什麼」而非「為什麼發生」
+   - 例：「背號已被使用」而非「違反唯一性約束」
 
 ## 新增詞彙流程
 

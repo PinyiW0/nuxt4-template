@@ -7,5 +7,8 @@ export default withNuxt(
     vue: true,
     typescript: true,
     stylistic: true,
+    ignores: [
+      '.ai-prompts/**',
+    ],
   }),
 )

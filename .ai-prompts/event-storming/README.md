@@ -1,10 +1,21 @@
-# Event Storming Workflow v6.0
+# Event Storming Workflow v7.0
 
 將 PRD 文件轉換為 **DSL-Level Gherkin** 規格（Gherkin v6.x）。
 
 ## 版本更新
 
-### v6.0 主要變更
+### v7.0 主要變更
+- **分階段邊界問題確認**：Phase 1（Entity 層級）在 Stage 2 後確認，Phase 2（Field 層級）在 Stage 5 後確認
+- **全域決策管理**：`globalDecisions` 支援跨 Epic 複用決策，避免重複確認
+- **決策樹機制**：邊界決策自動觸發後續追問（如軟刪除→是否過濾查詢）
+- **Hotspot 狀態管理**：支援 pending/resolved/ignored/escalated 狀態與回補流程
+- **測試資料一致性**：命名慣例與選用的 `test-fixtures.json`
+- **覆蓋度驗證**：自動檢查 User Story、驗收條件、ErrorCode 的覆蓋率
+- **Policy-Rule 映射**：Stage 5 預產出 DSL 片段，Stage 6 引用確保一致性
+- **ErrorCode 多語系**：支援多語系訊息與 Gherkin 專用訊息
+- **Background 使用準則**：明確定義何時使用 Background
+
+### v6.0 變更（保留）
 - **輸出層級調整**：產出 DSL-Level Gherkin，而非 ISA-Level
 - DSL-Level 使用業務友善語言，無技術語法（`$`, `>`, `<`）
 - 後續可透過專門流程轉換為 ISA-Level
@@ -57,21 +68,41 @@ for: event storming
 ```
 Stage 0: PRD 解析
     |
-Stage 1: 詞彙表建立
+Stage 1: 詞彙表建立（含 ErrorCode 多語系）
     |
 Stage 2: Epic 分析
+    |
++==========================+
+| Phase 1 邊界問題確認      |  <-- v7.0 新增：Entity 層級
+| - 刪除策略               |
+| - 級聯處理               |
+| - 名稱規則               |
+| - 建立 globalDecisions   |
++==========================+
     |
 [Per Epic Loop]
     Stage 3: Domain Events
     Stage 4: Commands
-    Stage 5: Policies
+    Stage 5: Policies（含 DSL 片段預產出）
+    |
+    +==========================+
+    | Phase 2 邊界問題確認      |  <-- Field 層級
+    | - 唯一性範圍             |
+    | - 數值範圍               |
+    | - 決策樹追問             |
+    +==========================+
+    |
+    Stage 6: Gherkin (DSL)（引用 DSL 片段）
     |
     +------------------+
-    | 邊界問題確認      |  <-- 強制步驟
-    | 必須等待使用者回答 |
+    | 覆蓋度驗證        |  <-- v7.0 新增
     +------------------+
     |
-    Stage 6: Gherkin (DSL)
++------------------+
+| 總結報告          |  <-- v7.0 新增
+| - Hotspot 狀態   |
+| - 覆蓋度摘要     |
++------------------+
     |
 Stage 7: PlantUML 視覺化（可選）
 ```
@@ -88,9 +119,9 @@ Stage 7: PlantUML 視覺化（可選）
 | 3 | Event Expert | Epic + glossary | `_meta/events/{epic}-events.json` |
 | 4 | Command Expert | Events + glossary | `_meta/commands/{epic}-commands.json` |
 | 5 | Policy Expert | Events + commands | `_meta/policies/{epic}-policies.json` |
-| - | **邊界問題確認** | 所有 meta files | `_meta/boundary-decisions.json` |
+| - | **邊界問題確認** | 所有 meta files | `_meta/boundary-decisions.json`, `_meta/hotspots.json` |
 | 6 | BDD Expert | All meta files + decisions | `.feature` files (DSL) |
-| 7 | Visualizer | All meta files | PlantUML diagrams |
+| 7 | Visualizer | All meta files | PlantUML diagrams, `_meta/terminology-mapping.md` |
 
 ---
 
@@ -113,17 +144,53 @@ Stage 7: PlantUML 視覺化（可選）
 ---
 邊界問題確認（Stage 6 前必須完成）
 
-Q1: 球員的背號唯一性範圍？
+**回答方式**：
+- 直接選擇：`Q1=A, Q2=B`
+- 追問解釋：`Q1=?` 或 `Q1=?A`（我會解釋後等你確認）
+- 自由輸入：`Q1=其他:你的描述`
+- 複選題用逗號分隔：`Q3=A,B`
+
+---
+
+Q1: 球員的背號唯一性範圍？（單選）
 - [ ] A) 在同一球隊內唯一（推薦）
 - [ ] B) 全系統唯一
 - [ ] C) 不需要唯一
+- [ ] D) 其他：_______________
 
-Q2: 刪除球隊時，其下的球員如何處理？
+Q2: 刪除球隊時，其下的球員如何處理？（單選）
 - [ ] A) 禁止刪除 - 必須先移除所有球員（推薦）
 - [ ] B) 級聯刪除 - 一併刪除所有球員
 - [ ] C) 孤立保留 - 球員保留但失去關聯
+- [ ] D) 其他：_______________
 
-請回答所有問題後繼續（例如：Q1=A, Q2=A）
+請回答所有問題後繼續。
+如需了解任何選項的詳細說明，請使用追問格式（如 `Q1=?A`）。
+---
+```
+
+### 追問互動範例
+
+```
+使用者: Q1=?A
+
+AI 回應:
+---
+**選項 A 詳細說明：在同一球隊內唯一**
+
+**這個選項代表什麼？**
+同一球隊內不能有兩個相同背號的球員，但不同球隊可以有相同背號。
+
+**選擇這個選項後的行為**：
+1. 新增球員時，系統檢查該球隊內是否已有相同背號
+2. 不同球隊的球員可以使用相同背號（如：閃電隊 1 號、雷霆隊 1 號）
+3. 球員轉隊時，若新球隊已有該背號，需要選擇新背號
+
+**範例場景**：
+- ✅ 閃電隊新增 1 號球員，雷霆隊也有 1 號球員 → 允許
+- ❌ 閃電隊已有 1 號，再新增 1 號 → 拒絕
+
+確認選擇 A 嗎？
 ---
 ```
 
@@ -135,21 +202,28 @@ Q2: 刪除球隊時，其下的球員如何處理？
 docs/gherkin-spec/
 ├── _meta/
 │   ├── prd-structure.json
-│   ├── glossary.json
+│   ├── glossary.json              <-- 含 ErrorCode 多語系映射
 │   ├── epic-dependencies.json
-│   ├── boundary-decisions.json    <-- v5.0 新增
+│   ├── boundary-decisions.json    <-- v7.0 擴充：globalDecisions + epicDecisions
+│   ├── hotspots.json              <-- v7.0 擴充：含狀態管理
+│   ├── coverage-report.json       <-- v7.0 新增：覆蓋度報告
+│   ├── test-fixtures.json         <-- v7.0 新增（可選）：測試資料參考
+│   ├── terminology-mapping.md     <-- Stage 7 產出
 │   ├── events/
 │   │   └── {epic-id}-events.json
 │   ├── commands/
 │   │   └── {epic-id}-commands.json
 │   └── policies/
-│       └── {epic-id}-policies.json
+│       └── {epic-id}-policies.json  <-- v7.0 擴充：含 appliedRules + dslFragments
 ├── epic-a/
-│   └── us-a1-xxx.feature
+│   └── {command-name}.feature
 ├── epic-b/
-│   └── us-b1-xxx.feature
+│   └── {command-name}.feature
 └── _diagrams/
-    └── {epic-id}-*.puml
+    ├── {epic-id}-event-flow.puml
+    ├── {epic-id}-command-event.puml
+    ├── {epic-id}-entity-relation.puml
+    └── hotspots.puml              <-- 若有 Hotspots
 ```
 
 ---

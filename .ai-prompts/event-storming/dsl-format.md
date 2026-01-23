@@ -122,6 +122,9 @@ Feature: {Command/Query 名稱}
   我想要 {目標}
   以便 {原因}
 
+  Background:                    # 選用，詳見下方使用準則
+    Given {所有 Example 共用的前置條件}
+
   Rule: {業務規則描述}
 
     @happy-path
@@ -136,6 +139,115 @@ Feature: {Command/Query 名稱}
       When {Actor} {執行操作}
       Then {錯誤結果}
 ```
+
+---
+
+## Background 使用準則
+
+### 何時使用 Background
+
+| 情況 | 使用 Background | 使用 Given |
+|------|-----------------|------------|
+| 所有 Example 都需要相同的前置條件 | ✅ | - |
+| 只有部分 Example 需要 | - | ✅ |
+| 前置條件涉及會變動的資料 | - | ✅ |
+| 前置條件描述「不存在」的狀態 | - | ✅ |
+
+### 適合放在 Background 的內容
+
+```gherkin
+Background:
+  # ✅ 好：所有測試都需要的基礎 Entity
+  Given 系統中存在球隊 "閃電隊"
+
+  # ✅ 好：所有測試都需要的使用者狀態
+  And 教練 已登入系統
+```
+
+### 不適合放在 Background 的內容
+
+```gherkin
+Background:
+  # ❌ 壞：「不存在」的狀態不應放在 Background
+  Given 系統中沒有球隊 "閃電隊"
+
+  # ❌ 壞：只有部分 Example 需要的資料
+  Given 球隊 "閃電隊" 有球員 "王小明"，背號 1
+
+  # ❌ 壞：會在測試中變動的資料
+  Given 球隊 "閃電隊" 狀態為 "ACTIVE"
+```
+
+### Background 範例
+
+**正確用法**：
+
+```gherkin
+@epic-b @player @command
+Feature: 建立球員
+  身為 教練
+  我想要 新增球員到球隊
+  以便 維護球員名單
+
+  Background:
+    # 所有 Example 都需要球隊存在
+    Given 系統中存在球隊 "閃電隊"
+
+  Rule: 背號在同一球隊內必須唯一
+
+    @happy-path
+    Example: 成功新增球員
+      # 不需要重複 "Given 系統中存在球隊 閃電隊"
+      When 教練 新增球員到球隊 "閃電隊"，姓名 "王小明"，背號 1，守位 "P"，排序 1
+      Then 球隊 "閃電隊" 應有球員 "王小明"
+
+    @error-handling
+    Example: 新增重複背號的球員應失敗
+      # 這個 Example 特有的前置條件放在 Given
+      Given 球隊 "閃電隊" 有球員 "王小明"，背號 1
+      When 教練 新增球員到球隊 "閃電隊"，姓名 "李小華"，背號 1，守位 "C"，排序 2
+      Then 應回傳錯誤 "背號已被使用"
+```
+
+**錯誤用法**：
+
+```gherkin
+# ❌ 錯誤：Background 放了不是所有 Example 都需要的資料
+Feature: 建立球隊
+
+  Background:
+    Given 系統中存在球隊 "閃電隊"  # 但「成功建立」需要的是「不存在」
+
+  Rule: 球隊名稱必須唯一
+
+    @happy-path
+    Example: 成功建立球隊
+      # ❌ 問題：Background 說球隊存在，但這裡需要不存在
+      Given 系統中沒有球隊 "閃電隊"  # 與 Background 矛盾
+      When 教練 建立球隊 "閃電隊"
+      Then 球隊 "閃電隊" 應該存在
+```
+
+### Background 與 Rule 的關係
+
+Background 適用於整個 Feature 的所有 Example，不能針對單一 Rule：
+
+```gherkin
+Feature: 球員管理
+
+  Background:
+    Given 系統中存在球隊 "閃電隊"  # 適用於下方所有 Rule
+
+  Rule: 背號必須唯一
+    Example: ...
+    Example: ...
+
+  Rule: 背號範圍為 0-99
+    Example: ...  # 也會套用 Background
+    Example: ...
+```
+
+如果不同 Rule 需要不同的共用前置條件，考慮拆分為多個 Feature 檔案。
 
 ---
 

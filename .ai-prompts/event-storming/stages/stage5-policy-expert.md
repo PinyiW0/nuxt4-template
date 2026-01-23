@@ -184,9 +184,117 @@
 | Postcondition (驗證) | Then {entity} "{name}" {field}應為 "{value}" |
 | Error | Then 應回傳錯誤 "{errorMessage}" |
 
+---
+
+## Policy 與 Gherkin Rule 映射
+
+### 映射原則
+
+Stage 5 產出的 Policies 和 Invariants 會映射到 Stage 6 的 Gherkin Rules：
+
+| Policy/Invariant | Gherkin |
+|------------------|---------|
+| 1 個 Invariant | 1 個 Rule |
+| 1 個 Precondition 群組 | 1 個 Rule |
+| 1 個 Validation 群組 | 1 個 Rule |
+
+### 輸出格式擴充（映射欄位）
+
+在 policies.json 中加入 `appliedRules` 欄位，明確記錄映射關係：
+
+```json
+{
+  "commandRules": [
+    {
+      "commandId": "C-B003",
+      "commandName": "CreateTeam",
+      "preconditions": [],
+      "validationRules": [],
+      "postconditions": [],
+      "appliedRules": [
+        {
+          "ruleId": "R-B003-01",
+          "ruleName": "球隊名稱必須唯一",
+          "source": ["PRE-B003", "INV-B002"],
+          "dslDescription": "Rule: 球隊名稱必須唯一（不區分大小寫）"
+        },
+        {
+          "ruleId": "R-B003-02",
+          "ruleName": "球隊名稱不可為空",
+          "source": ["VAL-B001"],
+          "dslDescription": "Rule: 球隊名稱不可為空"
+        }
+      ]
+    }
+  ],
+  "invariants": [
+    {
+      "invariantId": "INV-B001",
+      "description": "同一球隊內背號不可重複",
+      "entity": "Player",
+      "scope": "同一 teamId",
+      "field": "jerseyNumber",
+      "rule": "UNIQUE within teamId",
+      "appliedRules": [
+        {
+          "ruleId": "R-B005-01",
+          "featureFile": "create-player.feature",
+          "dslDescription": "Rule: 背號在同一球隊內必須唯一"
+        },
+        {
+          "ruleId": "R-B006-01",
+          "featureFile": "update-player.feature",
+          "dslDescription": "Rule: 更新後的背號在同一球隊內必須唯一"
+        }
+      ]
+    }
+  ]
+}
+```
+
+### DSL 片段預產出
+
+為了確保 Stage 6 BDD Expert 產出一致的 Gherkin，Policy Expert 應預產出 DSL 片段：
+
+```json
+{
+  "dslFragments": {
+    "PRE-B003": {
+      "given": "系統中沒有球隊 \"{teamName}\"",
+      "errorWhen": "系統中存在球隊 \"{teamName}\"",
+      "errorThen": "應回傳錯誤 \"球隊名稱已被使用\""
+    },
+    "POST-B001": {
+      "then": "球隊 \"{teamName}\" 應該存在"
+    },
+    "POST-B002": {
+      "then": "球隊 \"{teamName}\" 狀態應為 \"ACTIVE\""
+    },
+    "INV-B001": {
+      "happyGiven": "球隊 \"{teamName}\" 沒有背號 {jerseyNumber} 的球員",
+      "errorGiven": "球隊 \"{teamName}\" 有球員 \"{playerName}\"，背號 {jerseyNumber}",
+      "errorThen": "應回傳錯誤 \"背號已被使用\""
+    }
+  }
+}
+```
+
+### 映射一致性檢核
+
+BDD Expert 產出 Gherkin 時，應檢核：
+
+- [ ] 每個 Invariant 至少映射到一個 Rule
+- [ ] 每個 appliedRule 在對應 .feature 檔案中存在
+- [ ] dslFragments 中的 Given/When/Then 與 .feature 一致
+- [ ] ErrorCode 訊息與 Glossary 的 gherkinMessage 一致
+
+---
+
 ## 品質檢核
 
 - [ ] 所有 Command 都有前後置條件
 - [ ] ErrorCode 與 Glossary 一致
 - [ ] 驗證規則完整
 - [ ] 錯誤場景覆蓋所有 ErrorCode
+- [ ] 所有 Invariant 都有 appliedRules 映射
+- [ ] 預產出 dslFragments 供 Stage 6 使用
