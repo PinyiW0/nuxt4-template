@@ -71,7 +71,7 @@ Event Storming → DSL-Level Gherkin → ISA-Level Gherkin → Test Code → Cod
 
 ### 觸發時機與流程
 
-**Phase 1 觸發**：當完成 Stage 2（Epic Analyst）後，進入 Stage 3 之前：
+**Phase 1 觸發**：當完成 Stage 2（Feature Dependency Analyst）後，進入 Stage 3 之前：
 
 1. 掃描已識別的 Entity 清單
 2. 識別需要 Entity 層級決策的問題
@@ -271,7 +271,7 @@ Event Storming → DSL-Level Gherkin → ISA-Level Gherkin → Test Code → Cod
 ### 邊界問題確認流程（兩階段）
 
 ```
-Stage 2 完成（Epic 分析）
+Stage 2 完成（Feature 依賴分析）
     |
     V
 +----------------------------------+
@@ -706,9 +706,9 @@ Stage 6 開始
   |
   V
 +-----------------------------+
-| Stage 2: Epic 分析          |
-| 分析 Epic 依賴關係          |
-| 決定處理順序                |
+| Stage 2: Feature 依賴分析   |
+| 分析 Feature 間的依賴關係   |
+| 建立 @requires/@publishes   |
 +-----------------------------+
   |
   V
@@ -849,7 +849,7 @@ Stage 6 開始
 當 PRD 包含多個 Epic 時：
 
 ### Epic 處理順序
-1. 根據 Stage 2 分析的依賴關係決定順序
+1. 根據 Stage 2 分析的 Feature 依賴關係決定順序
 2. 被依賴的 Epic 優先處理
 3. 無依賴關係的 Epic 可並行處理
 

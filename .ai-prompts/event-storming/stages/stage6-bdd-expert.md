@@ -35,6 +35,7 @@ Event Storming → DSL-Level Gherkin → ISA-Level Gherkin → Test Code → Cod
 - Stage 5 的 policies.json
 - glossary.json
 - **boundary-decisions.json**（必須存在，否則不可開始）
+- **PRD 文件**（必須讀取角色定義章節）
 
 ## 輸出
 
@@ -64,10 +65,41 @@ Event Storming → DSL-Level Gherkin → ISA-Level Gherkin → Test Code → Cod
 | `Scenario:` | `Example:` | Example 更符合 BDD 語意 |
 | - | `Rule:` | 業務規則分組關鍵字 |
 
-### Feature 切分原則
+### Feature 切分原則（重要）
 
-- **一個 Command = 一個 Feature File**
+- **一個 Command = 一個 Feature File**（對應一個 Aggregate 操作）
 - **一個 Query = 一個 Feature File**
+
+**錯誤範例**（一個 Feature 包含多個 Command）：
+```gherkin
+# ❌ 錯誤：查詢球隊和選擇球隊是兩個不同的 Command
+Feature: 查詢球隊列表
+  Rule: 可以查詢所有球隊      # Command: QueryTeamList
+  Rule: 可以選擇特定球隊      # Command: SelectTeam ← 應獨立成 Feature
+```
+
+**正確拆分**：
+```
+us-b1-query-team-list.feature   → @publishes: 球隊列表已查詢
+us-b1-select-team.feature       → @publishes: 球隊已選擇
+```
+
+### When 語法規則（重要）
+
+| 關鍵字 | And 使用 | 原因 |
+|--------|----------|------|
+| Given  | ✅ 允許   | 前置條件可以有多個 |
+| **When** | **❌ 禁止** | **每個 Example 只有一個 Command** |
+| Then   | ✅ 允許   | 驗證結果可以有多個 |
+
+**原因**：在 DDD 中，Command 是對 Aggregate 的操作指令。每個 Example 測試一個 Command 對 Aggregate 的影響。
+
+**錯誤範例**：
+```gherkin
+# ❌ 錯誤：一個 Example 有兩個 Command
+When 教練 建立球隊 "閃電隊"
+And 教練 新增球員 "王小明"    # ← 這是另一個 Command，應該是另一個 Feature
+```
 
 ### Rule 設計原則
 
@@ -111,6 +143,18 @@ Feature: 建立球隊
 
 ## Event Storming → DSL Gherkin 映射
 
+### Command、Aggregate、Event 關係（DDD 觀點）
+
+```
+Command ──operates on──▶ Aggregate ──emits──▶ Event(s)
+```
+
+| 映射模式 | 說明 | Feature 標示 |
+|----------|------|--------------|
+| C → E | 一個 Command 產生一個 Event | `@publishes: 球隊已建立` |
+| C → 3E | 一個 Command 觸發多個 Event（Aggregate 內級聯） | `@publishes: 球隊已刪除, 球員已刪除` |
+| 3C → E | 多個 Command 協調完成（Saga Pattern） | 各 Feature 用 `@saga` 標示 |
+
 ### 修改型操作（Command）
 
 | Event Storming | DSL Gherkin |
@@ -126,6 +170,22 @@ Feature: 建立球隊
 | Preconditions（前置狀態） | Given |
 | Query（執行查詢） | When |
 | Read Model（回傳資料） | Then |
+
+### 跨 Feature 依賴標籤
+
+在 Feature 檔案開頭標示：
+
+```gherkin
+# @publishes: 球隊已建立
+# @requires: 使用者登入
+```
+
+| 標籤 | 說明 | 範例 |
+|------|------|------|
+| `@publishes` | 此 Command 產生的 Event（可多個） | `@publishes: 球隊已刪除, 球員已刪除` |
+| `@subscribes` | 訂閱的 Event（Saga 用） | `@subscribes: 訂單已建立` |
+| `@requires` | 前置依賴的 Feature | `@requires: 使用者登入` |
+| `@saga` | 所屬的 Saga 流程 | `@saga: 訂單處理流程` |
 
 ---
 
@@ -269,6 +329,91 @@ Given 球隊 "閃電隊" 有球員 "王小明"，背號 1
 
 ---
 
+## 角色權限規則（重要）
+
+### 步驟 0：讀取 PRD 角色定義
+
+**必須**從 PRD 文件中讀取「使用者與角色」章節，識別系統中的所有角色及其權限範圍。
+
+典型的角色定義範例：
+```markdown
+| 角色 | 描述 |
+|------|------|
+| **系統管理者** | 可管理所有帳號、球隊、訓練資料；具備最高權限 |
+| **教練/一般使用者** | 可管理自己建立的球隊/球員、建立/查詢訓練、查看分析報表 |
+```
+
+### 權限規則設計原則
+
+根據 PRD 中的角色定義，每個 Feature 必須包含：
+
+1. **識別操作的允許角色**：從 PRD 的 User Story 中提取（如「身為 管理者/教練」）
+2. **區分角色權限範圍**：
+   - **管理者**：通常可操作「所有」資源
+   - **教練**：通常只能操作「自己建立的」資源
+
+### Phase 1 權限 Rule 範例
+
+```gherkin
+# ===== Phase 1: 核心決策 =====
+
+Rule: 管理者可查詢所有球隊
+
+  @permission @happy-path
+  Example: 管理者查詢球隊列表
+    Given 使用者為「管理者」角色
+    And 使用者已登入系統
+    And 系統中存在球隊 "藍鷹隊"，建立者為 "coach1"
+    And 系統中存在球隊 "紅龍隊"，建立者為 "coach2"
+    When 使用者 查詢球隊列表
+    Then 應回傳 2 筆球隊
+    And 應包含球隊 "藍鷹隊"
+    And 應包含球隊 "紅龍隊"
+
+Rule: 教練只能查詢自己建立的球隊
+
+  @permission @happy-path
+  Example: 教練查詢自己建立的球隊
+    Given 使用者為「教練」角色，帳號為 "coach1"
+    And 使用者已登入系統
+    And 系統中存在球隊 "藍鷹隊"，建立者為 "coach1"
+    And 系統中存在球隊 "紅龍隊"，建立者為 "coach2"
+    When 使用者 查詢球隊列表
+    Then 應回傳 1 筆球隊
+    And 應包含球隊 "藍鷹隊"
+    And 不應包含球隊 "紅龍隊"
+
+Rule: 教練無法操作他人建立的球隊
+
+  @permission @error-handling
+  Example: 教練無法刪除他人建立的球隊
+    Given 使用者為「教練」角色，帳號為 "coach1"
+    And 使用者已登入系統
+    And 系統中存在球隊 "紅龍隊"，建立者為 "coach2"
+    When 使用者 刪除球隊 "紅龍隊"
+    Then 應回傳錯誤 "無權限操作此球隊"
+```
+
+### 權限規則標籤
+
+| 標籤 | 用途 | 範例 |
+|------|------|------|
+| `@permission` | 權限相關測試 | `@permission @happy-path` |
+| `@admin-only` | 僅管理者可執行 | `@admin-only @permission` |
+| `@owner-only` | 僅資源擁有者可執行 | `@owner-only @permission` |
+
+### 權限覆蓋檢查清單
+
+每個 Command Feature 必須檢查：
+
+- [ ] **允許角色**：哪些角色可以執行此操作？
+- [ ] **管理者權限**：管理者是否可操作所有資源？
+- [ ] **教練權限**：教練是否只能操作自己的資源？
+- [ ] **跨用戶限制**：教練操作他人資源時應失敗？
+- [ ] **審計記錄**：操作是否記錄執行者（created_by, deleted_by）？
+
+---
+
 ## 邊界決策套用
 
 根據 boundary-decisions.json 中的決策，產出對應的測試場景：
@@ -335,10 +480,20 @@ Rule: 有球員的球隊不可刪除
 | `@happy-path` | 正常成功流程 |
 | `@error-handling` | 錯誤處理場景 |
 | `@boundary` | 邊界條件測試 |
+| `@permission` | 權限相關測試（Phase 1 必須包含） |
 
 ---
 
 ## 執行指引
+
+### Step 0: 讀取 PRD 角色定義（必要）
+
+1. 開啟 PRD 文件（如 `docs/user-stories/user-v1.md`）
+2. 找到「使用者與角色」章節
+3. 記錄所有角色及其權限範圍：
+   - 管理者：通常可操作所有資源
+   - 教練：通常只能操作自己建立的資源
+4. 記錄每個 User Story 的允許角色（如「身為 管理者/教練」）
 
 ### Step 1: 檢查邊界決策
 
@@ -390,7 +545,7 @@ Rule: 有球員的球隊不可刪除
 
 ## Feature 檔案完整範本
 
-### Command 範例：建立球隊
+### Command 範例：建立球隊（含角色權限）
 
 ```gherkin
 # language: zh-TW
@@ -402,39 +557,81 @@ Rule: 有球員的球隊不可刪除
 # Level: DSL
 # Boundary Decisions:
 #   - Q1: 球隊名稱不區分大小寫
+# Allowed Roles: 管理者, 教練
 
 @epic-b @team @command
 Feature: 建立球隊
-  身為 教練
+  身為 管理者/教練
   我想要 建立新球隊
   以便 管理球員名單
+
+  Background:
+    Given 使用者已登入系統
+
+  # ===== Phase 1: 核心決策 =====
+
+  Rule: 管理者與教練皆可建立球隊
+
+    @permission @happy-path
+    Example: 管理者建立球隊
+      Given 使用者為「管理者」角色
+      And 系統中沒有球隊 "閃電隊"
+      When 使用者 建立球隊 "閃電隊"
+      Then 球隊 "閃電隊" 應該存在
+      And 球隊 "閃電隊" 的建立者為目前使用者
+
+    @permission @happy-path
+    Example: 教練建立球隊
+      Given 使用者為「教練」角色
+      And 系統中沒有球隊 "閃電隊"
+      When 使用者 建立球隊 "閃電隊"
+      Then 球隊 "閃電隊" 應該存在
+      And 球隊 "閃電隊" 的建立者為目前使用者
+
+  # ===== Phase 2: 核心業務 =====
 
   Rule: 球隊名稱必須唯一（不區分大小寫）
 
     @happy-path
     Example: 成功建立球隊
-      Given 系統中沒有球隊 "閃電隊"
-      When 教練 建立球隊 "閃電隊"
+      Given 使用者為「教練」角色
+      And 系統中沒有球隊 "閃電隊"
+      When 使用者 建立球隊 "閃電隊"
       Then 球隊 "閃電隊" 應該存在
       And 球隊 "閃電隊" 狀態應為 "ACTIVE"
 
     @error-handling
     Example: 建立重複名稱的球隊應失敗
-      Given 系統中存在球隊 "閃電隊"
-      When 教練 建立球隊 "閃電隊"
+      Given 使用者為「教練」角色
+      And 系統中存在球隊 "閃電隊"
+      When 使用者 建立球隊 "閃電隊"
       Then 應回傳錯誤 "球隊名稱已被使用"
 
     @error-handling
     Example: 建立僅大小寫不同的球隊名稱應失敗
-      Given 系統中存在球隊 "TeamA"
-      When 教練 建立球隊 "teama"
+      Given 使用者為「教練」角色
+      And 系統中存在球隊 "TeamA"
+      When 使用者 建立球隊 "teama"
       Then 應回傳錯誤 "球隊名稱已被使用"
+
+  Rule: 建立球隊時自動記錄建立者與建立時間
+
+    @happy-path
+    Example: 系統記錄審計資訊
+      Given 使用者為「教練」角色，帳號為 "coach1"
+      And 系統中沒有球隊 "新球隊"
+      When 使用者 建立球隊 "新球隊"
+      Then 球隊 "新球隊" 的建立者為 "coach1"
+      And 球隊 "新球隊" 的建立時間已記錄
+
+  # ===== Phase 3: 邊界條件 =====
 
   Rule: 球隊名稱不可為空
 
     @boundary
     Example: 球隊名稱為空應失敗
-      When 教練 建立球隊 ""
+      Given 使用者為「教練」角色
+      When 使用者 建立球隊 ""
       Then 應回傳錯誤 "球隊名稱不可為空"
 ```
 
@@ -502,7 +699,7 @@ Feature: 建立球員
       Then 應回傳錯誤 "必須指定排序"
 ```
 
-### Query 範例：查詢球隊列表
+### Query 範例：查詢球隊列表（含角色權限）
 
 ```gherkin
 # language: zh-TW
@@ -512,29 +709,97 @@ Feature: 建立球員
 # Source: docs/user-stories/user-v1.md
 # Generated: 2026-01-22
 # Level: DSL
+# Allowed Roles: 管理者, 教練
 
 @epic-b @team @query
 Feature: 查詢球隊列表
-  身為 教練
-  我想要 查詢所有球隊
+  身為 管理者/教練
+  我想要 查詢球隊列表
   以便 選擇要管理的球隊
 
-  Rule: 可以查詢所有啟用的球隊
+  Background:
+    Given 使用者已登入系統
+
+  # ===== Phase 1: 核心決策 =====
+
+  Rule: 管理者可查詢所有球隊
+
+    @permission @happy-path
+    Example: 管理者查詢球隊列表
+      Given 使用者為「管理者」角色
+      And 系統中存在球隊 "藍鷹隊"，建立者為 "coach1"
+      And 系統中存在球隊 "紅龍隊"，建立者為 "coach2"
+      When 使用者 查詢球隊列表
+      Then 應回傳 2 筆球隊
+      And 應包含球隊 "藍鷹隊"
+      And 應包含球隊 "紅龍隊"
+
+  Rule: 教練只能查詢自己建立的球隊
+
+    @permission @happy-path
+    Example: 教練查詢自己建立的球隊
+      Given 使用者為「教練」角色，帳號為 "coach1"
+      And 系統中存在球隊 "藍鷹隊"，建立者為 "coach1"
+      And 系統中存在球隊 "紅龍隊"，建立者為 "coach2"
+      When 使用者 查詢球隊列表
+      Then 應回傳 1 筆球隊
+      And 應包含球隊 "藍鷹隊"
+      And 不應包含球隊 "紅龍隊"
+
+  # ===== Phase 2: 核心業務 =====
+
+  Rule: 查詢結果預設過濾已刪除的球隊
 
     @happy-path
-    Example: 成功查詢球隊列表
-      Given 系統中存在球隊 "閃電隊"，狀態為 "ACTIVE"
-      And 系統中存在球隊 "勇士隊"，狀態為 "ACTIVE"
-      When 教練 查詢球隊列表
-      Then 應回傳 2 筆球隊
-      And 應包含球隊 "閃電隊"
-      And 應包含球隊 "勇士隊"
+    Example: 已刪除的球隊不顯示在列表中
+      Given 使用者為「管理者」角色
+      And 系統中存在球隊 "藍鷹隊"，狀態為 "ACTIVE"
+      And 系統中存在球隊 "解散隊"，狀態為 "DELETED"
+      When 使用者 查詢球隊列表
+      Then 應回傳 1 筆球隊
+      And 應包含球隊 "藍鷹隊"
+      And 不應包含球隊 "解散隊"
+
+  # ===== Phase 3: 邊界條件 =====
+
+  Rule: 無球隊時應回傳空列表
 
     @boundary
-    Example: 無球隊時應回傳空列表
-      Given 系統中沒有任何球隊
-      When 教練 查詢球隊列表
+    Example: 新教練查詢球隊列表
+      Given 使用者為「教練」角色，帳號為 "coach_new"
+      And 使用者尚未建立任何球隊
+      When 使用者 查詢球隊列表
       Then 應回傳 0 筆球隊
+```
+
+---
+
+## 覆蓋率三階段
+
+每個 Feature 的 Rule 應按以下階段組織：
+
+```
+┌─────────────────────────────────────────────────────┐
+│ Phase 1: 核心決策 (Global Decisions)                │
+│   - 權限規則（誰可以執行這個操作）                    │
+│   - 刪除策略（硬刪除/軟刪除）                        │
+│   - 唯一性範圍（全域/局部唯一）                      │
+└─────────────────────────────────────────────────────┘
+                        ▼
+┌─────────────────────────────────────────────────────┐
+│ Phase 2: 核心業務 (Business Rules)                  │
+│   - Happy Path（正常成功流程）                       │
+│   - 業務約束（名稱不可重複、背號唯一等）              │
+│   - 關聯處理（級聯刪除、連帶更新）                    │
+└─────────────────────────────────────────────────────┘
+                        ▼
+┌─────────────────────────────────────────────────────┐
+│ Phase 3: 邊界條件 (Boundary Conditions)             │
+│   - 空值驗證（必填欄位為空、純空白）                  │
+│   - 範圍驗證（數值上下限、字串長度）                  │
+│   - 重複性驗證（唯一性欄位衝突）                      │
+│   - 狀態衝突（已刪除、已鎖定、不存在）                │
+└─────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -552,12 +817,17 @@ Feature: 查詢球隊列表
 - [ ] Step 使用業務語言，無技術語法（無 `$`, `>`, `<`）
 - [ ] DataTable 欄位使用中文
 
+### 依賴標示檢核
+- [ ] 標示 `@publishes`（產生的 Event）
+- [ ] 標示 `@requires`（前置依賴）
+- [ ] Saga 流程標示 `@saga` 和 `@subscribes`
+
 ### 詞彙檢核
 - [ ] Entity 名稱與 Glossary 一致
 - [ ] Action 名稱與 Glossary 一致
 - [ ] 錯誤訊息與 Glossary 的 `gherkinMessage` 一致
 
-### Policy 映射檢核（新增）
+### Policy 映射檢核
 - [ ] 每個 Invariant 至少對應一個 Rule
 - [ ] Given/When/Then 與 dslFragments 一致
 - [ ] appliedRules 中的 Rule 都存在於 .feature
@@ -568,11 +838,67 @@ Feature: 查詢球隊列表
 - [ ] 唯一性約束已正確測試
 - [ ] 刪除策略已正確測試
 
-### 覆蓋度檢核
-- [ ] 每個 Rule 至少一個 Happy Path
-- [ ] 每個錯誤情境有對應 Example
-- [ ] 邊界條件有對應 Example
+### 覆蓋度檢核（三階段）
+- [ ] **Phase 1 核心決策**：
+  - [ ] **權限規則已測試**（必要）
+    - [ ] 管理者權限測試（可操作所有資源）
+    - [ ] 教練權限測試（只能操作自己建立的資源）
+    - [ ] 跨用戶限制測試（教練操作他人資源應失敗）
+  - [ ] 審計欄位測試（created_by, deleted_by 等）
+- [ ] **Phase 2 核心業務**：每個 Rule 至少一個 Happy Path
+- [ ] **Phase 3 邊界條件**：
+  - [ ] 空值驗證（必填欄位）
+  - [ ] 範圍驗證（數值上下限）
+  - [ ] 重複性驗證（唯一性衝突）
+  - [ ] 狀態驗證（不存在、已刪除）
 - [ ] 每個 User Story 驗收條件都有對應 Example
+
+### 權限檢核（強制）
+
+每個 Command/Query Feature 必須包含以下權限測試（根據 PRD 角色定義）：
+
+| 角色 | 必須測試項目 |
+|------|-------------|
+| 管理者 | 可操作所有資源 |
+| 教練 | 只能操作自己建立的資源 |
+| 教練 | 操作他人資源時應回傳權限錯誤 |
+
+**錯誤範例**（缺少權限測試）：
+```gherkin
+# ❌ 錯誤：只有單一角色，沒有權限區分
+Feature: 刪除球隊
+  Rule: 可以刪除球隊
+    Example: 成功刪除球隊
+      When 教練 刪除球隊 "閃電隊"
+      Then 球隊已刪除
+```
+
+**正確範例**（完整權限測試）：
+```gherkin
+# ✅ 正確：包含角色區分和跨用戶限制
+Feature: 刪除球隊
+  Rule: 管理者可刪除所有球隊
+    @permission
+    Example: 管理者刪除球隊
+      Given 使用者為「管理者」角色
+      When 使用者 刪除球隊 "閃電隊"
+      Then 操作成功
+
+  Rule: 教練只能刪除自己建立的球隊
+    @permission
+    Example: 教練刪除自己建立的球隊
+      Given 使用者為「教練」角色，帳號為 "coach1"
+      And 球隊 "閃電隊" 的建立者為 "coach1"
+      When 使用者 刪除球隊 "閃電隊"
+      Then 操作成功
+
+    @permission @error-handling
+    Example: 教練無法刪除他人建立的球隊
+      Given 使用者為「教練」角色，帳號為 "coach1"
+      And 球隊 "紅龍隊" 的建立者為 "coach2"
+      When 使用者 刪除球隊 "紅龍隊"
+      Then 應回傳錯誤 "無權限操作此球隊"
+```
 
 ---
 

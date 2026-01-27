@@ -70,7 +70,7 @@ Stage 0: PRD 解析
     |
 Stage 1: 詞彙表建立（含 ErrorCode 多語系）
     |
-Stage 2: Epic 分析
+Stage 2: Feature 依賴分析
     |
 +==========================+
 | Phase 1 邊界問題確認      |  <-- v7.0 新增：Entity 層級
@@ -115,7 +115,7 @@ Stage 7: PlantUML 視覺化（可選）
 |-------|------|------|------|
 | 0 | PRD Analyst | PRD markdown | `_meta/prd-structure.json` |
 | 1 | Glossary Manager | prd-structure.json | `_meta/glossary.json` |
-| 2 | Epic Analyst | prd-structure.json | `_meta/epic-dependencies.json` |
+| 2 | Feature Dependency Analyst | prd-structure.json | `_meta/feature-dependencies.json` |
 | 3 | Event Expert | Epic + glossary | `_meta/events/{epic}-events.json` |
 | 4 | Command Expert | Events + glossary | `_meta/commands/{epic}-commands.json` |
 | 5 | Policy Expert | Events + commands | `_meta/policies/{epic}-policies.json` |
@@ -203,7 +203,7 @@ docs/gherkin-spec/
 ├── _meta/
 │   ├── prd-structure.json
 │   ├── glossary.json              <-- 含 ErrorCode 多語系映射
-│   ├── epic-dependencies.json
+│   ├── feature-dependencies.json
 │   ├── boundary-decisions.json    <-- v7.0 擴充：globalDecisions + epicDecisions
 │   ├── hotspots.json              <-- v7.0 擴充：含狀態管理
 │   ├── coverage-report.json       <-- v7.0 新增：覆蓋度報告
