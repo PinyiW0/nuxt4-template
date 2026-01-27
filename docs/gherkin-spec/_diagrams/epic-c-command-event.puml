@@ -1,0 +1,35 @@
+@startuml epic-c-command-event
+!theme plain
+title Epic C: 訓練建立與 AI 系統控制 - Command-Event 對應關係
+
+left to right direction
+
+package "Training Commands" {
+  usecase "查詢訓練列表\nQueryTrainingList" as QRY_C001
+  usecase "建立訓練\nCreateTraining" as CMD_C001
+  usecase "刪除訓練\nDeleteTraining" as CMD_C002
+}
+
+package "AI System Commands" {
+  usecase "啟動 AI 系統\nStartAISystem" as CMD_C003
+  usecase "關閉 AI 系統\nStopAISystem" as CMD_C004
+}
+
+package "Training Events" {
+  usecase "TrainingListQueried" as EVT_C001
+  usecase "TrainingCreated" as EVT_C002
+  usecase "TrainingDeleted" as EVT_C003
+}
+
+package "AI System Events" {
+  usecase "AISystemStarted" as EVT_C004
+  usecase "AISystemStopped" as EVT_C005
+}
+
+QRY_C001 --> EVT_C001
+CMD_C001 --> EVT_C002
+CMD_C002 --> EVT_C003
+CMD_C003 --> EVT_C004
+CMD_C004 --> EVT_C005
+
+@enduml

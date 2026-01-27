@@ -1,0 +1,48 @@
+@startuml epic-d-entity-relation
+!theme plain
+title Epic D: Pitch & StrikeZone Entity 關係圖
+
+entity "Training" as training {
+  * id : uuid <<PK>>
+  --
+  teamId : uuid <<FK>>
+  playerId : uuid <<FK>>
+  date : date
+  strikeZoneHeight : integer
+}
+
+entity "Pitch" as pitch {
+  * id : uuid <<PK>>
+  --
+  * trainingId : uuid <<FK>>
+  speed : decimal
+  spinRate : integer
+  location : json
+  result : enum
+  timestamp : timestamp
+}
+
+entity "StrikeZone" as strikezone {
+  * id : uuid <<PK>>
+  --
+  * trainingId : uuid <<FK>>
+  topHeight : decimal
+  bottomHeight : decimal
+  width : decimal
+}
+
+training ||--o{ pitch : "contains"
+training ||--|| strikezone : "has"
+
+note right of pitch
+  由 AI 系統自動產生
+  location: {x, y} 座標
+  result: strike/ball
+end note
+
+note right of strikezone
+  可手動調整參數
+  影響九宮格顯示
+end note
+
+@enduml

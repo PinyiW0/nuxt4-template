@@ -1,0 +1,38 @@
+@startuml epic-a-event-flow
+!theme plain
+title Epic A: 登入/登出與權限控管 - Event Flow
+
+skinparam rectangle {
+  BackgroundColor<<command>> LightBlue
+  BackgroundColor<<event>> LightYellow
+  BackgroundColor<<actor>> LightGreen
+}
+
+actor "系統使用者" as Actor
+
+rectangle "登入" <<command>> as CMD_A001
+rectangle "登出" <<command>> as CMD_A002
+
+rectangle "UserLoggedIn\n使用者已登入" <<event>> as EVT_A001
+rectangle "UserLoggedOut\n使用者已登出" <<event>> as EVT_A002
+
+Actor --> CMD_A001 : 輸入帳號密碼
+CMD_A001 --> EVT_A001 : 驗證成功
+
+Actor --> CMD_A002 : 點擊登出
+CMD_A002 --> EVT_A002 : 清除 Token
+
+note right of EVT_A001
+  Payload:
+  - userId
+  - role
+  - loginAt
+end note
+
+note right of EVT_A002
+  Payload:
+  - userId
+  - logoutAt
+end note
+
+@enduml

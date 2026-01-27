@@ -1,0 +1,57 @@
+@startuml epic-d-event-flow
+!theme plain
+title Epic D: 訓練紀錄頁（即時投球檢視）- Event Flow
+
+skinparam rectangle {
+  BackgroundColor<<command>> LightBlue
+  BackgroundColor<<query>> LightCyan
+  BackgroundColor<<event>> LightYellow
+}
+
+actor "教練" as Coach
+
+' === Training Record Mode ===
+rectangle "進入訓練紀錄" <<command>> as CMD_D001
+rectangle "退出訓練紀錄" <<command>> as CMD_D002
+
+rectangle "TrainingRecordModeEntered\n已進入訓練紀錄模式" <<event>> as EVT_D001
+rectangle "TrainingRecordModeExited\n已退出訓練紀錄模式" <<event>> as EVT_D002
+
+' === Pitch ===
+rectangle "查詢投球清單" <<query>> as QRY_D001
+rectangle "查詢單球儀表板" <<query>> as QRY_D002
+
+rectangle "PitchListQueried\n投球清單已查詢" <<event>> as EVT_D003
+rectangle "PitchDashboardDisplayed\n單球儀表板已顯示" <<event>> as EVT_D004
+
+' === StrikeZone ===
+rectangle "調整好球帶" <<command>> as CMD_D003
+
+rectangle "StrikeZoneUpdated\n好球帶已更新" <<event>> as EVT_D005
+
+' 連線
+Coach --> CMD_D001
+CMD_D001 --> EVT_D001
+EVT_D001 --> QRY_D001 : 自動查詢
+
+Coach --> CMD_D002
+CMD_D002 --> EVT_D002
+
+QRY_D001 --> EVT_D003
+QRY_D002 --> EVT_D004
+
+Coach --> CMD_D003
+CMD_D003 --> EVT_D005
+
+note right of EVT_D003
+  即時更新：
+  Polling 每 3 秒
+end note
+
+note right of EVT_D004
+  支援切換：
+  - 九宮格視圖
+  - 3D 軌跡視圖
+end note
+
+@enduml

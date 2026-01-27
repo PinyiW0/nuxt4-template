@@ -1,0 +1,49 @@
+@startuml epic-c-entity-relation
+!theme plain
+title Epic C: Training Entity 關係圖
+
+entity "Team" as team {
+  * id : uuid <<PK>>
+  --
+  name : string
+  status : enum
+}
+
+entity "Player" as player {
+  * id : uuid <<PK>>
+  --
+  * teamId : uuid <<FK>>
+  name : string
+  jerseyNumber : integer
+  height : integer
+}
+
+entity "Training" as training {
+  * id : uuid <<PK>>
+  --
+  * teamId : uuid <<FK>>
+  * playerId : uuid <<FK>>
+  date : date
+  strikeZoneHeight : integer
+  status : enum (ACTIVE/DELETED)
+  createdBy : uuid <<FK>>
+  createdAt : timestamp
+}
+
+entity "AISystem" as ai {
+  * id : uuid <<PK>>
+  --
+  status : enum (RUNNING/STOPPED)
+  currentTrainingId : uuid <<FK>>
+}
+
+team ||--o{ training : "has"
+player ||--o{ training : "participates"
+training ||--o| ai : "controlled by"
+
+note right of training
+  軟刪除：保留歷史資料
+  strikeZoneHeight：受測球員的好球帶身高
+end note
+
+@enduml

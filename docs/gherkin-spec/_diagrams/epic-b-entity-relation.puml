@@ -1,0 +1,50 @@
+@startuml epic-b-entity-relation
+!theme plain
+title Epic B: Entity 關係圖
+
+entity "User" as user {
+  * id : uuid <<PK>>
+  --
+  account : string
+  password : string (hashed)
+  role : enum (admin/coach)
+  name : string
+}
+
+entity "Team" as team {
+  * id : uuid <<PK>>
+  --
+  name : string
+  status : enum (ACTIVE/DELETED)
+  createdBy : uuid <<FK>>
+  createdAt : timestamp
+  deletedBy : uuid <<FK>>
+  deletedAt : timestamp
+}
+
+entity "Player" as player {
+  * id : uuid <<PK>>
+  --
+  * teamId : uuid <<FK>>
+  name : string
+  jerseyNumber : integer (0-99)
+  height : integer
+  position : enum
+  sortOrder : integer
+  status : enum (ACTIVE/DELETED)
+}
+
+user ||--o{ team : "creates"
+team ||--o{ player : "contains"
+
+note right of team
+  軟刪除：標記 status = DELETED
+  名稱不區分大小寫
+end note
+
+note right of player
+  背號：同一球隊內唯一
+  級聯刪除：隨球隊刪除
+end note
+
+@enduml

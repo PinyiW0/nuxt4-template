@@ -1,0 +1,53 @@
+@startuml epic-b-command-event
+!theme plain
+title Epic B: 球隊/球員資料管理 - Command-Event 對應關係
+
+left to right direction
+
+package "Team Commands" {
+  usecase "查詢球隊列表\nQueryTeamList" as QRY_B001
+  usecase "選擇球隊\nSelectTeam" as CMD_B001
+  usecase "建立球隊\nCreateTeam" as CMD_B002
+  usecase "編輯球隊\nUpdateTeam" as CMD_B003
+  usecase "刪除球隊\nDeleteTeam" as CMD_B004
+}
+
+package "Player Commands" {
+  usecase "查詢球員列表\nQueryPlayerList" as QRY_B002
+  usecase "新增球員\nCreatePlayer" as CMD_B005
+  usecase "編輯球員\nUpdatePlayer" as CMD_B006
+  usecase "刪除球員\nDeletePlayer" as CMD_B007
+  usecase "調整排序\nReorderPlayer" as CMD_B008
+}
+
+package "Team Events" {
+  usecase "TeamListQueried" as EVT_B001
+  usecase "TeamSelected" as EVT_B002
+  usecase "TeamCreated" as EVT_B003
+  usecase "TeamUpdated" as EVT_B004
+  usecase "TeamDeleted" as EVT_B005
+}
+
+package "Player Events" {
+  usecase "PlayerListQueried" as EVT_B006
+  usecase "PlayerCreated" as EVT_B007
+  usecase "PlayerUpdated" as EVT_B008
+  usecase "PlayerDeleted" as EVT_B009
+  usecase "PlayerCascadeDeleted" as EVT_B010
+  usecase "PlayerReordered" as EVT_B011
+}
+
+QRY_B001 --> EVT_B001
+CMD_B001 --> EVT_B002
+CMD_B002 --> EVT_B003
+CMD_B003 --> EVT_B004
+CMD_B004 --> EVT_B005
+CMD_B004 --> EVT_B010 : 級聯
+
+QRY_B002 --> EVT_B006
+CMD_B005 --> EVT_B007
+CMD_B006 --> EVT_B008
+CMD_B007 --> EVT_B009
+CMD_B008 --> EVT_B011
+
+@enduml

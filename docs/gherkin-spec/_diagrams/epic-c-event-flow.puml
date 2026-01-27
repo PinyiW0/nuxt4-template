@@ -1,0 +1,56 @@
+@startuml epic-c-event-flow
+!theme plain
+title Epic C: 訓練建立與 AI 系統控制 - Event Flow
+
+skinparam rectangle {
+  BackgroundColor<<command>> LightBlue
+  BackgroundColor<<query>> LightCyan
+  BackgroundColor<<event>> LightYellow
+  BackgroundColor<<system>> #E6E6FA
+}
+
+actor "教練" as Coach
+
+' === Training 相關 ===
+rectangle "查詢訓練列表" <<query>> as QRY_C001
+rectangle "建立訓練" <<command>> as CMD_C001
+rectangle "刪除訓練" <<command>> as CMD_C002
+
+rectangle "TrainingListQueried\n訓練列表已查詢" <<event>> as EVT_C001
+rectangle "TrainingCreated\n訓練已建立" <<event>> as EVT_C002
+rectangle "TrainingDeleted\n訓練已刪除" <<event>> as EVT_C003
+
+' === AI System 相關 ===
+rectangle "啟動 AI 系統" <<command>> as CMD_C003
+rectangle "關閉 AI 系統" <<command>> as CMD_C004
+
+rectangle "AISystemStarted\nAI系統已啟動" <<system>> as EVT_C004
+rectangle "AISystemStopped\nAI系統已關閉" <<system>> as EVT_C005
+
+' 連線
+Coach --> QRY_C001
+Coach --> CMD_C001
+Coach --> CMD_C002
+Coach --> CMD_C003
+Coach --> CMD_C004
+
+QRY_C001 --> EVT_C001
+CMD_C001 --> EVT_C002
+CMD_C002 --> EVT_C003
+CMD_C003 --> EVT_C004
+CMD_C004 --> EVT_C005
+
+note right of EVT_C002
+  Payload:
+  - trainingId
+  - teamId
+  - playerId
+  - strikeZoneHeight
+end note
+
+note right of EVT_C004
+  AI 系統開始
+  捕捉投球資料
+end note
+
+@enduml

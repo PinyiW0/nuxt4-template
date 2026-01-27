@@ -1,0 +1,221 @@
+{
+  "_meta": {
+    "version": "2.0",
+    "confirmedAt": "2026-01-27T10:00:00Z",
+    "source": "docs/user-stories/user-v1.md"
+  },
+  "globalDecisions": [
+    {
+      "decisionId": "GD-001",
+      "entity": "Team",
+      "type": "delete_strategy",
+      "phase": 1,
+      "question": "球隊的刪除方式",
+      "answer": "A",
+      "decision": "軟刪除",
+      "description": "標記 status 為 DELETED，保留歷史紀錄",
+      "confirmedInEpic": "B",
+      "appliedToEpics": ["B", "C", "D", "E", "F"],
+      "followUpDecisions": ["GD-002"]
+    },
+    {
+      "decisionId": "GD-002",
+      "entity": "Team",
+      "type": "soft_delete_query_filter",
+      "phase": 1,
+      "question": "查詢時是否預設過濾已刪除的球隊",
+      "answer": "A",
+      "decision": "預設過濾",
+      "description": "查詢列表預設不顯示 DELETED 狀態的球隊",
+      "triggeredBy": "GD-001",
+      "confirmedInEpic": "B",
+      "appliedToEpics": ["B", "C", "D", "E", "F"]
+    },
+    {
+      "decisionId": "GD-003",
+      "entity": ["Team", "Player"],
+      "type": "cascade_behavior",
+      "phase": 1,
+      "question": "刪除球隊時球員的處理方式",
+      "answer": "B",
+      "decision": "級聯刪除",
+      "description": "刪除球隊時，其下所有球員一併軟刪除",
+      "confirmedInEpic": "B",
+      "appliedToEpics": ["B"],
+      "followUpDecisions": ["GD-004"]
+    },
+    {
+      "decisionId": "GD-004",
+      "entity": ["Team", "Player"],
+      "type": "cascade_confirmation",
+      "phase": 1,
+      "question": "級聯刪除前是否需要使用者確認",
+      "answer": "A",
+      "decision": "需要確認",
+      "description": "顯示將被刪除的球員數量，讓使用者確認",
+      "triggeredBy": "GD-003",
+      "confirmedInEpic": "B",
+      "appliedToEpics": ["B"]
+    },
+    {
+      "decisionId": "GD-005",
+      "entity": "Team",
+      "type": "identifier_case_sensitivity",
+      "phase": 1,
+      "question": "球隊名稱是否區分大小寫",
+      "answer": "A",
+      "decision": "不區分大小寫",
+      "description": "TeamA 和 teama 視為相同名稱，建立時會拒絕重複",
+      "confirmedInEpic": "B",
+      "appliedToEpics": ["B"]
+    },
+    {
+      "decisionId": "GD-006",
+      "entity": "Player",
+      "type": "delete_strategy",
+      "phase": 1,
+      "question": "球員的刪除方式",
+      "answer": "A",
+      "decision": "軟刪除",
+      "description": "標記 status 為 DELETED，保留歷史紀錄",
+      "confirmedInEpic": "B",
+      "appliedToEpics": ["B", "C", "F"],
+      "followUpDecisions": ["GD-007"]
+    },
+    {
+      "decisionId": "GD-007",
+      "entity": "Player",
+      "type": "soft_delete_query_filter",
+      "phase": 1,
+      "question": "查詢時是否預設過濾已刪除的球員",
+      "answer": "A",
+      "decision": "預設過濾",
+      "description": "查詢列表預設不顯示 DELETED 狀態的球員",
+      "triggeredBy": "GD-006",
+      "confirmedInEpic": "B",
+      "appliedToEpics": ["B", "C", "F"]
+    },
+    {
+      "decisionId": "GD-008",
+      "entity": "Training",
+      "type": "delete_strategy",
+      "phase": 1,
+      "question": "訓練的刪除方式",
+      "answer": "A",
+      "decision": "軟刪除",
+      "description": "標記 status 為 DELETED，保留歷史紀錄供分析",
+      "confirmedInEpic": "C",
+      "appliedToEpics": ["C", "D", "E"],
+      "followUpDecisions": ["GD-009", "GD-010"]
+    },
+    {
+      "decisionId": "GD-009",
+      "entity": "Training",
+      "type": "soft_delete_query_filter",
+      "phase": 1,
+      "question": "查詢時是否預設過濾已刪除的訓練",
+      "answer": "A",
+      "decision": "預設過濾",
+      "description": "查詢列表預設不顯示 DELETED 狀態的訓練",
+      "triggeredBy": "GD-008",
+      "confirmedInEpic": "C",
+      "appliedToEpics": ["C", "D", "E"]
+    },
+    {
+      "decisionId": "GD-010",
+      "entity": ["Training", "Pitch"],
+      "type": "cascade_behavior",
+      "phase": 1,
+      "question": "刪除訓練時投球紀錄的處理方式",
+      "answer": "A",
+      "decision": "級聯刪除",
+      "description": "刪除訓練時，其下所有投球紀錄一併軟刪除",
+      "triggeredBy": "GD-008",
+      "confirmedInEpic": "C",
+      "appliedToEpics": ["C", "E"]
+    },
+    {
+      "decisionId": "GD-011",
+      "entity": null,
+      "type": "resource_ownership",
+      "phase": 1,
+      "question": "教練是否只能操作自己建立的資源",
+      "answer": "A",
+      "decision": "教練只能操作自己的資源",
+      "description": "教練只能操作自己建立的球隊/訓練，管理者可操作所有資源",
+      "confirmedInEpic": "B",
+      "appliedToEpics": ["B", "C", "D", "E", "F"]
+    }
+  ],
+  "epicDecisions": {
+    "epic-b": [
+      {
+        "questionId": "Q-B001",
+        "phase": 2,
+        "entity": "Player",
+        "field": "jerseyNumber",
+        "type": "uniqueness",
+        "question": "背號唯一性範圍",
+        "selectionMode": "single",
+        "answer": "A",
+        "decision": "同一球隊內唯一",
+        "description": "同一球隊內不能有重複背號，但不同球隊可以有相同背號",
+        "appliedTo": ["us-b3-create-player.feature", "us-b3-update-player.feature"]
+      },
+      {
+        "questionId": "Q-B002",
+        "phase": 2,
+        "entity": "Player",
+        "field": "jerseyNumber",
+        "type": "value_range",
+        "question": "背號範圍限制",
+        "selectionMode": "single",
+        "answer": "A",
+        "decision": "0-99",
+        "description": "背號必須在 0 到 99 之間",
+        "appliedTo": ["us-b3-create-player.feature", "us-b3-update-player.feature"]
+      },
+      {
+        "questionId": "Q-B003",
+        "phase": 2,
+        "entity": "Player",
+        "field": "sortOrder",
+        "type": "default_value",
+        "question": "新球員預設排序",
+        "selectionMode": "single",
+        "answer": "A",
+        "decision": "排在最後",
+        "description": "新增球員時，若未指定排序，則排在現有球員之後",
+        "appliedTo": ["us-b3-create-player.feature"]
+      }
+    ],
+    "epic-d": [
+      {
+        "questionId": "Q-D001",
+        "phase": 2,
+        "entity": "Pitch",
+        "field": null,
+        "type": "realtime",
+        "question": "投球清單即時刷新機制",
+        "selectionMode": "single",
+        "answer": "B",
+        "decision": "Polling 每 3 秒",
+        "description": "使用 Polling 機制，每 3 秒向伺服器查詢最新投球",
+        "appliedTo": ["us-d2-query-pitch-list.feature"]
+      }
+    ]
+  },
+  "summary": {
+    "totalDecisions": 14,
+    "globalDecisions": 11,
+    "epicDecisions": 4,
+    "byPhase": {
+      "phase1": 11,
+      "phase2": 4
+    },
+    "byEpic": {
+      "B": 3,
+      "D": 1
+    }
+  }
+}

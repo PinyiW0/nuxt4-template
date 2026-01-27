@@ -1,0 +1,25 @@
+@startuml epic-a-command-event
+!theme plain
+title Epic A: 登入/登出 - Command-Event 對應關係
+
+left to right direction
+
+package "Commands" {
+  usecase "登入\nLogin" as CMD_A001
+  usecase "登出\nLogout" as CMD_A002
+}
+
+package "Events" {
+  usecase "UserLoggedIn\n使用者已登入" as EVT_A001
+  usecase "UserLoggedOut\n使用者已登出" as EVT_A002
+}
+
+CMD_A001 --> EVT_A001
+CMD_A002 --> EVT_A002
+
+note bottom of CMD_A001
+  Actor: 系統使用者
+  Errors: AUTH_INVALID_CREDENTIALS
+end note
+
+@enduml

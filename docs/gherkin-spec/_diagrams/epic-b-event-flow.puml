@@ -1,0 +1,59 @@
+@startuml epic-b-event-flow
+!theme plain
+title Epic B: 球隊/球員資料管理 - Event Flow
+
+skinparam rectangle {
+  BackgroundColor<<command>> LightBlue
+  BackgroundColor<<query>> LightCyan
+  BackgroundColor<<event>> LightYellow
+  BackgroundColor<<cascade>> #FFCCCB
+}
+
+' === Team 相關 ===
+rectangle "查詢球隊列表" <<query>> as QRY_B001
+rectangle "選擇球隊" <<command>> as CMD_B001
+rectangle "建立球隊" <<command>> as CMD_B002
+rectangle "編輯球隊" <<command>> as CMD_B003
+rectangle "刪除球隊" <<command>> as CMD_B004
+
+rectangle "TeamListQueried\n球隊列表已查詢" <<event>> as EVT_B001
+rectangle "TeamSelected\n球隊已選擇" <<event>> as EVT_B002
+rectangle "TeamCreated\n球隊已建立" <<event>> as EVT_B003
+rectangle "TeamUpdated\n球隊已更新" <<event>> as EVT_B004
+rectangle "TeamDeleted\n球隊已刪除" <<event>> as EVT_B005
+
+' === Player 相關 ===
+rectangle "查詢球員列表" <<query>> as QRY_B002
+rectangle "新增球員" <<command>> as CMD_B005
+rectangle "編輯球員" <<command>> as CMD_B006
+rectangle "刪除球員" <<command>> as CMD_B007
+rectangle "調整排序" <<command>> as CMD_B008
+
+rectangle "PlayerListQueried\n球員列表已查詢" <<event>> as EVT_B006
+rectangle "PlayerCreated\n球員已建立" <<event>> as EVT_B007
+rectangle "PlayerUpdated\n球員已更新" <<event>> as EVT_B008
+rectangle "PlayerDeleted\n球員已刪除" <<event>> as EVT_B009
+rectangle "PlayerCascadeDeleted\n球員已級聯刪除" <<cascade>> as EVT_B010
+rectangle "PlayerReordered\n球員排序已調整" <<event>> as EVT_B011
+
+' Team 連線
+QRY_B001 --> EVT_B001
+CMD_B001 --> EVT_B002
+CMD_B002 --> EVT_B003
+CMD_B003 --> EVT_B004
+CMD_B004 --> EVT_B005
+EVT_B005 --> EVT_B010 : 級聯刪除
+
+' Player 連線
+QRY_B002 --> EVT_B006
+CMD_B005 --> EVT_B007
+CMD_B006 --> EVT_B008
+CMD_B007 --> EVT_B009
+CMD_B008 --> EVT_B011
+
+note right of EVT_B010
+  因球隊刪除而
+  級聯刪除的球員
+end note
+
+@enduml

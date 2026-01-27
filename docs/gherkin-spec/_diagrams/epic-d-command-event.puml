@@ -1,0 +1,35 @@
+@startuml epic-d-command-event
+!theme plain
+title Epic D: 訓練紀錄頁 - Command-Event 對應關係
+
+left to right direction
+
+package "Mode Commands" {
+  usecase "進入訓練紀錄\nEnterTrainingRecordMode" as CMD_D001
+  usecase "退出訓練紀錄\nExitTrainingRecordMode" as CMD_D002
+}
+
+package "Pitch Queries" {
+  usecase "查詢投球清單\nQueryPitchList" as QRY_D001
+  usecase "查詢單球儀表板\nQueryPitchDashboard" as QRY_D002
+}
+
+package "StrikeZone Commands" {
+  usecase "調整好球帶\nUpdateStrikeZone" as CMD_D003
+}
+
+package "Events" {
+  usecase "TrainingRecordModeEntered" as EVT_D001
+  usecase "TrainingRecordModeExited" as EVT_D002
+  usecase "PitchListQueried" as EVT_D003
+  usecase "PitchDashboardDisplayed" as EVT_D004
+  usecase "StrikeZoneUpdated" as EVT_D005
+}
+
+CMD_D001 --> EVT_D001
+CMD_D002 --> EVT_D002
+QRY_D001 --> EVT_D003
+QRY_D002 --> EVT_D004
+CMD_D003 --> EVT_D005
+
+@enduml

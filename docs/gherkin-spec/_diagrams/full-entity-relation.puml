@@ -1,0 +1,98 @@
+@startuml full-entity-relation
+!theme plain
+title 完整 Entity 關係圖
+
+skinparam entity {
+  BackgroundColor<<core>> LightBlue
+  BackgroundColor<<training>> LightGreen
+  BackgroundColor<<analysis>> LightYellow
+}
+
+entity "User" as user <<core>> {
+  * id : uuid <<PK>>
+  --
+  account : string
+  password : string (hashed)
+  role : enum (admin/coach)
+  name : string
+}
+
+entity "Team" as team <<core>> {
+  * id : uuid <<PK>>
+  --
+  name : string
+  status : enum
+  createdBy : uuid <<FK>>
+  createdAt : timestamp
+  deletedBy : uuid <<FK>>
+  deletedAt : timestamp
+}
+
+entity "Player" as player <<core>> {
+  * id : uuid <<PK>>
+  --
+  * teamId : uuid <<FK>>
+  name : string
+  jerseyNumber : integer (0-99)
+  height : integer
+  position : enum
+  sortOrder : integer
+  status : enum
+}
+
+entity "Training" as training <<training>> {
+  * id : uuid <<PK>>
+  --
+  * teamId : uuid <<FK>>
+  * playerId : uuid <<FK>>
+  date : date
+  strikeZoneHeight : integer
+  status : enum
+  createdBy : uuid <<FK>>
+  createdAt : timestamp
+}
+
+entity "Pitch" as pitch <<analysis>> {
+  * id : uuid <<PK>>
+  --
+  * trainingId : uuid <<FK>>
+  speed : decimal
+  spinRate : integer
+  location : json
+  result : enum
+  timestamp : timestamp
+}
+
+entity "StrikeZone" as strikezone <<analysis>> {
+  * id : uuid <<PK>>
+  --
+  * trainingId : uuid <<FK>>
+  topHeight : decimal
+  bottomHeight : decimal
+  width : decimal
+}
+
+entity "AISystem" as ai <<training>> {
+  * id : uuid <<PK>>
+  --
+  status : enum
+  currentTrainingId : uuid <<FK>>
+}
+
+' 關聯
+user ||--o{ team : "creates"
+team ||--o{ player : "contains"
+team ||--o{ training : "has"
+player ||--o{ training : "participates"
+training ||--o{ pitch : "records"
+training ||--|| strikezone : "has"
+training ||--o| ai : "controlled by"
+
+legend right
+  | 顏色 | 說明 |
+  |<#LightBlue>| 核心 Entity |
+  |<#LightGreen>| 訓練相關 |
+  |<#LightYellow>| 分析相關 |
+endlegend
+
+@enduml

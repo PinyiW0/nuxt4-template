@@ -1,0 +1,53 @@
+@startuml epic-e-event-flow
+!theme plain
+title Epic E: 影像數據分析（歷史訓練）- Event Flow
+
+skinparam rectangle {
+  BackgroundColor<<command>> LightBlue
+  BackgroundColor<<query>> LightCyan
+  BackgroundColor<<event>> LightYellow
+  BackgroundColor<<ui>> #E6E6FA
+}
+
+actor "教練/分析使用者" as User
+
+' === UI 切換 ===
+rectangle "切換分析頁籤" <<command>> as CMD_E001
+rectangle "AnalysisTabSwitched\n分析頁籤已切換" <<ui>> as EVT_E001
+
+' === Historical Training ===
+rectangle "查詢歷史訓練" <<query>> as QRY_E001
+rectangle "批次刪除訓練" <<command>> as CMD_E002
+
+rectangle "HistoricalTrainingListQueried\n歷史訓練列表已查詢" <<event>> as EVT_E002
+rectangle "TrainingsBatchDeleted\n訓練已批次刪除" <<event>> as EVT_E003
+
+' === StrikeZone Record ===
+rectangle "查看好球帶記錄" <<query>> as QRY_E002
+rectangle "StrikeZoneRecordDisplayed\n好球帶記錄已顯示" <<event>> as EVT_E004
+
+' 連線
+User --> CMD_E001
+CMD_E001 --> EVT_E001
+
+User --> QRY_E001
+QRY_E001 --> EVT_E002
+
+User --> CMD_E002
+CMD_E002 --> EVT_E003
+
+User --> QRY_E002
+QRY_E002 --> EVT_E004
+
+note right of EVT_E001
+  頁籤：
+  - 訓練記錄
+  - 選手紀錄
+end note
+
+note right of EVT_E003
+  批次軟刪除
+  保留歷史資料
+end note
+
+@enduml

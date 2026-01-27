@@ -1,0 +1,32 @@
+@startuml epic-e-command-event
+!theme plain
+title Epic E: 影像數據分析 - Command-Event 對應關係
+
+left to right direction
+
+package "UI Commands" {
+  usecase "切換分析頁籤\nSwitchAnalysisTab" as CMD_E001
+}
+
+package "Training Commands" {
+  usecase "查詢歷史訓練\nQueryHistoricalTrainings" as QRY_E001
+  usecase "批次刪除訓練\nBatchDeleteTrainings" as CMD_E002
+}
+
+package "StrikeZone Queries" {
+  usecase "查看好球帶記錄\nViewStrikeZoneRecord" as QRY_E002
+}
+
+package "Events" {
+  usecase "AnalysisTabSwitched" as EVT_E001
+  usecase "HistoricalTrainingListQueried" as EVT_E002
+  usecase "TrainingsBatchDeleted" as EVT_E003
+  usecase "StrikeZoneRecordDisplayed" as EVT_E004
+}
+
+CMD_E001 --> EVT_E001
+QRY_E001 --> EVT_E002
+CMD_E002 --> EVT_E003
+QRY_E002 --> EVT_E004
+
+@enduml

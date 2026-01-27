@@ -1,0 +1,45 @@
+@startuml epic-f-event-flow
+!theme plain
+title Epic F: 選手分析（長期表現追蹤）- Event Flow
+
+skinparam rectangle {
+  BackgroundColor<<command>> LightBlue
+  BackgroundColor<<query>> LightCyan
+  BackgroundColor<<event>> LightYellow
+}
+
+actor "教練/分析使用者" as User
+
+' === Player Records ===
+rectangle "查詢選手紀錄" <<query>> as QRY_F001
+rectangle "批次刪除選手紀錄" <<command>> as CMD_F001
+
+rectangle "PlayerRecordListQueried\n選手紀錄列表已查詢" <<event>> as EVT_F001
+rectangle "PlayerRecordsBatchDeleted\n選手紀錄已批次刪除" <<event>> as EVT_F002
+
+' === Player Stats ===
+rectangle "查看選手統計" <<query>> as QRY_F002
+rectangle "PlayerStatsDisplayed\n選手統計已顯示" <<event>> as EVT_F003
+
+' 連線
+User --> QRY_F001
+QRY_F001 --> EVT_F001
+
+User --> CMD_F001
+CMD_F001 --> EVT_F002
+
+User --> QRY_F002
+QRY_F002 --> EVT_F003
+
+note right of EVT_F001
+  支援關鍵字搜尋
+  依球隊篩選
+end note
+
+note right of EVT_F003
+  包含：
+  - 月平均統計
+  - 熱區圖
+end note
+
+@enduml

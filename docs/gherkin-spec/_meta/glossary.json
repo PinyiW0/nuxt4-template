@@ -1,0 +1,255 @@
+{
+  "_meta": {
+    "version": "2.0",
+    "lastUpdated": "2026-01-27",
+    "source": "docs/user-stories/user-v1.md"
+  },
+  "entities": {
+    "User": {
+      "zh": "使用者",
+      "en": "User",
+      "table": "users",
+      "primaryKey": "user_id",
+      "description": "系統的使用者，包含管理者與教練",
+      "fields": {
+        "userId": { "zh": "使用者ID", "type": "uuid" },
+        "account": { "zh": "帳號", "type": "string" },
+        "password": { "zh": "密碼", "type": "string" },
+        "name": { "zh": "姓名", "type": "string" },
+        "role": { "zh": "角色", "type": "enum", "values": ["ADMIN", "COACH"] },
+        "status": { "zh": "狀態", "type": "enum", "values": ["ACTIVE", "INACTIVE"] }
+      }
+    },
+    "Team": {
+      "zh": "球隊",
+      "en": "Team",
+      "table": "teams",
+      "primaryKey": "team_id",
+      "description": "棒球隊伍，包含多個球員",
+      "fields": {
+        "teamId": { "zh": "球隊ID", "type": "uuid" },
+        "teamName": { "zh": "球隊名稱", "type": "string" },
+        "status": { "zh": "狀態", "type": "enum", "values": ["ACTIVE", "DELETED"] },
+        "createdBy": { "zh": "建立者", "type": "uuid", "foreignKey": "User" },
+        "createdAt": { "zh": "建立時間", "type": "datetime" },
+        "deletedBy": { "zh": "刪除者", "type": "uuid", "foreignKey": "User" },
+        "deletedAt": { "zh": "刪除時間", "type": "datetime" }
+      }
+    },
+    "Player": {
+      "zh": "球員",
+      "en": "Player",
+      "table": "players",
+      "primaryKey": "player_id",
+      "description": "球隊中的選手",
+      "fields": {
+        "playerId": { "zh": "球員ID", "type": "uuid" },
+        "teamId": { "zh": "所屬球隊ID", "type": "uuid", "foreignKey": "Team" },
+        "jerseyNumber": { "zh": "背號", "type": "integer", "range": [0, 99] },
+        "name": { "zh": "姓名", "type": "string" },
+        "height": { "zh": "身高", "type": "integer", "unit": "cm" },
+        "position": { "zh": "守備位置", "type": "enum", "values": ["P", "C", "1B", "2B", "3B", "SS", "LF", "CF", "RF"] },
+        "sortOrder": { "zh": "排序順序", "type": "integer" },
+        "status": { "zh": "狀態", "type": "enum", "values": ["ACTIVE", "DELETED"] }
+      }
+    },
+    "Training": {
+      "zh": "訓練",
+      "en": "Training",
+      "table": "trainings",
+      "primaryKey": "training_id",
+      "description": "一次訓練紀錄",
+      "fields": {
+        "trainingId": { "zh": "訓練ID", "type": "uuid" },
+        "teamId": { "zh": "球隊ID", "type": "uuid", "foreignKey": "Team" },
+        "playerId": { "zh": "受測球員ID", "type": "uuid", "foreignKey": "Player" },
+        "trainingDate": { "zh": "訓練日期", "type": "date" },
+        "strikeZoneHeight": { "zh": "好球帶身高", "type": "integer", "unit": "cm" },
+        "status": { "zh": "狀態", "type": "enum", "values": ["ACTIVE", "DELETED"] },
+        "createdBy": { "zh": "建立者", "type": "uuid", "foreignKey": "User" },
+        "createdAt": { "zh": "建立時間", "type": "datetime" }
+      }
+    },
+    "Pitch": {
+      "zh": "投球",
+      "en": "Pitch",
+      "table": "pitches",
+      "primaryKey": "pitch_id",
+      "description": "單次投球紀錄，由 AI 系統自動捕捉",
+      "fields": {
+        "pitchId": { "zh": "投球ID", "type": "uuid" },
+        "trainingId": { "zh": "訓練ID", "type": "uuid", "foreignKey": "Training" },
+        "pitchNumber": { "zh": "投球序號", "type": "integer" },
+        "speed": { "zh": "球速", "type": "decimal", "unit": "km/h" },
+        "spinRate": { "zh": "轉速", "type": "integer", "unit": "rpm" },
+        "locationX": { "zh": "落點X座標", "type": "decimal" },
+        "locationY": { "zh": "落點Y座標", "type": "decimal" },
+        "isStrike": { "zh": "是否好球", "type": "boolean" },
+        "pitchType": { "zh": "球種", "type": "string" },
+        "trajectory": { "zh": "軌跡數據", "type": "json" },
+        "timestamp": { "zh": "時間戳", "type": "datetime" }
+      }
+    },
+    "StrikeZone": {
+      "zh": "好球帶",
+      "en": "StrikeZone",
+      "description": "動態計算的好球帶範圍，基於選手身高",
+      "fields": {
+        "topHeight": { "zh": "上緣高度", "type": "integer", "unit": "cm" },
+        "bottomHeight": { "zh": "下緣高度", "type": "integer", "unit": "cm" },
+        "width": { "zh": "寬度", "type": "decimal", "unit": "cm" }
+      }
+    },
+    "AISystem": {
+      "zh": "AI系統",
+      "en": "AISystem",
+      "description": "AI 影像辨識偵測系統",
+      "fields": {
+        "status": { "zh": "狀態", "type": "enum", "values": ["RUNNING", "STOPPED"] }
+      }
+    }
+  },
+  "actions": {
+    "login": { "zh": "登入", "stepPattern": "{actor} 登入系統" },
+    "logout": { "zh": "登出", "stepPattern": "{actor} 登出系統" },
+    "query": { "zh": "查詢", "stepPattern": "{actor} 查詢{entity}列表" },
+    "create": { "zh": "建立", "stepPattern": "{actor} 建立{entity}" },
+    "update": { "zh": "編輯", "stepPattern": "{actor} 編輯{entity}" },
+    "delete": { "zh": "刪除", "stepPattern": "{actor} 刪除{entity}" },
+    "batchDelete": { "zh": "批次刪除", "stepPattern": "{actor} 批次刪除{entity}" },
+    "select": { "zh": "選擇", "stepPattern": "{actor} 選擇{entity}" },
+    "start": { "zh": "啟動", "stepPattern": "{actor} 啟動{entity}" },
+    "stop": { "zh": "關閉", "stepPattern": "{actor} 關閉{entity}" },
+    "enter": { "zh": "進入", "stepPattern": "{actor} 進入{entity}" },
+    "exit": { "zh": "退出", "stepPattern": "{actor} 退出{entity}" },
+    "switch": { "zh": "切換", "stepPattern": "{actor} 切換至{view}" },
+    "adjust": { "zh": "調整", "stepPattern": "{actor} 調整{setting}" },
+    "reorder": { "zh": "排序調整", "stepPattern": "{actor} 調整{entity}排序" },
+    "view": { "zh": "查看", "stepPattern": "{actor} 查看{entity}" }
+  },
+  "roles": {
+    "ADMIN": {
+      "zh": "系統管理者",
+      "permissions": ["*"],
+      "description": "可管理所有帳號、球隊、訓練資料；具備最高權限"
+    },
+    "COACH": {
+      "zh": "教練",
+      "permissions": ["team:own", "player:own", "training:own", "analysis:read"],
+      "description": "可管理自己建立的球隊/球員、建立/查詢訓練、查看分析報表"
+    }
+  },
+  "statuses": {
+    "ACTIVE": { "zh": "啟用", "description": "正常啟用狀態" },
+    "DELETED": { "zh": "已刪除", "description": "軟刪除狀態" },
+    "INACTIVE": { "zh": "停用", "description": "帳號停用狀態" },
+    "RUNNING": { "zh": "運行中", "description": "AI 系統運行中" },
+    "STOPPED": { "zh": "已停止", "description": "AI 系統已停止" }
+  },
+  "positions": {
+    "P": { "zh": "投手", "en": "Pitcher" },
+    "C": { "zh": "捕手", "en": "Catcher" },
+    "1B": { "zh": "一壘手", "en": "First Baseman" },
+    "2B": { "zh": "二壘手", "en": "Second Baseman" },
+    "3B": { "zh": "三壘手", "en": "Third Baseman" },
+    "SS": { "zh": "游擊手", "en": "Shortstop" },
+    "LF": { "zh": "左外野手", "en": "Left Fielder" },
+    "CF": { "zh": "中外野手", "en": "Center Fielder" },
+    "RF": { "zh": "右外野手", "en": "Right Fielder" }
+  },
+  "views": {
+    "nineGrid": { "zh": "九宮格落點圖", "description": "顯示投球落點的九宮格視圖" },
+    "trajectory3D": { "zh": "3D入壘軌跡", "description": "顯示投球軌跡的3D視圖" },
+    "trainingRecordQuery": { "zh": "訓練記錄查詢", "description": "以訓練為維度的歷史查詢" },
+    "playerRecordQuery": { "zh": "選手紀錄查詢", "description": "以選手為維度的歷史查詢" },
+    "monthlyStats": { "zh": "月平均統計", "description": "選手月度統計數據" },
+    "heatmap": { "zh": "熱區圖", "description": "投球落點熱區分佈圖" }
+  },
+  "errorCodes": {
+    "AUTH_INVALID_CREDENTIALS": {
+      "httpStatus": 401,
+      "messages": { "zh-TW": "帳號或密碼錯誤", "en": "Invalid username or password" },
+      "gherkinMessage": "帳號或密碼錯誤"
+    },
+    "AUTH_TOKEN_EXPIRED": {
+      "httpStatus": 401,
+      "messages": { "zh-TW": "登入已過期", "en": "Session expired" },
+      "gherkinMessage": "登入已過期，請重新登入"
+    },
+    "PERMISSION_DENIED": {
+      "httpStatus": 403,
+      "messages": { "zh-TW": "無權限執行此操作", "en": "Permission denied" },
+      "gherkinMessage": "無權限執行此操作"
+    },
+    "TEAM_PERMISSION_DENIED": {
+      "httpStatus": 403,
+      "messages": { "zh-TW": "無權限操作此球隊", "en": "No permission to operate this team" },
+      "gherkinMessage": "無權限操作此球隊"
+    },
+    "TEAM_NOT_FOUND": {
+      "httpStatus": 404,
+      "messages": { "zh-TW": "找不到指定的球隊", "en": "Team not found" },
+      "gherkinMessage": "找不到指定的球隊"
+    },
+    "TEAM_NAME_DUPLICATE": {
+      "httpStatus": 409,
+      "messages": { "zh-TW": "球隊名稱已被使用", "en": "Team name already exists" },
+      "gherkinMessage": "球隊名稱已被使用"
+    },
+    "TEAM_NAME_EMPTY": {
+      "httpStatus": 400,
+      "messages": { "zh-TW": "球隊名稱不可為空", "en": "Team name cannot be empty" },
+      "gherkinMessage": "球隊名稱不可為空"
+    },
+    "TEAM_ALREADY_DELETED": {
+      "httpStatus": 404,
+      "messages": { "zh-TW": "球隊不存在或已刪除", "en": "Team not found or deleted" },
+      "gherkinMessage": "球隊不存在或已刪除"
+    },
+    "PLAYER_NOT_FOUND": {
+      "httpStatus": 404,
+      "messages": { "zh-TW": "找不到指定的球員", "en": "Player not found" },
+      "gherkinMessage": "找不到指定的球員"
+    },
+    "PLAYER_JERSEY_DUPLICATE": {
+      "httpStatus": 409,
+      "messages": { "zh-TW": "背號已被使用", "en": "Jersey number already in use" },
+      "gherkinMessage": "背號已被使用"
+    },
+    "PLAYER_JERSEY_OUT_OF_RANGE": {
+      "httpStatus": 400,
+      "messages": { "zh-TW": "背號必須在 0-99 之間", "en": "Jersey number must be between 0-99" },
+      "gherkinMessage": "背號必須在 0-99 之間"
+    },
+    "PLAYER_NAME_EMPTY": {
+      "httpStatus": 400,
+      "messages": { "zh-TW": "球員姓名不可為空", "en": "Player name cannot be empty" },
+      "gherkinMessage": "球員姓名不可為空"
+    },
+    "TRAINING_NOT_FOUND": {
+      "httpStatus": 404,
+      "messages": { "zh-TW": "找不到指定的訓練", "en": "Training not found" },
+      "gherkinMessage": "找不到指定的訓練"
+    },
+    "TRAINING_ALREADY_DELETED": {
+      "httpStatus": 404,
+      "messages": { "zh-TW": "訓練不存在或已刪除", "en": "Training not found or deleted" },
+      "gherkinMessage": "訓練不存在或已刪除"
+    },
+    "AI_SYSTEM_ALREADY_RUNNING": {
+      "httpStatus": 409,
+      "messages": { "zh-TW": "AI系統已在運行中", "en": "AI system is already running" },
+      "gherkinMessage": "AI系統已在運行中"
+    },
+    "AI_SYSTEM_NOT_RUNNING": {
+      "httpStatus": 409,
+      "messages": { "zh-TW": "AI系統尚未啟動", "en": "AI system is not running" },
+      "gherkinMessage": "AI系統尚未啟動"
+    },
+    "INVALID_STRIKE_ZONE": {
+      "httpStatus": 400,
+      "messages": { "zh-TW": "好球帶參數無效", "en": "Invalid strike zone parameters" },
+      "gherkinMessage": "好球帶參數無效"
+    }
+  }
+}

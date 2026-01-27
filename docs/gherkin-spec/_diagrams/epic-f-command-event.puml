@@ -1,0 +1,26 @@
+@startuml epic-f-command-event
+!theme plain
+title Epic F: 選手分析 - Command-Event 對應關係
+
+left to right direction
+
+package "Player Record Commands" {
+  usecase "查詢選手紀錄\nQueryPlayerRecords" as QRY_F001
+  usecase "批次刪除選手紀錄\nBatchDeletePlayerRecords" as CMD_F001
+}
+
+package "Player Stats Queries" {
+  usecase "查看選手統計\nViewPlayerStats" as QRY_F002
+}
+
+package "Events" {
+  usecase "PlayerRecordListQueried" as EVT_F001
+  usecase "PlayerRecordsBatchDeleted" as EVT_F002
+  usecase "PlayerStatsDisplayed" as EVT_F003
+}
+
+QRY_F001 --> EVT_F001
+CMD_F001 --> EVT_F002
+QRY_F002 --> EVT_F003
+
+@enduml

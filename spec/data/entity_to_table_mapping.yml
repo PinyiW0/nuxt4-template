@@ -1,0 +1,105 @@
+# Entity to Table Mapping for ISA-Level Gherkin
+# Generated from: docs/gherkin-spec/_meta/glossary.json
+# Generated: 2026-01-27
+
+entities:
+  使用者:
+    entity_en: User
+    table: users
+    primary_key: user_id
+    fields:
+      userId: user_id
+      account: account
+      password: password
+      role: role
+      name: name
+      status: status
+
+  球隊:
+    entity_en: Team
+    table: teams
+    primary_key: team_id
+    fields:
+      teamId: team_id
+      teamName: team_name
+      status: status
+      createdBy: created_by
+      createdAt: created_at
+      deletedBy: deleted_by
+      deletedAt: deleted_at
+
+  球員:
+    entity_en: Player
+    table: players
+    primary_key: player_id
+    fields:
+      playerId: player_id
+      teamId: team_id
+      name: name
+      jerseyNumber: jersey_number
+      height: height
+      position: position
+      sortOrder: sort_order
+      status: status
+
+  訓練:
+    entity_en: Training
+    table: trainings
+    primary_key: training_id
+    fields:
+      trainingId: training_id
+      teamId: team_id
+      playerId: player_id
+      date: training_date
+      strikeZoneHeight: strike_zone_height
+      status: status
+      createdBy: created_by
+      createdAt: created_at
+      deletedBy: deleted_by
+      deletedAt: deleted_at
+
+  投球:
+    entity_en: Pitch
+    table: pitches
+    primary_key: pitch_id
+    fields:
+      pitchId: pitch_id
+      trainingId: training_id
+      speed: speed
+      spinRate: spin_rate
+      location: location
+      result: result
+      isStrike: is_strike
+      timestamp: timestamp
+
+  好球帶:
+    entity_en: StrikeZone
+    table: strike_zones
+    primary_key: strike_zone_id
+    fields:
+      strikeZoneId: strike_zone_id
+      trainingId: training_id
+      topHeight: top_height
+      bottomHeight: bottom_height
+      width: width
+
+enums:
+  role:
+    - ADMIN
+    - COACH
+  status:
+    - ACTIVE
+    - DELETED
+  position:
+    - P
+    - C
+    - 1B
+    - 2B
+    - 3B
+    - SS
+    - LF
+    - CF
+    - RF
+  result:
+    - STRIKE
+    - BALL
