@@ -14,12 +14,16 @@
 ## 輸入
 
 - 當前處理的 Epic
-- Stage 3 的 events.json
+- Stage 3 的 Events 分析結果（對話記憶）
 - glossary.json
 
 ## 輸出
 
-- `docs/gherkin-spec/_meta/commands/{epic-id}-commands.json`
+**不產出檔案**。Commands 分析結果保留在對話記憶中，直接用於：
+1. Stage 5 Policy 分析
+2. Stage 6 Gherkin 產出
+
+> 簡化說明：Commands 是中間分析產物。如需視覺化（Stage 7），可事後補產 JSON。
 
 ## Command 命名規則
 
@@ -33,107 +37,31 @@
 | delete | Team | DeleteTeam |
 | select | Team | SelectTeam |
 
-## 輸出格式（JSON）
+## 分析結果摘要格式
 
-```json
-{
-  "_meta": {
-    "version": "1.0",
-    "generatedAt": "2026-01-22T10:00:00Z",
-    "epic": "B",
-    "epicName": "球隊/球員資料管理"
-  },
-  "commands": [
-    {
-      "commandId": "C-B001",
-      "commandName": "QueryTeamList",
-      "description": "查詢球隊列表",
-      "type": "Query",
-      "actor": ["ADMIN", "COACH"],
-      "entity": "Team",
-      "relatedUserStory": "B1",
-      "input": {
-        "required": [],
-        "optional": [
-          { "field": "status", "type": "enum", "values": ["ACTIVE", "INACTIVE"], "default": "ACTIVE" },
-          { "field": "page", "type": "integer", "default": 1 },
-          { "field": "pageSize", "type": "integer", "default": 20 }
-        ]
-      },
-      "output": {
-        "type": "TeamListResult",
-        "fields": [
-          { "field": "teams", "type": "Team[]" },
-          { "field": "totalCount", "type": "integer" }
-        ]
-      },
-      "producedEvents": []
-    },
-    {
-      "commandId": "C-B002",
-      "commandName": "SelectTeam",
-      "description": "選擇球隊",
-      "type": "Command",
-      "actor": ["ADMIN", "COACH"],
-      "entity": "Team",
-      "relatedUserStory": "B1",
-      "input": {
-        "required": [
-          { "field": "teamId", "type": "uuid" }
-        ],
-        "optional": []
-      },
-      "output": {
-        "type": "Team",
-        "fields": [
-          { "field": "teamId", "type": "uuid" },
-          { "field": "teamName", "type": "string" }
-        ]
-      },
-      "producedEvents": ["E-B004"],
-      "preconditions": [
-        { "rule": "球隊必須存在", "errorCode": "TEAM_NOT_FOUND" }
-      ]
-    },
-    {
-      "commandId": "C-B003",
-      "commandName": "CreateTeam",
-      "description": "建立球隊",
-      "type": "Command",
-      "actor": ["ADMIN", "COACH"],
-      "entity": "Team",
-      "relatedUserStory": "B2",
-      "input": {
-        "required": [
-          { "field": "teamName", "type": "string", "validation": "2-50 字元" }
-        ],
-        "optional": [
-          { "field": "description", "type": "string", "validation": "最大 500 字元" }
-        ]
-      },
-      "output": {
-        "type": "Team",
-        "fields": [
-          { "field": "teamId", "type": "uuid" },
-          { "field": "teamName", "type": "string" }
-        ]
-      },
-      "producedEvents": ["E-B001"],
-      "preconditions": [
-        { "rule": "球隊名稱不可重複", "errorCode": "TEAM_NAME_DUPLICATE" }
-      ]
-    }
-  ],
-  "commandEventMapping": [
-    { "command": "C-B002", "events": ["E-B004"], "relation": "1:1" },
-    { "command": "C-B003", "events": ["E-B001"], "relation": "1:1" }
-  ],
-  "summary": {
-    "totalCommands": 7,
-    "queries": 1,
-    "commands": 6
-  }
-}
+分析完成後，向使用者報告摘要（不寫檔案）：
+
+```markdown
+### Epic {X} Commands 分析完成
+
+**識別的 Commands**：
+| Command | 類型 | Entity | 產生的 Event |
+|---------|------|--------|--------------|
+| QueryTeamList | Query | Team | - |
+| CreateTeam | Command | Team | TeamCreated |
+| UpdateTeam | Command | Team | TeamUpdated |
+| DeleteTeam | Command | Team | TeamDeleted, PlayerCascadeDeleted |
+
+**Command-Event 對應**：
+- CreateTeam → TeamCreated (1:1)
+- DeleteTeam → TeamDeleted, PlayerCascadeDeleted (1:N 級聯)
+
+**摘要**：
+- 共 {N} 個 Commands
+- Queries：{N} 個
+- Commands：{N} 個
+
+準備進入 Stage 5：Policy 分析
 ```
 
 ## 執行指引

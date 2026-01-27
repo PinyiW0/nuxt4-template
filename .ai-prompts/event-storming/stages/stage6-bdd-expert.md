@@ -30,9 +30,7 @@ Event Storming → DSL-Level Gherkin → ISA-Level Gherkin → Test Code → Cod
 **重要**：此 Stage 必須在 Facilitator 完成邊界問題確認後才能開始。
 
 需要的輸入：
-- Stage 3 的 events.json
-- Stage 4 的 commands.json
-- Stage 5 的 policies.json
+- Stage 3-5 的分析結果（對話記憶中）
 - glossary.json
 - **boundary-decisions.json**（必須存在，否則不可開始）
 - **PRD 文件**（必須讀取角色定義章節）
@@ -495,30 +493,22 @@ Rule: 有球員的球隊不可刪除
    - 教練：通常只能操作自己建立的資源
 4. 記錄每個 User Story 的允許角色（如「身為 管理者/教練」）
 
-### Step 1: 檢查邊界決策
+### Step 1: 檢查邊界決策（重要）
 
-確認 `_meta/boundary-decisions.json` 存在且包含所需決策。
+1. **讀取** `_meta/boundary-decisions.json`
+2. **建立決策 ID 對照表**，記錄每個決策的 ID 和描述：
+   - `globalDecisions[].decisionId` → 描述
+   - `epicDecisions[epic-x][].questionId` → 描述
+3. **在 Feature 註解引用時，必須使用正確的 ID**
 
-### Step 1.5: 載入 Policy DSL 片段（重要）
+**常見錯誤**：混淆相近的決策 ID（如 GD-004 vs GD-005），導致 DSL 和 ISA 檔案不一致。
 
-從 `_meta/policies/{epic-id}-policies.json` 載入 `dslFragments`，作為撰寫 Gherkin 的基礎：
+### Step 1.5: 參照 Policy 分析結果
 
-```json
-{
-  "dslFragments": {
-    "PRE-B003": {
-      "given": "系統中沒有球隊 \"{teamName}\"",
-      "errorWhen": "系統中存在球隊 \"{teamName}\"",
-      "errorThen": "應回傳錯誤 \"球隊名稱已被使用\""
-    }
-  }
-}
-```
-
-**優先使用 dslFragments**：
-- Given step 優先使用 `dslFragments[xxx].given`
-- Error scenario 優先使用 `dslFragments[xxx].errorGiven` + `errorThen`
-- 確保與 Policy Expert 產出一致
+從對話記憶中的 Stage 5 Policy 分析結果，確保 Gherkin 覆蓋：
+- 所有 Invariants → 對應的 Rule
+- 所有 ErrorScenarios → 對應的 Error Example
+- 所有 Preconditions → 對應的 Given
 
 ### Step 2: 從 Commands 產生 Feature 檔案
 
@@ -556,7 +546,7 @@ Rule: 有球員的球隊不可刪除
 # Generated: 2026-01-22
 # Level: DSL
 # Boundary Decisions:
-#   - Q1: 球隊名稱不區分大小寫
+#   - GD-005: 球隊名稱不區分大小寫（必須與 boundary-decisions.json 的 decisionId 一致）
 # Allowed Roles: 管理者, 教練
 
 @epic-b @team @command
@@ -646,8 +636,8 @@ Feature: 建立球隊
 # Generated: 2026-01-22
 # Level: DSL
 # Boundary Decisions:
-#   - Q1: 背號同一球隊內唯一
-#   - Q2: 背號範圍 0-99
+#   - Q-B001: 背號同一球隊內唯一（對應 epicDecisions.epic-b[0].questionId）
+#   - Q-B002: 背號範圍 0-99（對應 epicDecisions.epic-b[1].questionId）
 
 @epic-b @player @command
 Feature: 建立球員
@@ -833,7 +823,28 @@ Feature: 查詢球隊列表
 - [ ] appliedRules 中的 Rule 都存在於 .feature
 - [ ] 錯誤訊息與 dslFragments.errorThen 一致
 
-### 邊界決策檢核
+### 邊界決策檢核（重要）
+
+**ID 一致性檢核（必要）**：
+- [ ] **Feature 註解中的決策 ID 必須與 boundary-decisions.json 完全一致**
+- [ ] 產出前必須讀取 `_meta/boundary-decisions.json`，確認引用的 ID 正確
+- [ ] 若不確定，查詢 `globalDecisions[].decisionId` 和 `epicDecisions[epic-x][].questionId`
+
+**錯誤範例**：
+```gherkin
+# ❌ 錯誤：GD-004 是「級聯刪除確認」，不是「大小寫」
+# Boundary Decisions:
+#   - GD-004: 球隊名稱不區分大小寫
+```
+
+**正確範例**：
+```gherkin
+# ✅ 正確：GD-005 才是「球隊名稱大小寫」決策
+# Boundary Decisions:
+#   - GD-005: 球隊名稱不區分大小寫
+```
+
+**套用檢核**：
 - [ ] 所有邊界決策已套用至測試場景
 - [ ] 唯一性約束已正確測試
 - [ ] 刪除策略已正確測試

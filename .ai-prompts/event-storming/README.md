@@ -5,13 +5,13 @@
 ## 版本更新
 
 ### v7.0 主要變更
+- **簡化產出原則**：僅 `glossary.json`、`boundary-decisions.json`、`.feature` 為必須產出，其餘保留在對話記憶
 - **分階段邊界問題確認**：Phase 1（Entity 層級）在 Stage 2 後確認，Phase 2（Field 層級）在 Stage 5 後確認
 - **全域決策管理**：`globalDecisions` 支援跨 Epic 複用決策，避免重複確認
 - **決策樹機制**：邊界決策自動觸發後續追問（如軟刪除→是否過濾查詢）
-- **Hotspot 狀態管理**：支援 pending/resolved/ignored/escalated 狀態與回補流程
-- **測試資料一致性**：命名慣例與選用的 `test-fixtures.json`
-- **覆蓋度驗證**：自動檢查 User Story、驗收條件、ErrorCode 的覆蓋率
-- **Policy-Rule 映射**：Stage 5 預產出 DSL 片段，Stage 6 引用確保一致性
+- **Hotspot 記錄**：在 Stage 7 視覺化時統一產出（若有需要）
+- **Feature 依賴標籤**：用 `@requires`/`@publishes` 標籤取代 `feature-dependencies.json`
+- **Policy-Rule 映射**：Stage 5 分析保留在對話記憶，直接用於 Stage 6
 - **ErrorCode 多語系**：支援多語系訊息與 Gherkin 專用訊息
 - **Background 使用準則**：明確定義何時使用 Background
 
@@ -66,45 +66,41 @@ for: event storming
 ## Pipeline 架構
 
 ```
-Stage 0: PRD 解析
+Stage 0: PRD 解析 → 對話記憶
     |
-Stage 1: 詞彙表建立（含 ErrorCode 多語系）
+Stage 1: 詞彙表建立 → glossary.json
     |
-Stage 2: Feature 依賴分析
+Stage 2: Feature 依賴分析 → 對話記憶（@requires/@publishes 標籤）
     |
 +==========================+
-| Phase 1 邊界問題確認      |  <-- v7.0 新增：Entity 層級
+| Phase 1 邊界問題確認      |  <-- Entity 層級
 | - 刪除策略               |
 | - 級聯處理               |
 | - 名稱規則               |
-| - 建立 globalDecisions   |
+| → boundary-decisions.json |
 +==========================+
     |
 [Per Epic Loop]
-    Stage 3: Domain Events
-    Stage 4: Commands
-    Stage 5: Policies（含 DSL 片段預產出）
+    Stage 3: Domain Events → 對話記憶
+    Stage 4: Commands → 對話記憶
+    Stage 5: Policies → 對話記憶
     |
     +==========================+
     | Phase 2 邊界問題確認      |  <-- Field 層級
     | - 唯一性範圍             |
     | - 數值範圍               |
-    | - 決策樹追問             |
+    | → 更新 boundary-decisions |
     +==========================+
     |
-    Stage 6: Gherkin (DSL)（引用 DSL 片段）
-    |
-    +------------------+
-    | 覆蓋度驗證        |  <-- v7.0 新增
-    +------------------+
+    Stage 6: Gherkin (DSL) → ⭐ .feature 檔案（主要產出）
     |
 +------------------+
-| 總結報告          |  <-- v7.0 新增
-| - Hotspot 狀態   |
+| 完成報告          |
 | - 覆蓋度摘要     |
+| - Hotspot 列表   |
 +------------------+
     |
-Stage 7: PlantUML 視覺化（可選）
+Stage 7: PlantUML 視覺化（可選）→ _diagrams/*.puml
 ```
 
 ---
@@ -113,15 +109,15 @@ Stage 7: PlantUML 視覺化（可選）
 
 | Stage | 名稱 | 輸入 | 輸出 |
 |-------|------|------|------|
-| 0 | PRD Analyst | PRD markdown | `_meta/prd-structure.json` |
-| 1 | Glossary Manager | prd-structure.json | `_meta/glossary.json` |
-| 2 | Feature Dependency Analyst | prd-structure.json | `_meta/feature-dependencies.json` |
-| 3 | Event Expert | Epic + glossary | `_meta/events/{epic}-events.json` |
-| 4 | Command Expert | Events + glossary | `_meta/commands/{epic}-commands.json` |
-| 5 | Policy Expert | Events + commands | `_meta/policies/{epic}-policies.json` |
-| - | **邊界問題確認** | 所有 meta files | `_meta/boundary-decisions.json`, `_meta/hotspots.json` |
-| 6 | BDD Expert | All meta files + decisions | `.feature` files (DSL) |
-| 7 | Visualizer | All meta files | PlantUML diagrams, `_meta/terminology-mapping.md` |
+| 0 | PRD Analyst | PRD markdown | 對話記憶（不產出檔案） |
+| 1 | Glossary Manager | PRD 分析結果 | `_meta/glossary.json` |
+| 2 | Feature Dependency Analyst | PRD 分析結果 | 對話記憶（用 @requires/@publishes 標籤） |
+| 3 | Event Expert | Epic + glossary | 對話記憶（不產出檔案） |
+| 4 | Command Expert | Events + glossary | 對話記憶（不產出檔案） |
+| 5 | Policy Expert | Events + commands | 對話記憶（不產出檔案） |
+| - | **邊界問題確認** | 對話記憶 | `_meta/boundary-decisions.json` |
+| 6 | BDD Expert | 對話記憶 + decisions | `.feature` files (DSL) ⭐ 主要產出 |
+| 7 | Visualizer | .feature + glossary | PlantUML diagrams, `_meta/terminology-mapping.md`（可選）|
 
 ---
 
@@ -198,32 +194,41 @@ AI 回應:
 
 ## 輸出結構
 
+### 簡化產出原則
+
+v7.0 簡化了中繼檔案產出，僅保留必要的持久化檔案：
+
+| 類別 | 檔案 | 說明 |
+|------|------|------|
+| **必須** | `glossary.json` | 跨 Epic 詞彙一致性 |
+| **必須** | `boundary-decisions.json` | 避免重複決策 |
+| **必須** | `*.feature` | ⭐ 主要產出 |
+| 可選 | `terminology-mapping.md` | Stage 7 視覺化時產出 |
+| 可選 | `*.puml` | Stage 7 視覺化時產出 |
+
+**不產出檔案（保留在對話記憶）**：
+- Stage 0 PRD 結構分析
+- Stage 2 Feature 依賴（用 `@requires`/`@publishes` 標籤取代）
+- Stage 3-5 Events/Commands/Policies 分析
+
+### 目錄結構
+
 ```
 docs/gherkin-spec/
 ├── _meta/
-│   ├── prd-structure.json
-│   ├── glossary.json              <-- 含 ErrorCode 多語系映射
-│   ├── feature-dependencies.json
-│   ├── boundary-decisions.json    <-- v7.0 擴充：globalDecisions + epicDecisions
-│   ├── hotspots.json              <-- v7.0 擴充：含狀態管理
-│   ├── coverage-report.json       <-- v7.0 新增：覆蓋度報告
-│   ├── test-fixtures.json         <-- v7.0 新增（可選）：測試資料參考
-│   ├── terminology-mapping.md     <-- Stage 7 產出
-│   ├── events/
-│   │   └── {epic-id}-events.json
-│   ├── commands/
-│   │   └── {epic-id}-commands.json
-│   └── policies/
-│       └── {epic-id}-policies.json  <-- v7.0 擴充：含 appliedRules + dslFragments
+│   ├── glossary.json              <-- 必須：詞彙表（含 ErrorCode 多語系）
+│   ├── boundary-decisions.json    <-- 必須：邊界決策記錄
+│   └── terminology-mapping.md     <-- 可選：Stage 7 產出
 ├── epic-a/
-│   └── {command-name}.feature
+│   └── {command-name}.feature     <-- ⭐ 主要產出
 ├── epic-b/
 │   └── {command-name}.feature
-└── _diagrams/
+├── ...
+└── _diagrams/                     <-- 可選：Stage 7 產出
     ├── {epic-id}-event-flow.puml
     ├── {epic-id}-command-event.puml
     ├── {epic-id}-entity-relation.puml
-    └── hotspots.puml              <-- 若有 Hotspots
+    └── README.md
 ```
 
 ---

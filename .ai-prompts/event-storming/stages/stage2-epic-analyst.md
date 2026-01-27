@@ -13,12 +13,19 @@
 
 ## 輸入
 
-- Stage 0 的 prd-structure.json
+- Stage 0 的 PRD 分析結果（對話記憶）
 - Stage 1 的 glossary.json
 
 ## 輸出
 
-- `docs/gherkin-spec/_meta/feature-dependencies.json`
+**不產出檔案**。依賴關係直接標示在 .feature 檔案的標籤中：
+
+```gherkin
+# @publishes: 球隊已建立
+# @requires: 使用者登入
+```
+
+> 簡化說明：Feature 依賴關係可透過 @requires/@publishes 標籤直接在 .feature 檔案中表達，不需要額外的 JSON 檔案。
 
 ## Feature 依賴類型
 
@@ -55,107 +62,30 @@ Feature: 查詢球員列表
 @requires: 建立球隊（需要有球隊才能查詢其球員）
 ```
 
-## 輸出格式（JSON）
+## 分析結果摘要格式
 
-```json
-{
-  "_meta": {
-    "version": "1.0",
-    "generatedAt": "2026-01-27T10:00:00Z",
-    "sourceFile": "docs/gherkin-spec/_meta/prd-structure.json"
-  },
-  "features": {
-    "登入": {
-      "featureId": "us-a1-login",
-      "epic": "A",
-      "command": "登入",
-      "aggregate": "User",
-      "publishes": ["使用者已登入"],
-      "subscribes": [],
-      "requires": [],
-      "description": "所有功能的前置條件"
-    },
-    "建立球隊": {
-      "featureId": "us-b2-create-team",
-      "epic": "B",
-      "command": "建立球隊",
-      "aggregate": "Team",
-      "publishes": ["球隊已建立"],
-      "subscribes": [],
-      "requires": ["登入"],
-      "description": "需要登入才能建立球隊"
-    },
-    "建立球員": {
-      "featureId": "us-b3-create-player",
-      "epic": "B",
-      "command": "建立球員",
-      "aggregate": "Player",
-      "publishes": ["球員已建立"],
-      "subscribes": [],
-      "requires": ["登入", "建立球隊"],
-      "description": "球員必須屬於某個球隊"
-    },
-    "刪除球隊": {
-      "featureId": "us-b2-delete-team",
-      "epic": "B",
-      "command": "刪除球隊",
-      "aggregate": "Team",
-      "publishes": ["球隊已刪除", "球員已刪除"],
-      "subscribes": [],
-      "requires": ["登入", "建立球隊"],
-      "description": "刪除球隊時級聯刪除所屬球員"
-    }
-  },
-  "sagas": [
-    {
-      "sagaName": "訂單處理流程",
-      "steps": [
-        {
-          "order": 1,
-          "feature": "建立訂單",
-          "publishes": "訂單已建立"
-        },
-        {
-          "order": 2,
-          "feature": "扣減庫存",
-          "subscribes": "訂單已建立",
-          "publishes": "庫存已扣減"
-        },
-        {
-          "order": 3,
-          "feature": "處理付款",
-          "subscribes": "庫存已扣減",
-          "publishes": "付款已完成"
-        }
-      ]
-    }
-  ],
-  "aggregates": {
-    "User": {
-      "features": ["登入", "登出"],
-      "isRoot": true
-    },
-    "Team": {
-      "features": ["建立球隊", "更新球隊", "刪除球隊", "查詢球隊列表", "選擇球隊"],
-      "isRoot": true,
-      "contains": ["Player"]
-    },
-    "Player": {
-      "features": ["建立球員", "更新球員", "刪除球員", "查詢球員列表"],
-      "isRoot": false,
-      "belongsTo": "Team"
-    }
-  },
-  "dependencyGraph": {
-    "登入": [],
-    "登出": ["登入"],
-    "建立球隊": ["登入"],
-    "查詢球隊列表": ["登入"],
-    "選擇球隊": ["登入", "建立球隊"],
-    "建立球員": ["登入", "建立球隊"],
-    "刪除球隊": ["登入", "建立球隊"]
-  }
-}
+分析完成後，向使用者報告摘要（不寫檔案）：
+
+```markdown
+### Feature 依賴分析完成
+
+**Aggregate 邊界**：
+| Aggregate | 是否 Root | 關聯 |
+|-----------|-----------|------|
+| User | ✅ | - |
+| Team | ✅ | contains: Player |
+| Player | - | belongsTo: Team |
+
+**Feature 依賴圖**：
+- 登入 → (無依賴)
+- 建立球隊 → @requires: 登入
+- 建立球員 → @requires: 登入, 建立球隊
+- 刪除球隊 → @publishes: 球隊已刪除, 球員已刪除
+
+**Saga 流程**：（若有）
+- 訂單處理流程：建立訂單 → 扣減庫存 → 處理付款
+
+準備進入 Phase 1 邊界問題確認
 ```
 
 ## 執行指引

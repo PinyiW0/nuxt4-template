@@ -13,12 +13,16 @@
 
 ## 輸入
 
-- 當前處理的 Epic（來自 prd-structure.json）
+- 當前處理的 Epic（來自對話記憶）
 - glossary.json
 
 ## 輸出
 
-- `docs/gherkin-spec/_meta/events/{epic-id}-events.json`
+**不產出檔案**。Events 分析結果保留在對話記憶中，直接用於：
+1. Stage 4 Command 分析
+2. Stage 6 Gherkin 產出（@publishes 標籤）
+
+> 簡化說明：Events 是中間分析產物。如需視覺化（Stage 7），可事後補產 JSON。
 
 ## 事件命名規則
 
@@ -30,66 +34,27 @@
 | Player | PlayerCreated, PlayerUpdated, PlayerDeleted, PlayerOrderChanged |
 | Training | TrainingCreated, TrainingStarted, TrainingEnded |
 
-## 輸出格式（JSON）
+## 分析結果摘要格式
 
-```json
-{
-  "_meta": {
-    "version": "1.0",
-    "generatedAt": "2026-01-22T10:00:00Z",
-    "epic": "B",
-    "epicName": "球隊/球員資料管理"
-  },
-  "domainEvents": [
-    {
-      "eventId": "E-B001",
-      "eventName": "TeamCreated",
-      "description": "新球隊已建立",
-      "source": "Actor",
-      "entity": "Team",
-      "data": {
-        "required": [
-          { "field": "teamId", "type": "uuid", "description": "球隊 ID" },
-          { "field": "teamName", "type": "string", "description": "球隊名稱" },
-          { "field": "createdAt", "type": "timestamp", "description": "建立時間" },
-          { "field": "createdBy", "type": "uuid", "description": "建立者 ID" }
-        ],
-        "optional": [
-          { "field": "description", "type": "string", "description": "球隊描述" }
-        ]
-      },
-      "relatedUserStory": "B2"
-    },
-    {
-      "eventId": "E-B002",
-      "eventName": "TeamUpdated",
-      "description": "球隊資料已更新",
-      "source": "Actor",
-      "entity": "Team",
-      "data": {
-        "required": [
-          { "field": "teamId", "type": "uuid", "description": "球隊 ID" },
-          { "field": "teamName", "type": "string", "description": "球隊名稱" },
-          { "field": "updatedAt", "type": "timestamp", "description": "更新時間" },
-          { "field": "updatedBy", "type": "uuid", "description": "更新者 ID" }
-        ],
-        "optional": []
-      },
-      "relatedUserStory": "B2"
-    }
-  ],
-  "summary": {
-    "totalEvents": 8,
-    "byEntity": {
-      "Team": 4,
-      "Player": 4
-    },
-    "bySource": {
-      "Actor": 8,
-      "System": 0
-    }
-  }
-}
+分析完成後，向使用者報告摘要（不寫檔案）：
+
+```markdown
+### Epic {X} Domain Events 分析完成
+
+**識別的 Events**：
+| Event | Entity | 來源 | 說明 |
+|-------|--------|------|------|
+| TeamCreated | Team | Actor | 新球隊已建立 |
+| TeamUpdated | Team | Actor | 球隊資料已更新 |
+| TeamDeleted | Team | Actor | 球隊已刪除 |
+| PlayerCascadeDeleted | Player | System | 因球隊刪除而級聯刪除 |
+
+**摘要**：
+- 共 {N} 個 Events
+- Actor 觸發：{N} 個
+- System 觸發：{N} 個
+
+準備進入 Stage 4：Command 分析
 ```
 
 ## 執行指引

@@ -13,135 +13,41 @@
 
 ## 輸入
 
-- Stage 3 的 events.json
-- Stage 4 的 commands.json
+- Stage 3 的 Events 分析結果（對話記憶）
+- Stage 4 的 Commands 分析結果（對話記憶）
 - glossary.json
 
 ## 輸出
 
-- `docs/gherkin-spec/_meta/policies/{epic-id}-policies.json`
+**不產出檔案**。Policies 分析結果保留在對話記憶中，直接用於 Stage 6 Gherkin 產出。
 
-## 輸出格式（JSON）
+> 簡化說明：Policies 是中間分析產物，主要用於確保 Gherkin 的 Rules 完整覆蓋業務規則。如需視覺化（Stage 7），可事後補產 JSON。
 
-```json
-{
-  "_meta": {
-    "version": "1.0",
-    "generatedAt": "2026-01-22T10:00:00Z",
-    "epic": "B",
-    "epicName": "球隊/球員資料管理"
-  },
-  "commandRules": [
-    {
-      "commandId": "C-B003",
-      "commandName": "CreateTeam",
-      "preconditions": [
-        {
-          "ruleId": "PRE-B001",
-          "description": "用戶已登入系統",
-          "dslGiven": "教練 已登入系統",
-          "errorCode": "UNAUTHORIZED"
-        },
-        {
-          "ruleId": "PRE-B002",
-          "description": "用戶擁有 team:create 權限",
-          "dslGiven": "教練 具有建立球隊權限",
-          "errorCode": "FORBIDDEN"
-        },
-        {
-          "ruleId": "PRE-B003",
-          "description": "球隊名稱在系統中不存在",
-          "dslGiven": "系統中沒有球隊 \"閃電隊\"",
-          "errorCode": "TEAM_NAME_DUPLICATE"
-        }
-      ],
-      "validationRules": [
-        {
-          "ruleId": "VAL-B001",
-          "field": "teamName",
-          "rules": [
-            { "type": "required", "message": "球隊名稱不可為空" },
-            { "type": "minLength", "value": 2, "message": "球隊名稱至少 2 個字元" },
-            { "type": "maxLength", "value": 50, "message": "球隊名稱最多 50 個字元" }
-          ]
-        }
-      ],
-      "postconditions": [
-        {
-          "ruleId": "POST-B001",
-          "description": "新球隊已存在於系統中",
-          "dslThen": "球隊 \"閃電隊\" 應該存在",
-          "verification": "Team.exists(teamId) == true"
-        },
-        {
-          "ruleId": "POST-B002",
-          "description": "球隊狀態為啟用",
-          "dslThen": "球隊 \"閃電隊\" 狀態應為 \"ACTIVE\"",
-          "verification": "Team.status == ACTIVE"
-        }
-      ]
-    }
-  ],
-  "policies": [
-    {
-      "policyId": "POL-B001",
-      "policyName": "AutoLoadPlayersOnTeamSelection",
-      "description": "選擇球隊後自動載入球員列表",
-      "trigger": {
-        "eventId": "E-B004",
-        "eventName": "TeamSelected"
-      },
-      "condition": "always",
-      "action": {
-        "commandId": "C-B010",
-        "commandName": "QueryPlayerList",
-        "input": {
-          "teamId": "event.teamId"
-        }
-      }
-    }
-  ],
-  "invariants": [
-    {
-      "invariantId": "INV-B001",
-      "description": "同一球隊內背號不可重複",
-      "entity": "Player",
-      "scope": "同一 teamId",
-      "field": "jerseyNumber",
-      "rule": "UNIQUE within teamId"
-    },
-    {
-      "invariantId": "INV-B002",
-      "description": "球隊名稱全系統唯一",
-      "entity": "Team",
-      "scope": "全系統",
-      "field": "teamName",
-      "rule": "UNIQUE"
-    }
-  ],
-  "errorScenarios": [
-    {
-      "scenarioId": "ERR-B001",
-      "commandId": "C-B003",
-      "errorCode": "TEAM_NAME_DUPLICATE",
-      "description": "使用已存在的球隊名稱建立球隊",
-      "dslScenario": {
-        "given": "系統中存在球隊 \"閃電隊\"",
-        "when": "教練 建立球隊 \"閃電隊\"",
-        "then": "應回傳錯誤 \"球隊名稱已被使用\""
-      }
-    }
-  ],
-  "summary": {
-    "totalRules": 15,
-    "preconditions": 5,
-    "validationRules": 6,
-    "postconditions": 4,
-    "policies": 1,
-    "invariants": 2,
-    "errorScenarios": 3
-  }
-}
+## 分析結果摘要格式
+
+分析完成後，向使用者報告摘要（不寫檔案）：
+
+```markdown
+### Epic {X} Policies 分析完成
+
+**Invariants（不變式）**：
+| Invariant | Entity | 範圍 | 規則 |
+|-----------|--------|------|------|
+| 背號唯一 | Player | 同一球隊內 | jerseyNumber UNIQUE |
+| 球隊名稱唯一 | Team | 全系統 | teamName UNIQUE |
+
+**Policies（自動觸發）**：
+| Policy | 觸發事件 | 動作 |
+|--------|----------|------|
+| 自動載入球員 | TeamSelected | QueryPlayerList |
+
+**Error Scenarios**：
+| 錯誤場景 | ErrorCode | 觸發條件 |
+|----------|-----------|----------|
+| 球隊名稱重複 | TEAM_NAME_DUPLICATE | 建立/編輯時名稱已存在 |
+| 背號重複 | PLAYER_JERSEY_DUPLICATE | 新增/編輯時背號已使用 |
+
+準備進入 Phase 2 邊界問題確認，然後 Stage 6 Gherkin 產出
 ```
 
 ## 執行指引

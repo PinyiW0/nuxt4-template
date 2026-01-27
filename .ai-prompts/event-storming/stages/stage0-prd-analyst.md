@@ -17,7 +17,9 @@
 
 ## 輸出
 
-- `docs/gherkin-spec/_meta/prd-structure.json`
+**不產出檔案**。分析結果保留在對話記憶中，供後續 Stage 使用。
+
+> 簡化說明：PRD 結構分析是一次性的過程產物，不需要持久化。AI 在單次對話中會記住這些資訊。
 
 ## 執行指引
 
@@ -54,94 +56,27 @@
 - 原因（Why）
 - 驗收條件
 
-## 輸出格式（JSON）
+## 分析結果摘要格式
 
-```json
-{
-  "_meta": {
-    "version": "1.0",
-    "generatedAt": "2026-01-22T10:00:00Z",
-    "sourceFile": "docs/user-stories/user-v1.md",
-    "sourceHash": "sha256..."
-  },
-  "product": {
-    "name": "棒球訓練數據分析系統",
-    "background": "...",
-    "goals": ["..."],
-    "nonGoals": ["..."]
-  },
-  "roles": [
-    {
-      "roleId": "ADMIN",
-      "roleName": "系統管理者",
-      "description": "...",
-      "permissions": ["*"]
-    },
-    {
-      "roleId": "COACH",
-      "roleName": "教練",
-      "description": "...",
-      "permissions": ["team:*", "player:*", "training:*"]
-    }
-  ],
-  "epics": [
-    {
-      "epicId": "A",
-      "epicName": "登入/登出與權限控管",
-      "description": "使用者認證與授權管理",
-      "priority": "必要",
-      "userStories": [
-        {
-          "storyId": "A1",
-          "title": "Google OAuth 登入",
-          "asA": "使用者",
-          "iWant": "透過 Google 帳號登入系統",
-          "soThat": "快速進入系統使用功能",
-          "acceptanceCriteria": [
-            "可以使用 Google 帳號登入",
-            "登入後顯示使用者名稱",
-            "登入失敗顯示錯誤訊息"
-          ]
-        },
-        {
-          "storyId": "A2",
-          "title": "登出功能",
-          "asA": "已登入使用者",
-          "iWant": "登出系統",
-          "soThat": "結束使用並保護帳號安全",
-          "acceptanceCriteria": [
-            "可以點擊登出按鈕",
-            "登出後回到登入頁面"
-          ]
-        }
-      ]
-    },
-    {
-      "epicId": "B",
-      "epicName": "球隊/球員資料管理",
-      "description": "球隊和球員的 CRUD 操作",
-      "priority": "高",
-      "userStories": [
-        {
-          "storyId": "B1",
-          "title": "球隊列表查詢與選擇",
-          "asA": "管理者/教練",
-          "iWant": "查詢並選擇球隊",
-          "soThat": "管理該隊球員",
-          "acceptanceCriteria": ["..."]
-        }
-      ]
-    }
-  ],
-  "flows": [
-    {
-      "flowId": "F1",
-      "flowName": "核心使用流程",
-      "description": "...",
-      "steps": ["登入", "選擇球隊", "管理球員", "建立訓練"]
-    }
-  ]
-}
+分析完成後，向使用者報告摘要（不寫檔案）：
+
+```markdown
+### PRD 結構分析完成
+
+**產品**：{產品名稱}
+
+**角色**：
+- {角色1}：{權限說明}
+- {角色2}：{權限說明}
+
+**Epic 清單**：
+| Epic | 名稱 | User Stories 數量 |
+|------|------|-------------------|
+| A | 登入/登出 | 2 |
+| B | 球隊/球員管理 | 4 |
+| ... | ... | ... |
+
+準備進入 Stage 1：詞彙表建立
 ```
 
 ## 品質檢核

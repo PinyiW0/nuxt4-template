@@ -14,12 +14,12 @@
 
 ## 輸入
 
-- Stage 3 的 events.json
-- Stage 4 的 commands.json
-- Stage 5 的 policies.json
 - glossary.json
 - boundary-decisions.json
-- hotspots.json（若存在）
+- 已產出的 .feature 檔案
+- 對話記憶中的 Stage 3-5 分析結果（或需要時補產 JSON）
+
+> 注意：Stage 7 是可選階段。如果需要視覺化，會從對話記憶或 .feature 檔案中萃取資訊，必要時補產中繼 JSON。
 
 ## 輸出
 
@@ -168,12 +168,16 @@ end note
 
 ## 執行指引
 
-### Step 1: 讀取分析結果
+### Step 1: 收集資料來源
 
-```
-讀取 docs/gherkin-spec/_meta/events/{epic-id}-events.json
-讀取 docs/gherkin-spec/_meta/commands/{epic-id}-commands.json
-```
+優先順序：
+1. 對話記憶中的 Stage 3-5 分析結果
+2. 從 .feature 檔案中萃取（@publishes 標籤、When steps）
+3. glossary.json 和 boundary-decisions.json
+
+如果需要完整的中繼資料供後續使用，可在此階段補產：
+- `_meta/events/{epic-id}-events.json`
+- `_meta/commands/{epic-id}-commands.json`
 
 ### Step 2: 產出 Event Flow 圖
 
