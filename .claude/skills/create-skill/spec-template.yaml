@@ -1,0 +1,63 @@
+# Skill 規格檔範本
+# 請檢查並修改後執行 /create-skill 2 <skill-name>
+
+name: my-skill
+description: |
+  清楚描述 skill 的用途
+  說明何時應該觸發（關鍵字、場景）
+
+# 觸發設定
+invocation:
+  user: true # 用戶可手動呼叫 (/skill-name)
+  model: true # AI 可自動觸發
+  argument_hint: '' # 參數提示，如 "[filename]" "[phase] [name]"
+
+# 執行設定
+execution:
+  context: inline # inline: 在當前 context | fork: 獨立 subagent
+  agent: '' # fork 時指定: Explore, Plan, general-purpose
+  allowed_tools: [] # 限制可用工具，空陣列 = 不限制
+  # 範例: [Read, Grep, Glob]
+
+# 內容結構
+content:
+  summary: |
+    一段話說明這個 skill 做什麼
+
+  sections:
+    - title: 使用方式
+      body: |
+        ```bash
+        /my-skill [arguments]
+        ```
+
+    - title: 執行流程
+      body: |
+        1. 步驟一
+        2. 步驟二
+        3. 步驟三
+
+  # 必讀文件 - 使用 @ 語法引用
+  required_files: []
+  # 範例:
+  # - .ai-prompts/some-doc.md
+
+  # 注意事項
+  notes: []
+  # 範例:
+  # - 重要提醒一
+  # - 重要提醒二
+
+# 支援檔案（選用）
+supporting_files: []
+# 範例:
+# - path: template.md
+#   purpose: 輸出範本
+#   content: |
+#     # 範本標題
+#     內容...
+#
+# - path: examples/sample.md
+#   purpose: 使用範例
+#   content: |
+#     範例內容...

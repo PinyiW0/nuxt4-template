@@ -1,0 +1,536 @@
+# UI Configuration for AI Code Generation
+# 此設定檔定義專案的 UI 風格與行為規範，AI 產生程式碼時必須遵循
+
+# =============================================================================
+# 專案資訊（必填）
+# =============================================================================
+project:
+  name: "鷹眼偵測系統" # 網站名稱，由使用者定義，AI 不可自行決定
+  description: "智能訓練分析平台，提供即時動作偵測與數據分析" # 網站描述
+  locale: "zh-TW" # 語系
+
+# =============================================================================
+# 風格預設（Style Presets）
+# 在 Phase 2 時選擇，選擇後會自動套用到 theme.colors
+# =============================================================================
+stylePresets:
+  # ---------------------------------------------------------------------------
+  # 1. dark-default - Dracula 暖調霓虹風，深棕背景配粉紅強調、紫色輔助
+  # ---------------------------------------------------------------------------
+  dark-default:
+    name: "dark-default"
+    description: "Dracula 暖調霓虹風，深棕暖灰背景配粉紅強調色，適合開發者工具、創意類應用"
+    preview: "🧛"
+    prefersDark: true  # 建議使用深色模式
+    colors:
+      primary: "#ff79c6"        # 主色：霓虹粉紅
+      secondary: "#bd93f9"      # 次要色：薰衣草紫
+      accent: "#ffb86c"         # 強調色：暖橘色
+      success: "#51fa7b"        # 成功：螢光綠
+      warning: "#f1fa8c"        # 警告：螢光黃
+      error: "#ff5555"          # 錯誤：霓虹紅
+      info: "#8be9fd"           # 資訊：霓虹青
+      neutral: "#414558"        # 中性色：深灰紫（背景色調）
+
+  # ---------------------------------------------------------------------------
+  # 2. light-default - 清新自然風，淺色背景配薄荷綠主色
+  # ---------------------------------------------------------------------------
+  light-default:
+    name: "light-default"
+    description: "清新自然風，淺色背景配薄荷綠主色、藍色次要色，適合通用型應用"
+    preview: "🌿"
+    prefersDark: false  # 建議使用淺色模式
+    colors:
+      primary: "#66cc8a"        # 主色：薄荷綠
+      secondary: "#377cfb"      # 次要色：天藍色
+      tertiary: "#00ba7b"       # 第三層級：翠綠色
+      accent: "#f68067"         # 強調色：珊瑚橘
+      success: "#00a96e"        # 成功：翠綠色
+      warning: "#ffbe00"        # 警告：金黃色
+      error: "#ff5861"          # 錯誤：玫瑰紅
+      info: "#00b5ff"           # 資訊：天空藍
+      neutral: "#333c4d"        # 中性色：深灰藍
+    # 額外風格設定
+    darkModeDefault: false   # 預設使用淺色模式
+    cardStyle: "soft"        # 卡片風格：柔和圓潤
+
+  # ---------------------------------------------------------------------------
+  # 3. dark-aqua - 深海青綠風，深藍背景配青綠主色、米黃點綴
+  # ---------------------------------------------------------------------------
+  dark-aqua:
+    name: "dark-aqua"
+    description: "深海青綠風，深藍背景配青綠主色，適合數據儀表板、專業工具"
+    preview: "🌊"
+    prefersDark: true  # 建議使用深色模式
+    colors:
+      primary: "#13ecf3"        # 主色：青綠色
+      secondary: "#966fb3"      # 次要色：淺紫色
+      tertiary: "#015355"       # 第三層級：藍綠
+      accent: "#ffe999"         # 強調色：米黃/琥珀色（用於亮點）
+      success: "#18a34a"        # 成功：翠綠色
+      warning: "#d97708"        # 警告：琥珀色
+      error: "#ff7265"          # 錯誤：珊瑚橘（較柔和）
+      info: "#2563eb"           # 資訊：天空藍
+      neutral: "#05176c"        # 中性色：深藍灰（slate-800/900 為背景）
+    # 額外風格設定
+    darkModeDefault: true    # 預設使用深色模式
+    cardStyle: "glass"       # 卡片風格：玻璃擬態效果
+
+  # ---------------------------------------------------------------------------
+  # 4. dark-luxury-gold - 奢華金尊風，深色背景配白金主色、金色點綴
+  # ---------------------------------------------------------------------------
+  dark-luxury-gold:
+    name: "dark-luxury-gold"
+    description: "奢華金尊風，深色背景配白金主色、金色點綴，適合專業工具系統"
+    preview: "👑"
+    prefersDark: true  # 建議使用深色模式
+    colors:
+      primary: "#ffffff"        # 主色：純白/白金
+      secondary: "#152747"      # 次要色：深藍灰
+      tertiary: "#09090b"       # 第三層級：深黑
+      accent: "#513448"         # 強調色：紫紅
+      success: "#87d03a"        # 成功：青綠色
+      warning: "#e2d563"        # 警告：金黃色
+      error: "#ff6f6f"          # 錯誤：珊瑚紅
+      info: "#67c6ff"           # 資訊：淺藍色
+      neutral: "#331800"        # 中性色：深棕色
+
+  # ---------------------------------------------------------------------------
+  # 5. light-autumn - 秋日暖紅風，淺色背景配酒紅主色、暖棕點綴
+  # ---------------------------------------------------------------------------
+  light-autumn:
+    name: "light-autumn"
+    description: "秋日暖紅風，淺色背景配酒紅主色、暖棕點綴，適合企業級系統"
+    preview: "🍂"
+    prefersDark: false  # 建議使用淺色模式
+    colors:
+      primary: "#8c0327"        # 主色：酒紅色
+      secondary: "#d85251"      # 次要色：珊瑚紅
+      accent: "#d59b6b"         # 強調色：暖棕色
+      success: "#499380"        # 成功：青綠色
+      warning: "#e97f16"        # 警告：橙色
+      error: "#d40014"          # 錯誤：鮮紅色
+      info: "#44adbb"           # 資訊：青藍色
+      neutral: "#826a5c"        # 中性色：暖灰棕
+    # 額外風格設定
+    darkModeDefault: false   # 預設使用淺色模式
+
+  # ---------------------------------------------------------------------------
+  # 6. light-caramellatte - 焦糖拿鐵風，淺色背景配深咖啡主色、橘紅點綴
+  # ---------------------------------------------------------------------------
+  light-caramellatte:
+    name: "light-caramellatte"
+    description: "焦糖拿鐵風，淺色背景配深咖啡主色、橘紅點綴，溫暖柔和"
+    preview: "☕"
+    prefersDark: false  # 建議使用淺色模式
+    colors:
+      primary: "#000000"        # 主色：深黑/深咖啡
+      secondary: "#370a00"      # 次要色：深棕紅
+      accent: "#8c3f27"         # 強調色：焦糖棕
+      success: "#006044"        # 成功：深綠色
+      warning: "#fcb700"        # 警告：金黃色
+      error: "#ff6266"          # 錯誤：珊瑚紅
+      info: "#193ab7"           # 資訊：深藍色
+      neutral: "#c93400"        # 中性色：橘紅色
+    # 額外風格設定
+    darkModeDefault: false   # 預設使用淺色模式
+
+  # ---------------------------------------------------------------------------
+  # 7. light-lemonade-green - 檸檬綠意風，淺色背景配青綠主色、檸檬黃點綴
+  # ---------------------------------------------------------------------------
+  light-lemonade-green:
+    name: "light-lemonade-green"
+    description: "檸檬綠意風，淺色背景配青綠主色、檸檬黃點綴，清新活力"
+    preview: "🍋"
+    prefersDark: false  # 建議使用淺色模式
+    colors:
+      primary: "#419400"        # 主色：草綠色
+      secondary: "#bdc000"      # 次要色：黃綠色
+      accent: "#edd000"         # 強調色：檸檬黃
+      success: "#b9dbc6"        # 成功：淺綠色
+      warning: "#d7d3b0"        # 警告：米黃色
+      error: "#efc6c2"          # 錯誤：淺粉色
+      info: "#b1d9e9"           # 資訊：淺藍色
+      neutral: "#343300"        # 中性色：深橄欖色
+    # 額外風格設定
+    darkModeDefault: false   # 預設使用淺色模式
+
+  # ---------------------------------------------------------------------------
+  # 8. light-winter - 冬日清爽風，淺色背景配寶藍主色、紫色次要色
+  # ---------------------------------------------------------------------------
+  light-winter:
+    name: "light-winter"
+    description: "冬日清爽風，淺色背景配寶藍主色、紫色次要色，乾淨俐落"
+    preview: "❄️"
+    prefersDark: false  # 建議使用淺色模式
+    colors:
+      primary: "#0069ff"        # 主色：寶藍色
+      secondary: "#463aa2"      # 次要色：深紫色
+      tertiary: "#0090b5"       # 第三層級：青藍色
+      accent: "#c148ac"         # 強調色：桃紫色
+      success: "#81cfd1"        # 成功：淺青色
+      warning: "#efd7bc"        # 警告：米黃色
+      error: "#e58b8b"          # 錯誤：粉紅色
+      info: "#94e7fb"           # 資訊：淺藍色
+      neutral: "#021431"        # 中性色：深藍黑
+    # 額外風格設定
+    darkModeDefault: false   # 預設使用淺色模式
+    cardStyle: "subtle"      # 卡片風格：柔和陰影
+
+# =============================================================================
+# 當前選擇的風格（每次執行 /feature-to-ui 時由用戶選擇）
+# =============================================================================
+selectedPreset: dark-default  # Dracula 暖調霓虹風，深棕背景配粉紅強調（2026-01-30 選定）
+
+# =============================================================================
+# 色彩主題（根據 selectedPreset 自動填入）
+# 參考：https://ui.nuxt.com/getting-started/theme#colors
+# =============================================================================
+theme:
+  # ---------------------------------------------------------------------------
+  # Nuxt UI 色彩配置（直接對應 app.config.ts > ui.colors）
+  # 此區塊會根據用戶選擇的風格自動更新
+  # ---------------------------------------------------------------------------
+  colors:
+    primary: "#ff79c6"     # 主色：霓虹粉紅
+    secondary: "#bd93f9"   # 次要色：薰衣草紫
+    accent: "#ffb86c"      # 強調色：暖橘色
+    success: "#51fa7b"     # 成功：螢光綠
+    warning: "#f1fa8c"     # 警告：螢光黃
+    error: "#ff5555"       # 錯誤：霓虹紅
+    info: "#8be9fd"        # 資訊：霓虹青
+    neutral: "#414558"     # 中性色：深灰紫
+
+  # ---------------------------------------------------------------------------
+  # 進階：自定義 hex 色彩
+  # 若 selectedPreset 的 isCustomHex 為 true，需：
+  # 1. 使用 https://uicolors.app 產生 50-950 色階
+  # 2. 在 app/assets/css/main.css 中以 @theme static 定義（注意要加 static！）
+  # 3. 重新啟動 dev server
+  #
+  # 範例（main.css）：
+  # @theme static {
+  #   --color-primary-50: #fff0f7;
+  #   --color-primary-500: #ff359a;
+  #   --color-primary-950: #580024;
+  # }
+  # ---------------------------------------------------------------------------
+
+# =============================================================================
+# 測試帳號（從 ui-config-pm.yaml 同步）
+# 供 Mock API 使用的測試帳號
+# =============================================================================
+testAccounts:
+  - username: "admin"
+    password: "admin123"
+    role: "管理員"
+    description: "可存取所有功能"
+  - username: "user"
+    password: "user123"
+    role: "一般使用者"
+    description: "僅能存取基本功能"
+
+# =============================================================================
+# Toast 通知設定
+# 參考：https://ui.nuxt.com/components/toast
+# =============================================================================
+toast:
+  # 顯示時間（毫秒）
+  duration: 3000
+  # 預設位置
+  position: "top-right" # top-left | top-center | top-right | bottom-left | bottom-center | bottom-right
+  # 是否可關閉
+  closable: true
+
+# =============================================================================
+# 表格與列表設定
+# 參考：https://ui.nuxt.com/components/table
+# =============================================================================
+table:
+  # 分頁設定
+  pagination:
+    enabled: true
+    defaultPageSize: 10 # 固定每頁 10 筆
+    pageSizeOptions: [10, 20, 50]
+    showPageSizeSelector: false # 不顯示每頁筆數選擇器
+    position: "bottom-right" # Pagination 固定在右下角
+    alwaysShow: true # 即使只有一頁也顯示 pagination
+  # 列樣式
+  row:
+    hover: true # hover 時是否有背景色變化
+    cursorPointer: true # hover 時是否顯示 pointer cursor
+    clickable: true # 列是否可點擊
+    fixedHeight: true # 列高度固定，錯誤訊息不影響高度
+  # 空資料顯示
+  emptyState:
+    icon: "i-heroicons-circle-stack"
+    label: "目前沒有資料"
+
+# =============================================================================
+# 列表頁面佈局設定
+# =============================================================================
+listPage:
+  # 容器高度
+  fullHeight: true # 列表容器高度滿高（flex-1）
+  # 佈局結構
+  layout:
+    # 頁面標題區域
+    header:
+      shrink: true # 不可壓縮
+      marginBottom: "mb-6"
+    # 列表卡片區域
+    card:
+      flex: true # 使用 flex 佈局
+      minHeight: "min-h-0" # 允許縮小
+      bodyPadding: "p-0" # 卡片內容無 padding
+    # Pagination 區域
+    pagination:
+      position: "bottom-right" # 固定在右下角
+      sticky: true # 固定在底部
+      border: "border-t" # 上方邊線
+      padding: "px-4 py-3"
+
+# =============================================================================
+# 表單設定
+# =============================================================================
+form:
+  # 必填欄位標示
+  requiredIndicator: "*"
+  # 欄位寬度規則
+  fieldWidth: "full" # full | auto（建議永遠使用 full）
+
+  # 密碼欄位
+  password:
+    showToggle: true # 是否顯示眼睛 icon 切換密碼可見性
+    toggleIcon:
+      show: "i-heroicons-eye"
+      hide: "i-heroicons-eye-slash"
+
+  # 搜尋欄位
+  search:
+    icon: "i-heroicons-magnifying-glass"
+    placeholder: "搜尋..."
+    debounceMs: 300 # 防抖延遲
+
+# =============================================================================
+# 查詢功能設定
+# 當 DSL 中出現「查詢」相關 Command 時，UI 必須包含搜尋功能
+# =============================================================================
+query:
+  # 搜尋框設定
+  searchBox:
+    enabled: true # 有「查詢」功能時必須顯示搜尋框
+    position: "top-right" # 搜尋框位置（相對於表格）
+    width: "w-64" # 搜尋框寬度
+
+  # 篩選器設定
+  filters:
+    style: "inline" # inline | dropdown | sidebar
+
+# =============================================================================
+# 刪除操作設定
+# =============================================================================
+delete:
+  # 確認對話框
+  confirmation:
+    required: true
+    title: "確認刪除"
+    description: "此操作無法復原，確定要刪除嗎？"
+    confirmButton:
+      label: "刪除"
+      color: "error"
+    cancelButton:
+      label: "取消"
+      color: "neutral"
+
+# =============================================================================
+# Modal 對話框設定
+# 參考：https://ui.nuxt.com/components/modal
+# =============================================================================
+modal:
+  # 預設尺寸
+  size: "md" # sm | md | lg | xl | 2xl | fullscreen
+  # 點擊背景是否關閉
+  closeOnClickOutside: true
+  # 按 ESC 是否關閉
+  closeOnEsc: true
+
+# =============================================================================
+# 按鈕設定
+# 參考：https://ui.nuxt.com/components/button
+# =============================================================================
+button:
+  # 主要操作按鈕
+  primary:
+    color: "primary"
+    variant: "solid"
+  # 次要操作按鈕
+  secondary:
+    color: "neutral"
+    variant: "outline"
+  # 危險操作按鈕（如刪除）
+  danger:
+    color: "error"
+    variant: "solid"
+  # 載入中狀態
+  loading:
+    icon: "i-heroicons-arrow-path"
+    animation: "animate-spin"
+
+# =============================================================================
+# 載入狀態設定
+# =============================================================================
+loading:
+  # 全頁載入
+  fullPage:
+    enabled: true
+    overlay: true
+  # 骨架屏
+  skeleton:
+    enabled: true
+    animation: "pulse" # pulse | wave
+
+# =============================================================================
+# 響應式設計（RWD）規範 - 必須遵循
+# =============================================================================
+responsive:
+  # 是否啟用響應式設計
+  enabled: true
+
+  # 設計策略（後台系統使用 desktop-first）
+  strategy: "desktop-first" # mobile-first | desktop-first
+
+  # 斷點定義（使用 Tailwind 預設）
+  breakpoints:
+    xs: "425px"   # 超小螢幕
+    sm: "640px"   # 手機橫向
+    md: "768px"   # 平板
+    lg: "1024px"  # 小筆電
+    xl: "1280px"  # 桌面
+    2xl: "1536px" # 大螢幕
+
+  # Sidebar 響應式行為
+  sidebar:
+    # 小於此斷點時隱藏 sidebar，改用漢堡選單
+    hideBelow: "lg"
+    # 行動裝置選單樣式
+    mobileMenu: "drawer" # drawer | overlay | bottom-sheet
+
+  # 表格響應式行為
+  table:
+    # 小於此斷點時改用卡片列表
+    cardViewBelow: "md"
+    # 隱藏次要欄位的斷點
+    hideSecondaryColumnsBelow: "sm"
+
+  # 表單響應式行為
+  form:
+    # 多欄表單在此斷點以下改為單欄
+    stackBelow: "sm"
+
+  # Grid 響應式規則
+  grid:
+    # 預設響應式 grid 設定
+    default: "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+
+# =============================================================================
+# 響應式實作規範（AI 必須遵循）
+# =============================================================================
+#
+# 1. Layout 響應式：
+#    - Sidebar 在 lg 以下隱藏，顯示漢堡選單
+#    - Header 在行動裝置上簡化
+#
+# 2. 表格響應式：
+#    - md 以下考慮改用卡片列表
+#    - 或使用水平滾動 overflow-x-auto
+#    - 隱藏次要欄位：hidden sm:table-cell
+#
+# 3. 表單響應式：
+#    - 多欄並排使用 grid-cols-1 sm:grid-cols-2
+#    - Modal 在行動裝置上使用全螢幕
+#
+# 4. 按鈕響應式：
+#    - 行動裝置上只顯示 icon：hidden sm:inline
+#    - 或使用 icon-only 按鈕
+#
+# 5. 文字響應式：
+#    - 標題：text-xl sm:text-2xl lg:text-3xl
+#    - 長文字使用 truncate 或 line-clamp
+#
+
+# =============================================================================
+# Icon 設定
+# 參考：https://ui.nuxt.com/getting-started/icons
+# 使用 Nuxt Icon (@nuxt/icon)，支援 200,000+ icons via Iconify
+# 瀏覽 icons：https://icones.js.org
+# =============================================================================
+icons:
+  # 預設 icon 集（建議使用 heroicons，與 Nuxt UI 風格一致）
+  collection: "heroicons" # heroicons | lucide | simple-icons
+  # 常用 icon 對照
+  common:
+    add: "i-heroicons-plus"
+    edit: "i-heroicons-pencil"
+    delete: "i-heroicons-trash"
+    search: "i-heroicons-magnifying-glass"
+    filter: "i-heroicons-funnel"
+    close: "i-heroicons-x-mark"
+    check: "i-heroicons-check"
+    warning: "i-heroicons-exclamation-triangle"
+    error: "i-heroicons-exclamation-circle"
+    info: "i-heroicons-information-circle"
+    user: "i-heroicons-user"
+    settings: "i-heroicons-cog-6-tooth"
+    logout: "i-heroicons-arrow-right-on-rectangle"
+    loading: "i-heroicons-arrow-path"
+    chevronDown: "i-heroicons-chevron-down"
+    chevronRight: "i-heroicons-chevron-right"
+    menu: "i-heroicons-bars-3"
+
+# =============================================================================
+# 額外套件需求（Nuxt UI 未涵蓋的功能）
+# 這些功能需要安裝額外套件，AI 產生 UI 時應提示使用者
+# =============================================================================
+additionalPackages:
+  # 圖表
+  charts:
+    required: false
+    package: "@nuxt/ui-pro" # 或 "vue-chartjs", "echarts"
+    useCase: "數據視覺化、統計圖表"
+
+  # 拖拽排序
+  draggable:
+    required: false
+    package: "vuedraggable" # 或 "@vueuse/integrations/useSortable"
+    useCase: "列表拖拽排序、看板拖拽"
+
+  # 富文本編輯器
+  richTextEditor:
+    required: false
+    package: "@tiptap/vue-3" # 或 "quill"
+    useCase: "文章編輯、格式化內容"
+
+  # 日期時間選擇器（進階）
+  dateTimePicker:
+    required: false
+    package: "v-calendar" # Nuxt UI 內建基本的，進階用 v-calendar
+    useCase: "日期範圍選擇、時間選擇"
+
+  # 檔案上傳
+  fileUpload:
+    required: false
+    package: "vue-filepond" # 或自行實作
+    useCase: "圖片上傳、檔案拖放上傳"
+
+  # 無限滾動
+  infiniteScroll:
+    required: false
+    package: "@vueuse/core" # useInfiniteScroll
+    useCase: "無限滾動列表"
+
+  # 虛擬列表（大量資料）
+  virtualList:
+    required: false
+    package: "@tanstack/vue-virtual"
+    useCase: "渲染大量列表項目（1000+）"

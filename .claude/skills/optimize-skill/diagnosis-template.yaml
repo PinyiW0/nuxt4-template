@@ -1,0 +1,100 @@
+# 診斷報告範本
+# 產出位置: .claude/skills/_reports/<skill-name>/diagnosis.yaml
+
+# 基本資訊
+skill_name: my-skill
+skill_path: .claude/skills/my-skill/SKILL.md
+diagnosed_at: '2024-01-01T12:00:00Z'
+
+# 摘要（pass | warning | fail）
+summary:
+  frontmatter: pass
+  content: warning
+  trigger: fail
+  efficiency: pass
+
+# 詳細診斷
+details:
+  frontmatter:
+    - item: name
+      status: pass
+      current: my-skill
+      issue: null
+      suggestion: null
+
+    - item: description
+      status: warning
+      current: 處理程式碼
+      issue: 過於籠統，AI 難以判斷何時使用
+      suggestion: |
+        格式化 TypeScript 程式碼，修正縮排與分號。
+        用於整理程式碼、統一風格、或用戶說「格式化」「prettier」時觸發
+
+    - item: allowed-tools
+      status: pass
+      current: null
+      issue: null
+      suggestion: null
+
+    - item: context
+      status: pass
+      current: inline
+      issue: null
+      suggestion: null
+
+  content:
+    - item: length
+      status: warning
+      current: 620 lines
+      issue: 超過建議的 500 行
+      suggestion: 將詳細文檔移到支援檔案
+
+    - item: structure
+      status: pass
+      current: 有明確的 input/output
+      issue: null
+      suggestion: null
+
+  trigger:
+    - item: keywords
+      status: fail
+      current:
+        - 處理
+        - 程式碼
+      issue: 缺少常見關鍵字
+      suggestion:
+        add:
+          - format
+          - prettier
+          - lint
+          - 格式化
+
+    - item: overlap
+      status: pass
+      current: 無重疊
+      issue: null
+      suggestion: null
+
+  efficiency:
+    - item: context
+      status: pass
+      current: inline
+      issue: null
+      suggestion: null
+
+# 優化建議（按優先順序）
+recommendations:
+  priority_high:
+    - id: trigger-keywords
+      description: 改善 description 關鍵字覆蓋
+      estimated_impact: 提升觸發準確度
+
+  priority_medium:
+    - id: content-split
+      description: 將詳細文檔分離到支援檔案
+      estimated_impact: 減少 context 使用量
+
+  priority_low: []
+
+# 下一步
+next_step: 檢視報告後執行 /optimize-skill 2 my-skill

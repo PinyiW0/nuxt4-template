@@ -200,6 +200,93 @@ Then 應回傳錯誤 "球隊名稱已被使用"
 
 ---
 
+## UI 實作指令
+
+### 完整工作流程（推薦）
+
+當需要根據 .feature 檔產生完整的 UI 畫面時，使用以下指令：
+
+```bash
+/feature-to-ui
+```
+
+或自然語言：
+```
+請根據 .feature 檔搭配 NuxtUI 去產生對應畫面
+```
+
+此工作流程會依序執行：
+
+| Phase | 說明 | 完成後動作 |
+|-------|------|-----------|
+| Phase 0 | 載入 `/nuxt-ui`、分析所有 .feature 檔、產出功能清單 | 詢問確認 |
+| Phase 1 | 建立 Mock API（假資料端點） | 詢問確認 |
+| Phase 2 | 基礎架構設定（色彩、Layout、共用組件、明暗模式） | 詢問確認 |
+| Phase 3 | 逐一實作功能畫面 | **每個功能完成後都詢問確認** |
+
+> **重要**：每個 Phase 和每個功能完成後都會詢問用戶確認，確認後才會繼續。
+
+詳細流程請參考：`.ai-prompts/ui/feature-to-ui-workflow.md`
+
+---
+
+### 單一功能實作
+
+如果只需要實作單一功能（非完整流程），必須先讀取以下文件：
+
+1. **UI 設定檔**：`.ai-prompts/ui/ui-config.yaml`
+   - 專案名稱（禁止自行定義）
+   - 色彩主題配置
+   - Toast、表格、表單等元件行為設定
+   - Icon 對照表
+
+2. **UI 建構指南**：`.ai-prompts/ui/nuxt-ui-page-builder.md`
+   - DSL Feature 到 UI 的轉換規則
+   - 元件規範和範本
+   - 表單驗證規則
+   - 錯誤處理方式
+
+3. **NuxtUI 文檔**：載入 `/nuxt-ui` skill
+   - 組件 API 和使用方式
+
+4. **DSL Feature 規格**：`docs/gherkin-spec/features/*.feature`
+   - 從 DSL 提取表單欄位
+   - 從 Rule 提取驗證規則
+   - 從 Then 提取錯誤訊息
+
+### 執行流程
+
+```
+1. 載入 /nuxt-ui skill
+2. 讀取 ui-config.yaml 取得設定
+3. 讀取相關的 DSL Feature 檔案
+4. 依照 nuxt-ui-page-builder.md 的規範產生 UI
+5. 確保 app.config.ts 與 ui-config.yaml 同步
+```
+
+### 禁止事項
+
+| 禁止行為 | 正確做法 |
+|----------|----------|
+| 自行定義網站名稱 | 從 `project.name` 讀取 |
+| 寫死色彩值 | 使用語意化 `color="primary"` |
+| 使用非指定 icon 集 | 使用 `ui-config.yaml > icons.collection` |
+| 查詢頁面沒有搜尋框 | `query.searchBox.enabled` 為 true 時必須有 |
+| 密碼欄位沒有眼睛切換 | 檢查 `form.password.showToggle` |
+| 跳過確認步驟直接做多個功能 | 每個功能完成後都要等用戶確認 |
+| 不載入 /nuxt-ui 就開始寫組件 | 先載入 skill 確認組件 API |
+
+### 觸發條件
+
+以下情況視為 UI 實作，需遵循上述流程：
+- 建立新頁面（pages/）
+- 建立新元件（components/）
+- 修改現有 UI 元件
+- 實作表單功能
+- 實作列表/表格功能
+
+---
+
 ## 其他專案指令
 
 （其他 Claude 指令可以在這裡添加）
