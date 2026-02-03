@@ -5,9 +5,9 @@
 # 專案資訊（必填）
 # =============================================================================
 project:
-  name: "鷹眼偵測系統" # 網站名稱，由使用者定義，AI 不可自行決定
-  description: "智能訓練分析平台，提供即時動作偵測與數據分析" # 網站描述
-  locale: "zh-TW" # 語系
+  name: "" # 網站名稱，由使用者定義，AI 不可自行決定
+  description: "" # 網站描述
+  locale: "" # 語系
 
 # =============================================================================
 # 風格預設（Style Presets）
@@ -178,9 +178,9 @@ stylePresets:
     cardStyle: "subtle"      # 卡片風格：柔和陰影
 
 # =============================================================================
-# 當前選擇的風格（每次執行 /feature-to-ui 時由用戶選擇）
+# 當前選擇的風格（從 ui-config-pm.yaml 同步）
 # =============================================================================
-selectedPreset: dark-default  # Dracula 暖調霓虹風，深棕背景配粉紅強調（2026-01-30 選定）
+selectedPreset: null
 
 # =============================================================================
 # 色彩主題（根據 selectedPreset 自動填入）
@@ -192,14 +192,15 @@ theme:
   # 此區塊會根據用戶選擇的風格自動更新
   # ---------------------------------------------------------------------------
   colors:
-    primary: "#ff79c6"     # 主色：霓虹粉紅
-    secondary: "#bd93f9"   # 次要色：薰衣草紫
-    accent: "#ffb86c"      # 強調色：暖橘色
-    success: "#51fa7b"     # 成功：螢光綠
-    warning: "#f1fa8c"     # 警告：螢光黃
-    error: "#ff5555"       # 錯誤：霓虹紅
-    info: "#8be9fd"        # 資訊：霓虹青
-    neutral: "#414558"     # 中性色：深灰紫
+    primary: "#13ecf3"     # 主色：青綠色
+    secondary: "#966fb3"   # 次要色：淺紫色
+    tertiary: "#015355"    # 第三層級：藍綠
+    accent: "#ffe999"      # 強調色：米黃/琥珀色
+    success: "#18a34a"     # 成功：翠綠色
+    warning: "#d97708"     # 警告：琥珀色
+    error: "#ff7265"       # 錯誤：珊瑚橘
+    info: "#2563eb"        # 資訊：天空藍
+    neutral: "#05176c"     # 中性色：深藍灰
 
   # ---------------------------------------------------------------------------
   # 進階：自定義 hex 色彩
@@ -242,6 +243,23 @@ toast:
   # 是否可關閉
   closable: true
 
+# -----------------------------------------------------------------------------
+# Toast 實作規範（AI 必須遵循）
+# -----------------------------------------------------------------------------
+# 重要：UApp 組件內建 toaster，不要再額外放 UToaster 組件！
+#
+# 正確做法 - 透過 UApp 的 :toaster prop 配置：
+#   <UApp :toaster="{ position: 'top-right' }">
+#     ...
+#   </UApp>
+#
+# 錯誤做法 - 會導致 toast 同時出現在兩個位置：
+#   <UApp>
+#     ...
+#     <UToaster position="top-right" />  <!-- 不要這樣做！ -->
+#   </UApp>
+# -----------------------------------------------------------------------------
+
 # =============================================================================
 # 表格與列表設定
 # 參考：https://ui.nuxt.com/components/table
@@ -283,12 +301,44 @@ listPage:
       flex: true # 使用 flex 佈局
       minHeight: "min-h-0" # 允許縮小
       bodyPadding: "p-0" # 卡片內容無 padding
+      bodyOverflow: "overflow-auto" # body 區域可滾動
     # Pagination 區域
     pagination:
       position: "bottom-right" # 固定在右下角
-      sticky: true # 固定在底部
+      sticky: true # 固定在底部（shrink-0）
       border: "border-t" # 上方邊線
       padding: "px-4 py-3"
+
+# -----------------------------------------------------------------------------
+# 列表頁面實作規範（AI 必須遵循）
+# -----------------------------------------------------------------------------
+# 為確保 pagination 在視窗縮小時不被遮住，必須使用以下結構：
+#
+# 1. Layout 的 main content 區域：
+#    <main class="flex-1 flex flex-col">
+#      <div class="flex-1 flex flex-col overflow-hidden">
+#        <slot />
+#      </div>
+#    </main>
+#
+# 2. 列表頁面容器：
+#    <div class="flex flex-col h-full p-6">
+#      <!-- header 區域 -->
+#      <div class="... mb-6">...</div>
+#      <!-- UCard 區域 -->
+#      <UCard class="flex-1 flex flex-col min-h-0" :ui="{ body: '...', footer: '...' }">
+#        ...
+#      </UCard>
+#    </div>
+#
+# 3. UCard 的 ui prop 必須設定：
+#    :ui="{
+#      body: 'p-0 flex-1 overflow-auto min-h-0',  // body 可滾動
+#      footer: 'shrink-0'                          // footer 固定不壓縮
+#    }"
+#
+# 這樣當視窗高度變小時，表格區域會出現滾動條，pagination 固定在底部。
+# -----------------------------------------------------------------------------
 
 # =============================================================================
 # 表單設定
@@ -298,6 +348,31 @@ form:
   requiredIndicator: "*"
   # 欄位寬度規則
   fieldWidth: "full" # full | auto（建議永遠使用 full）
+  # 防重複提交
+  preventDoubleSubmit: true # 所有表單提交函數必須檢查 isSubmitting 狀態
+
+# -----------------------------------------------------------------------------
+# 表單提交實作規範（AI 必須遵循）
+# -----------------------------------------------------------------------------
+# 為防止重複提交導致多個 toast 或重複 API 呼叫，所有提交函數必須：
+#
+# 1. 在函數開頭檢查 isSubmitting 狀態：
+#    async function handleCreate(event) {
+#      if (isSubmitting.value) return  // 防止重複提交
+#      isSubmitting.value = true
+#      ...
+#    }
+#
+# 2. 若有其他前置條件，一併檢查：
+#    async function handleEdit(event) {
+#      if (!selectedItem.value || isSubmitting.value) return
+#      isSubmitting.value = true
+#      ...
+#    }
+#
+# 3. 提交按鈕必須同時設定 :loading 和 :disabled：
+#    <UButton type="submit" :loading="isSubmitting" :disabled="isSubmitting">
+# -----------------------------------------------------------------------------
 
   # 密碼欄位
   password:
