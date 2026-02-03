@@ -10,8 +10,9 @@
    - 讀取 `@.ai-prompts/ui/ui-config-pm.yaml`
    - 同步到 `@.ai-prompts/ui/ui-config.yaml`
 
-3. **掃描 .feature 檔**
+3. **掃描並讀取所有 .feature 檔**
    - 路徑：`docs/gherkin-spec/features/*.dsl.feature`
+   - ⚠️ **必須讀取全部檔案**，不可跳過或只處理部分
 
 ### 0.2 PM 設定同步邏輯
 

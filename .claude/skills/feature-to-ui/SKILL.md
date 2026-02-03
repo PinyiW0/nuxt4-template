@@ -23,7 +23,9 @@ agent: general-purpose
 
 ## 現有 Feature 檔案
 
-!`ls -1 docs/gherkin-spec/features/*.feature 2>/dev/null | head -10 || echo "(無)"`
+!`ls -1 docs/gherkin-spec/features/*.feature 2>/dev/null || echo "(無)"`
+
+> ⚠️ **Phase 0 必須讀取並分析上述所有 .feature 檔案**，不可只處理部分
 
 ---
 
@@ -70,9 +72,11 @@ agent: general-purpose
 
 1. 載入 `/nuxt-ui` 取得組件文檔
 2. 讀取 PM 設定並同步到 `ui-config.yaml`
-3. 掃描 `docs/gherkin-spec/features/*.feature`
-4. 產出功能清單分析報告
+3. 掃描並讀取 `docs/gherkin-spec/features/*.feature` 中的**所有檔案**
+4. 產出**完整的**功能清單分析報告（涵蓋所有 .feature）
 5. **詢問用戶確認**
+
+> ⚠️ **必須分析所有 .feature 檔案**，Phase 0 的輸出是完整的功能清單
 
 ### Output
 - 功能清單分析報告（含 API 端點規劃）

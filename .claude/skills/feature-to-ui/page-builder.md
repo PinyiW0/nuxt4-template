@@ -139,6 +139,9 @@ And 系統顯示 "帳號或密碼錯誤"
 | 直接用 `color="blue"` | 用語意化 `color="primary"` |
 | 查詢頁沒搜尋框 | 「查詢」必須有搜尋框 |
 | `@theme` 不加 `static` | 必須 `@theme static` |
+| 使用 `text-white` 固定白色 | 使用 `text-neutral-900 dark:text-white` |
+| 使用 `bg-neutral-900` 固定深色背景 | 使用 `bg-white dark:bg-neutral-900` |
+| UFormField 不預留錯誤訊息空間 | 加上 `class="relative mb-8"` 和 `:ui="{ error: 'absolute top-full left-0 mt-1' }"` |
 
 ---
 
@@ -185,11 +188,21 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
 </script>
 
 <template>
-  <UForm :schema="schema" :state="state" @submit="onSubmit">
-    <UFormField label="帳號" name="account" class="min-h-18">
+  <UForm :schema="schema" :state="state" class="space-y-4" @submit="onSubmit">
+    <UFormField
+      label="帳號"
+      name="account"
+      class="relative mb-8"
+      :ui="{ error: 'absolute top-full left-0 mt-1' }"
+    >
       <UInput v-model="state.account" class="w-full" />
     </UFormField>
-    <UFormField label="密碼" name="password" class="min-h-18">
+    <UFormField
+      label="密碼"
+      name="password"
+      class="relative mb-8"
+      :ui="{ error: 'absolute top-full left-0 mt-1' }"
+    >
       <UInput v-model="state.password" type="password" class="w-full" />
     </UFormField>
     <UButton type="submit" :loading="loading">
@@ -209,7 +222,12 @@ const showPassword = ref(false)
 </script>
 
 <template>
-  <UFormField label="密碼" name="password">
+  <UFormField
+    label="密碼"
+    name="password"
+    class="relative mb-8"
+    :ui="{ error: 'absolute top-full left-0 mt-1' }"
+  >
     <UInput
       v-model="state.password"
       :type="showPassword ? 'text' : 'password'"
@@ -229,6 +247,50 @@ const showPassword = ref(false)
   </UFormField>
 </template>
 ```
+
+---
+
+## 深淺模式（Dark/Light Mode）規範
+
+所有 UI 必須同時支援深色和淺色模式，使用響應式 Tailwind class：
+
+### 文字顏色
+
+```vue
+<!-- ❌ 錯誤：只在深色模式可見 -->
+<h1 class="text-white">標題</h1>
+
+<!-- ✅ 正確：深淺模式都可見 -->
+<h1 class="text-neutral-900 dark:text-white">標題</h1>
+
+<!-- 次要文字 -->
+<p class="text-neutral-500 dark:text-neutral-400">描述</p>
+```
+
+### 背景顏色
+
+```vue
+<!-- ❌ 錯誤：只適合深色模式 -->
+<div class="bg-neutral-900">...</div>
+
+<!-- ✅ 正確：響應式背景 -->
+<div class="bg-white dark:bg-neutral-900">...</div>
+<div class="bg-neutral-100 dark:bg-neutral-800">...</div>
+```
+
+### 邊框顏色
+
+```vue
+<!-- ❌ 錯誤 -->
+<div class="border border-neutral-800">...</div>
+
+<!-- ✅ 正確 -->
+<div class="border border-neutral-200 dark:border-neutral-800">...</div>
+```
+
+### 例外：彩色背景上的文字
+
+在 `bg-success-500`、`bg-error-500`、`bg-primary-500` 等彩色背景上，可以固定使用 `text-white`，因為這些背景在深淺模式下都是深色。
 
 ---
 
