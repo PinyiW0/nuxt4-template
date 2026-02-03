@@ -258,34 +258,51 @@ const showPassword = ref(false)
 
 ```vue
 <!-- ❌ 錯誤：只在深色模式可見 -->
-<h1 class="text-white">標題</h1>
+<h1 class="text-white">
+標題
+</h1>
 
 <!-- ✅ 正確：深淺模式都可見 -->
-<h1 class="text-neutral-900 dark:text-white">標題</h1>
+<h1 class="text-neutral-900 dark:text-white">
+標題
+</h1>
 
 <!-- 次要文字 -->
-<p class="text-neutral-500 dark:text-neutral-400">描述</p>
+<p class="text-neutral-500 dark:text-neutral-400">
+描述
+</p>
 ```
 
 ### 背景顏色
 
 ```vue
 <!-- ❌ 錯誤：只適合深色模式 -->
-<div class="bg-neutral-900">...</div>
+<div class="bg-neutral-900">
+...
+</div>
 
 <!-- ✅ 正確：響應式背景 -->
-<div class="bg-white dark:bg-neutral-900">...</div>
-<div class="bg-neutral-100 dark:bg-neutral-800">...</div>
+<div class="bg-white dark:bg-neutral-900">
+...
+</div>
+
+<div class="bg-neutral-100 dark:bg-neutral-800">
+...
+</div>
 ```
 
 ### 邊框顏色
 
 ```vue
 <!-- ❌ 錯誤 -->
-<div class="border border-neutral-800">...</div>
+<div class="border border-neutral-800">
+...
+</div>
 
 <!-- ✅ 正確 -->
-<div class="border border-neutral-200 dark:border-neutral-800">...</div>
+<div class="border border-neutral-200 dark:border-neutral-800">
+...
+</div>
 ```
 
 ### 例外：彩色背景上的文字
