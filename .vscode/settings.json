@@ -3,6 +3,29 @@
     "*.css": "tailwindcss"
   },
 
+  // Cucumber (Gherkin) Full Support 配置
+  "cucumberautocomplete.steps": [
+    "test/bdd/steps/**/*.ts"
+  ],
+  "cucumberautocomplete.formatConfOverride": {
+    "And": 3,
+    "But": "relative"
+  },
+  "cucumberautocomplete.syncfeatures": "docs/gherkin-spec/**/*.feature",
+  "cucumberautocomplete.strictGherkinCompletion": false,
+  "cucumberautocomplete.smartSnippets": true,
+  "cucumberautocomplete.stepsInvariants": true,
+  "cucumberautocomplete.customParameters": [
+    {
+      "parameter": "{string}",
+      "value": "\"([^\"]*)\""
+    },
+    {
+      "parameter": "{int}",
+      "value": "(\\d+)"
+    }
+  ],
+
   // Disable the default formatter, use eslint instead
   "editor.formatOnSave": false,
 

@@ -9,6 +9,8 @@ export default withNuxt(
     stylistic: true,
     ignores: [
       '.ai-prompts/**',
+      '.claude/**',
+      'chapter04/**',
     ],
   }),
 )

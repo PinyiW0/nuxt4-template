@@ -11,7 +11,14 @@
     "lint": "eslint .",
     "typecheck": "nuxi typecheck",
     "commitlint": "commitlint --edit",
-    "prepare": "husky"
+    "prepare": "husky",
+    "test": "vitest",
+    "test:unit": "vitest --project unit",
+    "test:nuxt": "vitest --project nuxt",
+    "test:e2e": "vitest --project e2e",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:ui": "vitest --ui --watch"
   },
   "dependencies": {
     "@nuxt/ui": "^4.3.0",
@@ -31,13 +38,22 @@
     "@antfu/eslint-config": "^6.2.0",
     "@commitlint/cli": "^20.1.0",
     "@commitlint/config-conventional": "^20.0.0",
+    "@cucumber/gherkin": "^38.0.0",
     "@iconify-json/heroicons": "^1.2.3",
     "@iconify-json/lucide": "^1.2.87",
     "@nuxt/eslint": "^1.11.0",
+    "@nuxt/test-utils": "^3.23.0",
     "@types/node": "^24.10.1",
     "@types/three": "^0.182.0",
+    "@vitest/ui": "^3.2.4",
+    "@vue/test-utils": "^2.4.6",
     "eslint-plugin-format": "^1.0.2",
+    "happy-dom": "^20.5.0",
     "husky": "^9.1.7",
+    "pixelmatch": "^7.1.0",
+    "playwright-core": "^1.58.1",
+    "quickpickle": "^1.11.0",
+    "vitest": "^3.2.4",
     "vue-tsc": "^3.1.5"
   }
 }
