@@ -1,4 +1,8 @@
-# 元件規範
+# 元件規範（Phase 6 使用參考）
+
+> **本檔用途**：Phase 6 實作頁面時，查閱「如何使用」共用元件的範例與規則。
+> **元件原始碼**（props、slots、events 定義）→ 詳見 [phase-5-components.md](phases/phase-5-components.md)
+> Nuxt UI 類型規範、API 規範、配色策略 → 詳見 [rules.md](rules.md)
 
 ## 表單元件
 
@@ -59,20 +63,27 @@ const schema = z.object({
 
 ```vue
 <script setup lang="ts">
+// ⚠️ 必須從 types/api/ import 型別，禁止定義 local interface
+import type { TeamItem } from '~/types/api/teams'
+import { useAuthStore } from '~/stores/auth'
+
+const authStore = useAuthStore()
 const currentPage = ref(1)
 const pageSize = 10
 
+// ⚠️ 呼叫前先讀取對應的 API endpoint 原始碼確認回傳格式
 const { data } = await useFetch<{
-  data: { items: Item[], total: number }
-}>('/api/items', {
+  status: string
+  data: TeamItem[]
+}>('/api/teams', {
   query: computed(() => ({
-    page: currentPage.value,
-    pageSize,
+    user: authStore.userAccount,
+    role: authStore.userRole,
   })),
 })
 
-const items = computed(() => data.value?.data?.items || [])
-const totalItems = computed(() => data.value?.data?.total || 0)
+const items = computed(() => data.value?.data || [])
+const totalItems = computed(() => items.value.length)
 </script>
 
 <template>
@@ -82,7 +93,10 @@ const totalItems = computed(() => data.value?.data?.total || 0)
       <h1 class="text-2xl font-bold">
         列表標題
       </h1>
-      <UButton icon="i-heroicons-plus">
+      <UButton
+        data-testid="team-create"
+        icon="i-heroicons-plus"
+      >
         新增
       </UButton>
     </div>
@@ -95,16 +109,38 @@ const totalItems = computed(() => data.value?.data?.total || 0)
         :page-size="pageSize"
       >
         <UTable
+          data-testid="team-list"
           :data="items"
           :columns="columns"
           class="[&_th]:h-10 [&_td]:h-12"
           :ui="{ tr: 'cursor-pointer hover:bg-elevated' }"
-        />
+        >
+          <!-- 操作欄範例 -->
+          <template #actions-cell="{ row }">
+            <div class="flex items-center gap-1">
+              <UButton
+                data-testid="team-edit"
+                icon="i-heroicons-pencil"
+                variant="ghost"
+                size="xs"
+              />
+              <UButton
+                data-testid="team-delete"
+                icon="i-heroicons-trash"
+                variant="ghost"
+                color="error"
+                size="xs"
+              />
+            </div>
+          </template>
+        </UTable>
       </CommonListContainer>
     </UCard>
   </div>
 </template>
 ```
+
+> **data-testid 說明**：列表內的按鈕（`team-edit`, `team-delete`）可重複，E2E 測試時用 `first()`, `nth()`, 或 `filter({ hasText })` 定位
 
 ---
 
@@ -128,69 +164,15 @@ const totalItems = computed(() => data.value?.data?.total || 0)
 
 ---
 
-## CommonListContainer
+## Layout 配合須知
 
-```vue
-<!-- app/components/common/ListContainer.vue -->
-<script setup lang="ts">
-const props = withDefaults(defineProps<{
-  total: number
-  pageSize?: number
-}>(), {
-  pageSize: 10,
-})
+> Layout 完整程式碼與結構 → 詳見 [phase-4-layout.md](phases/phase-4-layout.md)
+> Layout 規範（Sidebar 必備功能、Mobile Top Bar）→ 詳見 [rules.md](rules.md) > Layout 規範
 
-const page = defineModel<number>('page', { default: 1 })
-</script>
-
-<template>
-  <div class="flex h-full flex-col">
-    <!-- 表格區 -->
-    <div class="min-h-0 flex-1 overflow-hidden">
-      <slot />
-    </div>
-
-    <!-- Pagination -->
-    <div class="flex shrink-0 items-center justify-end border-t px-4 py-3">
-      <UPagination
-        v-model:page="page"
-        :total="total"
-        :items-per-page="pageSize"
-        show-edges
-      />
-    </div>
-  </div>
-</template>
-```
-
----
-
-## Layout 配合設定
-
-```vue
-<!-- app/layouts/default.vue -->
-<template>
-  <!-- h-screen + overflow-hidden -->
-  <div class="flex h-screen overflow-hidden">
-    <aside class="hidden lg:flex w-64">
-      <!-- Sidebar -->
-    </aside>
-    <div class="flex flex-1 flex-col">
-      <header class="h-16 shrink-0">
-        <!-- Header -->
-      </header>
-      <!-- min-h-0 讓 flex-1 可縮小 -->
-      <main class="flex min-h-0 flex-1 flex-col overflow-hidden p-6">
-        <slot />
-      </main>
-    </div>
-  </div>
-</template>
-```
-
-> ⚠️ **關鍵**：
-> - 外層 `h-screen overflow-hidden`
-> - main 必須有 `min-h-0`
+頁面在 `<main class="flex min-h-0 flex-1 flex-col overflow-auto p-6">` 內渲染，注意：
+- 外層已有 `h-screen overflow-hidden`，頁面不需再設 `h-screen`
+- 頁面用 `flex h-full flex-col` 撐滿即可
+- 需要可滾動區域時，遵循 `flex flex-col min-h-0` 模式
 
 ---
 
@@ -210,21 +192,46 @@ const page = defineModel<number>('page', { default: 1 })
 
 ## 刪除確認 Modal
 
+### 使用 CommonConfirmModal
+
 ```vue
-<UModal v-model="deleteModalOpen">
-  <template #header>
-    <h3>確認刪除</h3>
-  </template>
-  <template #body>
-    <p>此操作無法復原，確定要刪除嗎？</p>
-  </template>
-  <template #footer>
-    <UButton color="neutral" @click="deleteModalOpen = false">
-      取消
-    </UButton>
-    <UButton color="error" @click="confirmDelete">
-      刪除
-    </UButton>
+<CommonConfirmModal
+  v-model:open="isDeleteModalOpen"
+  title="確認刪除"
+  :description="`確定要刪除「${selectedItem?.name}」嗎？`"
+  confirm-label="刪除"
+  confirm-color="error"
+  :loading="isSubmitting"
+  @confirm="handleDelete"
+/>
+```
+
+### 直接使用 UModal（不用 CommonConfirmModal）
+
+```vue
+<UModal v-model:open="deleteModalOpen">
+  <template #content>
+    <div data-testid="modal" class="p-6">
+      <h3 class="text-lg font-semibold text-neutral-900 dark:text-white">確認刪除</h3>
+      <p class="mt-2 text-neutral-500 dark:text-neutral-400">此操作無法復原，確定要刪除嗎？</p>
+      <div class="mt-6 flex justify-end gap-3">
+        <UButton
+          data-testid="modal-cancel"
+          color="neutral"
+          variant="outline"
+          @click="deleteModalOpen = false"
+        >
+          取消
+        </UButton>
+        <UButton
+          data-testid="modal-confirm"
+          color="error"
+          @click="confirmDelete"
+        >
+          刪除
+        </UButton>
+      </div>
+    </div>
   </template>
 </UModal>
 ```
@@ -234,14 +241,13 @@ const page = defineModel<number>('page', { default: 1 })
 ## 空狀態
 
 ```vue
-<template v-if="!data?.length">
-  <div class="flex flex-col items-center justify-center py-12">
-    <UIcon name="i-heroicons-circle-stack" class="size-12 text-muted" />
-    <p class="mt-2 text-muted">
-      目前沒有資料
-    </p>
-  </div>
-</template>
+<!-- 使用 CommonEmptyState 元件 -->
+<CommonEmptyState
+  v-if="!items.length"
+  icon="i-heroicons-user-group"
+  title="目前沒有球隊"
+  description="點擊上方按鈕新增第一支球隊"
+/>
 ```
 
 ---
@@ -251,6 +257,7 @@ const page = defineModel<number>('page', { default: 1 })
 ```vue
 <UInput
   v-model="searchQuery"
+  data-testid="team-search"
   icon="i-heroicons-magnifying-glass"
   placeholder="搜尋..."
   class="w-64"

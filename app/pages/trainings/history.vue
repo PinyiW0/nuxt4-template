@@ -1,237 +1,227 @@
 <script setup lang="ts">
-import type { Training } from '~/composables/useTrainings'
+import type { TeamItem } from '~/types/api/teams'
+import type { TrainingItem } from '~/types/api/trainings'
 
-const { isAuthenticated } = useAuth()
+import { useAuthStore } from '~/stores/auth'
+
+definePageMeta({ layout: 'default' })
+
+const authStore = useAuthStore()
 const router = useRouter()
+const toast = useToast()
 
-// 權限檢查
-watch(isAuthenticated, (value) => {
-  if (!value)
-    router.push('/login')
-}, { immediate: true })
+// 篩選條件
+const filterTeam = ref<number | null>(null)
+const filterDate = ref('')
 
-const {
-  trainings,
-  isLoading,
-  isSubmitting,
-  fetchHistoryTrainings,
-  deleteTraining,
-  batchDeleteTrainings,
-} = useTrainings()
-
-// 搜尋
-const searchQuery = ref('')
-const filteredTrainings = computed(() => {
-  if (!searchQuery.value)
-    return trainings.value
-  const query = searchQuery.value.toLowerCase()
-  return trainings.value.filter(t =>
-    t.player_name.toLowerCase().includes(query)
-    || t.team_name.toLowerCase().includes(query),
-  )
+// 取得球隊列表（用於篩選下拉）
+const { data: teamsResponse } = useFetch('/api/teams', {
+  query: { page: 1, page_size: 100 },
 })
 
-// 多選
-const selectedIds = ref<number[]>([])
+const teamOptions = computed(() => {
+  const teams = (teamsResponse.value?.data ?? []) as TeamItem[]
+  return [
+    { label: '全部球隊', value: null },
+    ...teams.map(t => ({ label: t.name, value: t.id })),
+  ]
+})
+
+// 取得歷史訓練列表
+const { data: historyResponse, refresh } = useFetch('/api/trainings/history', {
+  query: computed(() => ({
+    page: 1,
+    page_size: 100,
+    user: authStore.user?.account,
+    role: authStore.user?.role,
+  })),
+})
+
+const allItems = computed(() => (historyResponse.value?.data ?? []) as TrainingItem[])
+
+// 客戶端過濾
+const filteredItems = computed(() => {
+  let items = allItems.value
+  if (filterTeam.value) {
+    items = items.filter(t => t.team_id === filterTeam.value)
+  }
+  if (filterDate.value) {
+    items = items.filter(t => t.date === filterDate.value)
+  }
+  return items
+})
+
+// 分頁
+const page = ref(1)
+const pageSize = 10
+const total = computed(() => filteredItems.value.length)
+
+const pagedItems = computed(() => {
+  const start = (page.value - 1) * pageSize
+  return filteredItems.value.slice(start, start + pageSize)
+})
+
+// 篩選條件變更時重置頁碼
+watch([filterTeam, filterDate], () => {
+  page.value = 1
+})
 
 // 表格欄位
 const columns = [
   { accessorKey: 'select', header: '' },
   { accessorKey: 'date', header: '日期' },
-  { accessorKey: 'player_name', header: '受測選手' },
+  { accessorKey: 'player_name', header: '選手' },
   { accessorKey: 'team_name', header: '球隊' },
   { accessorKey: 'pitch_count', header: '投球數' },
   { accessorKey: 'actions', header: '操作' },
 ]
 
-// Modal 狀態
-const isDeleteModalOpen = ref(false)
-const isBatchDeleteModalOpen = ref(false)
-const selectedTraining = ref<Training | null>(null)
+// Checkbox 多選
+const rowSelection = ref<Record<string, boolean>>({})
 
-// 格式化日期
-function formatDate(dateString: string) {
-  return new Date(dateString).toLocaleDateString('zh-TW', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  })
-}
-
-// 切換選擇
-function toggleSelect(id: number) {
-  const index = selectedIds.value.indexOf(id)
-  if (index === -1) {
-    selectedIds.value.push(id)
+const selectedIds = computed(() => {
+  const ids: number[] = []
+  for (const [index, selected] of Object.entries(rowSelection.value)) {
+    if (selected) {
+      const item = pagedItems.value[Number(index)]
+      if (item)
+        ids.push(item.id)
+    }
   }
-  else {
-    selectedIds.value.splice(index, 1)
-  }
-}
-
-// 全選/取消全選
-function toggleSelectAll() {
-  if (selectedIds.value.length === filteredTrainings.value.length) {
-    selectedIds.value = []
-  }
-  else {
-    selectedIds.value = filteredTrainings.value.map(t => t.id)
-  }
-}
-
-// 是否已選擇
-function isSelected(id: number) {
-  return selectedIds.value.includes(id)
-}
-
-// 開啟刪除 Modal
-function openDeleteModal(training: Training) {
-  selectedTraining.value = training
-  isDeleteModalOpen.value = true
-}
-
-// 開啟批次刪除 Modal
-function openBatchDeleteModal() {
-  if (selectedIds.value.length === 0)
-    return
-  isBatchDeleteModalOpen.value = true
-}
-
-// 前往訓練詳情
-function goToTraining(training: Training) {
-  router.push(`/trainings/${training.id}`)
-}
-
-// 確認刪除
-async function handleDelete() {
-  if (!selectedTraining.value)
-    return
-  const success = await deleteTraining(selectedTraining.value.id)
-  if (success) {
-    isDeleteModalOpen.value = false
-    await fetchHistoryTrainings()
-  }
-}
-
-// 確認批次刪除
-async function handleBatchDelete() {
-  const success = await batchDeleteTrainings(selectedIds.value)
-  if (success) {
-    isBatchDeleteModalOpen.value = false
-    selectedIds.value = []
-    await fetchHistoryTrainings()
-  }
-}
-
-// 載入資料
-onMounted(async () => {
-  await fetchHistoryTrainings()
+  return ids
 })
+
+// 分頁變更時清除選取
+watch(page, () => {
+  rowSelection.value = {}
+})
+
+// 批次刪除
+const isDeleteOpen = ref(false)
+const isSubmitting = ref(false)
+
+async function handleBatchDelete() {
+  if (isSubmitting.value)
+    return
+
+  isSubmitting.value = true
+  try {
+    await $fetch('/api/trainings/batch-delete', {
+      method: 'POST',
+      body: { training_ids: selectedIds.value },
+    })
+    toast.add({ title: '訓練已批次刪除', color: 'success' })
+    isDeleteOpen.value = false
+    rowSelection.value = {}
+    await refresh()
+  }
+  catch {
+    toast.add({ title: '刪除失敗', color: 'error' })
+  }
+  finally {
+    isSubmitting.value = false
+  }
+}
+
+// 點擊列導航
+function handleRowSelect(_e: Event, row: { original: TrainingItem }) {
+  router.push(`/trainings/${row.original.id}`)
+}
 </script>
 
 <template>
-  <div class="flex flex-col h-full">
-    <CommonPageHeader title="歷史訓練紀錄" description="查看過去的訓練紀錄">
-      <template #actions>
-        <UButton to="/trainings" variant="outline" color="neutral" icon="i-heroicons-arrow-left">
-          返回訓練列表
-        </UButton>
-        <UButton
-          v-if="selectedIds.length > 0"
-          icon="i-heroicons-trash"
-          color="error"
-          @click="openBatchDeleteModal"
-        >
-          刪除已選 ({{ selectedIds.length }})
-        </UButton>
-      </template>
-      <template #filters>
-        <div class="mt-4">
-          <CommonSearchInput v-model="searchQuery" placeholder="搜尋選手或球隊..." />
-        </div>
-      </template>
-    </CommonPageHeader>
+  <div data-testid="trainings-history-page" class="flex h-full flex-col">
+    <CommonPageHeader title="歷史訓練" description="查看過往訓練紀錄" />
 
+    <!-- 工具列 -->
+    <div class="mb-4 flex flex-wrap items-center gap-3">
+      <UInput
+        v-model="filterDate"
+        data-testid="history-filter-date"
+        type="date"
+        placeholder="依日期篩選"
+        class="w-44"
+      />
+
+      <USelect
+        v-model="filterTeam"
+        data-testid="history-filter-team"
+        :items="teamOptions"
+        value-key="value"
+        class="w-44"
+      />
+
+      <div class="flex-1" />
+
+      <UButton
+        v-if="selectedIds.length > 0"
+        data-testid="batch-delete-btn"
+        color="error"
+        variant="outline"
+        icon="i-heroicons-trash"
+        :label="`批次刪除 (${selectedIds.length})`"
+        @click="isDeleteOpen = true"
+      />
+    </div>
+
+    <!-- 列表 -->
     <CommonListContainer
-      :loading="isLoading"
-      :empty="filteredTrainings.length === 0"
-      empty-title="沒有歷史訓練紀錄"
-      empty-description="完成的訓練會顯示在這裡"
+      v-model:page="page"
+      :total="total"
+      :page-size="pageSize"
+      data-testid="trainings-history-pagination"
     >
-      <UTable :columns="columns" :data="filteredTrainings">
-        <template #select-header>
-          <UCheckbox
-            :model-value="selectedIds.length === filteredTrainings.length && filteredTrainings.length > 0"
-            :indeterminate="selectedIds.length > 0 && selectedIds.length < filteredTrainings.length"
-            @update:model-value="toggleSelectAll"
-          />
-        </template>
-
+      <UTable
+        v-model:row-selection="rowSelection"
+        data-testid="history-list"
+        :data="pagedItems"
+        :columns="columns"
+        class="w-full"
+        @select="handleRowSelect"
+      >
         <template #select-cell="{ row }">
           <UCheckbox
-            :model-value="isSelected((row.original as Training).id)"
-            @update:model-value="toggleSelect((row.original as Training).id)"
+            :model-value="rowSelection[row.index] ?? false"
+            @update:model-value="(val: boolean | 'indeterminate') => rowSelection[row.index] = val === true"
+            @click.stop
           />
         </template>
 
         <template #date-cell="{ row }">
-          <span class="font-medium text-neutral-900 dark:text-white">{{ formatDate((row.original as Training).date) }}</span>
+          <span data-testid="history-row" class="text-neutral-900 dark:text-white">{{ row.original.date }}</span>
         </template>
 
         <template #player_name-cell="{ row }">
-          <span>{{ (row.original as Training).player_name }}</span>
+          <span class="text-neutral-700 dark:text-neutral-300">{{ row.original.player_name }}</span>
+        </template>
+
+        <template #team_name-cell="{ row }">
+          <span class="text-neutral-700 dark:text-neutral-300">{{ row.original.team_name }}</span>
         </template>
 
         <template #pitch_count-cell="{ row }">
-          <UBadge color="primary" variant="subtle">
-            {{ (row.original as Training).pitch_count }} 球
-          </UBadge>
+          <span class="text-neutral-700 dark:text-neutral-300">{{ row.original.pitch_count }}</span>
         </template>
 
         <template #actions-cell="{ row }">
-          <div class="flex items-center gap-1">
-            <UButton
-              icon="i-heroicons-eye"
-              variant="ghost"
-              color="neutral"
-              size="xs"
-              @click="goToTraining(row.original as Training)"
-            />
-            <UButton
-              icon="i-heroicons-chart-bar"
-              variant="ghost"
-              color="neutral"
-              size="xs"
-              @click="router.push(`/trainings/${(row.original as Training).id}/analysis`)"
-            />
-            <UButton
-              icon="i-heroicons-trash"
-              variant="ghost"
-              color="error"
-              size="xs"
-              @click="openDeleteModal(row.original as Training)"
-            />
-          </div>
+          <UButton
+            icon="i-heroicons-eye"
+            color="neutral"
+            variant="ghost"
+            size="xs"
+            @click.stop="router.push(`/trainings/${row.original.id}`)"
+          />
         </template>
       </UTable>
     </CommonListContainer>
 
-    <!-- 刪除確認 Modal -->
-    <CommonConfirmModal
-      v-model:open="isDeleteModalOpen"
-      title="確認刪除"
-      description="確定要刪除這筆訓練嗎？所有相關的投球紀錄也會一併刪除。"
-      confirm-label="刪除"
-      :loading="isSubmitting"
-      @confirm="handleDelete"
-    />
-
     <!-- 批次刪除確認 Modal -->
     <CommonConfirmModal
-      v-model:open="isBatchDeleteModalOpen"
-      title="確認批次刪除"
-      :description="`確定要刪除已選的 ${selectedIds.length} 筆訓練嗎？所有相關的投球紀錄也會一併刪除。`"
+      v-model:open="isDeleteOpen"
+      title="確認刪除"
+      :description="`確定要刪除所選的 ${selectedIds.length} 筆訓練嗎？此操作無法復原。`"
       confirm-label="刪除"
+      confirm-color="error"
       :loading="isSubmitting"
       @confirm="handleBatchDelete"
     />

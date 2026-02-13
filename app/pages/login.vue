@@ -1,119 +1,118 @@
 <script setup lang="ts">
 import type { FormSubmitEvent } from '@nuxt/ui'
+
 import { z } from 'zod'
 
-definePageMeta({
-  layout: 'auth',
-})
+import { useAuthStore } from '~/stores/auth'
 
-const { login, isLoading, isAuthenticated } = useAuth()
+definePageMeta({ layout: 'auth' })
+
+const authStore = useAuthStore()
 const router = useRouter()
+const toast = useToast()
 
-// 已登入則導向首頁
-watch(isAuthenticated, (value) => {
-  if (value) {
-    router.push('/')
-  }
-}, { immediate: true })
-
-// 表單 Schema
 const schema = z.object({
-  account: z.string().min(1, '請輸入帳號'),
+  account: z.string().trim().min(1, '請輸入帳號'),
   password: z.string().min(1, '請輸入密碼'),
 })
 
 type Schema = z.output<typeof schema>
 
-// 表單狀態
 const state = reactive<Schema>({
   account: '',
   password: '',
 })
 
-// 密碼可見性
+const isSubmitting = ref(false)
 const showPassword = ref(false)
 
-// 提交表單
 async function onSubmit(event: FormSubmitEvent<Schema>) {
-  await login(event.data.account, event.data.password)
+  if (isSubmitting.value)
+    return
+  isSubmitting.value = true
+  try {
+    await authStore.login(event.data.account, event.data.password)
+    toast.add({ title: '登入成功', color: 'success' })
+    await router.push('/')
+  }
+  catch (error: unknown) {
+    const err = error as { data?: { message?: string } }
+    const message = err?.data?.message || '帳號或密碼錯誤'
+    toast.add({ title: '登入失敗', description: message, color: 'error' })
+  }
+  finally {
+    isSubmitting.value = false
+  }
 }
 </script>
 
 <template>
-  <UCard class="w-full">
-    <template #header>
-      <div class="text-center">
-        <h2 class="text-xl font-semibold text-neutral-900 dark:text-white">
-          登入系統
-        </h2>
-        <p class="mt-1 text-sm text-neutral-400">
-          請輸入您的帳號密碼
-        </p>
-      </div>
-    </template>
+  <div data-testid="login-page" class="w-full max-w-sm">
+    <h1 class="mb-2 text-center text-2xl font-bold text-neutral-900 dark:text-white">
+      鷹眼偵測系統
+    </h1>
+    <p class="mb-8 text-center text-neutral-500 dark:text-neutral-400">
+      智能訓練分析平台
+    </p>
 
-    <UForm :schema="schema" :state="state" class="space-y-4" @submit="onSubmit">
-      <UFormField
-        label="帳號"
-        name="account"
-        required
-        class="relative mb-8"
-        :ui="{ error: 'absolute top-full left-0 mt-1' }"
+    <UCard>
+      <UForm
+        :schema="schema"
+        :state="state"
+        class="space-y-2"
+        @submit="onSubmit"
       >
-        <UInput
-          v-model="state.account"
-          class="w-full"
-          placeholder="請輸入帳號"
-          icon="i-heroicons-user"
-          autocomplete="username"
-          :disabled="isLoading"
-        />
-      </UFormField>
-
-      <UFormField
-        label="密碼"
-        name="password"
-        required
-        class="relative mb-8"
-        :ui="{ error: 'absolute top-full left-0 mt-1' }"
-      >
-        <UInput
-          v-model="state.password"
-          class="w-full"
-          :type="showPassword ? 'text' : 'password'"
-          placeholder="請輸入密碼"
-          icon="i-heroicons-lock-closed"
-          autocomplete="current-password"
-          :disabled="isLoading"
-          :ui="{ trailing: 'pointer-events-auto' }"
+        <UFormField
+          label="帳號"
+          name="account"
+          class="relative mb-8"
+          :ui="{ error: 'absolute top-full left-0 mt-1' }"
         >
-          <template #trailing>
-            <UButton
-              :icon="showPassword ? 'i-heroicons-eye-slash' : 'i-heroicons-eye'"
-              variant="link"
-              color="neutral"
-              size="xs"
-              :disabled="isLoading"
-              @click="showPassword = !showPassword"
-            />
-          </template>
-        </UInput>
-      </UFormField>
+          <UInput
+            v-model="state.account"
+            data-testid="login-account"
+            placeholder="請輸入帳號"
+            class="w-full"
+          />
+        </UFormField>
 
-      <UButton
-        type="submit"
-        block
-        :loading="isLoading"
-        :disabled="isLoading"
-      >
-        登入
-      </UButton>
-    </UForm>
+        <UFormField
+          label="密碼"
+          name="password"
+          class="relative mb-8"
+          :ui="{ error: 'absolute top-full left-0 mt-1' }"
+        >
+          <UInput
+            v-model="state.password"
+            data-testid="login-password"
+            :type="showPassword ? 'text' : 'password'"
+            placeholder="請輸入密碼"
+            class="w-full"
+          >
+            <template #trailing>
+              <UButton
+                :icon="showPassword ? 'i-heroicons-eye-slash' : 'i-heroicons-eye'"
+                color="neutral"
+                variant="link"
+                size="sm"
+                :padded="false"
+                @click="showPassword = !showPassword"
+              />
+            </template>
+          </UInput>
+        </UFormField>
 
-    <template #footer>
-      <div class="text-center text-sm text-neutral-500">
-        <p>測試帳號：admin / admin123 或 coach1 / pass123</p>
-      </div>
-    </template>
-  </UCard>
+        <UButton
+          type="submit"
+          data-testid="login-submit"
+          color="primary"
+          block
+          :loading="isSubmitting"
+          :disabled="isSubmitting"
+        >
+          登入
+        </UButton>
+      </UForm>
+    </UCard>
+  </div>
 </template>

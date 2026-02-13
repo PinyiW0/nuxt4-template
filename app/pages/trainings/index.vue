@@ -1,308 +1,342 @@
 <script setup lang="ts">
-import type { FormSubmitEvent } from '@nuxt/ui'
-import type { Training } from '~/composables/useTrainings'
-import { z } from 'zod'
+import type { PlayerItem } from '~/types/api/players'
+import type { TeamItem } from '~/types/api/teams'
+import type { TrainingItem } from '~/types/api/trainings'
 
-const { isAuthenticated } = useAuth()
+import { useAuthStore } from '~/stores/auth'
+
+definePageMeta({ layout: 'default' })
+
+const authStore = useAuthStore()
 const router = useRouter()
+const toast = useToast()
 
-// 權限檢查
-watch(isAuthenticated, (value) => {
-  if (!value)
-    router.push('/login')
-}, { immediate: true })
+// 分頁
+const page = ref(1)
+const pageSize = 10
 
-const { teams, fetchTeams } = useTeams()
-const { players, fetchPlayers } = usePlayers()
-const {
-  trainings,
-  isLoading,
-  isSubmitting,
-  fetchTrainings,
-  createTraining,
-  deleteTraining,
-} = useTrainings()
+// 訓練列表
+const { data: trainingsResponse, refresh } = useFetch('/api/trainings', {
+  query: computed(() => ({
+    page: page.value,
+    page_size: pageSize,
+    user: authStore.user?.account,
+    role: authStore.user?.role,
+  })),
+})
 
-// 搜尋
-const searchQuery = ref('')
-const filteredTrainings = computed(() => {
-  if (!searchQuery.value)
-    return trainings.value
-  const query = searchQuery.value.toLowerCase()
-  return trainings.value.filter(t =>
-    t.player_name.toLowerCase().includes(query)
-    || t.team_name.toLowerCase().includes(query),
-  )
+const trainings = computed(() => trainingsResponse.value?.data ?? [])
+const total = computed(() => (trainingsResponse.value as Record<string, unknown>)?.total as number ?? 0)
+
+// 球隊列表（用於表單）
+const { data: teamsResponse } = useFetch('/api/teams', {
+  query: {
+    page_size: 999,
+    user: authStore.user?.account,
+    role: authStore.user?.role,
+  },
+})
+const teamOptions = computed(() => {
+  const list = (teamsResponse.value?.data ?? []) as TeamItem[]
+  return list.map(t => ({ label: t.name, value: t.id }))
+})
+
+// 球員列表（依球隊篩選）
+const formTeamId = ref<number | undefined>(undefined)
+const { data: playersResponse } = useFetch('/api/players', {
+  query: computed(() => ({
+    page_size: 999,
+    team_id: formTeamId.value,
+    user: authStore.user?.account,
+    role: authStore.user?.role,
+  })),
+  watch: [formTeamId],
+})
+const playerOptions = computed(() => {
+  const list = (playersResponse.value?.data ?? []) as PlayerItem[]
+  return list.map(p => ({ label: `${p.number} - ${p.name}`, value: p.id }))
 })
 
 // 表格欄位
 const columns = [
   { accessorKey: 'date', header: '日期' },
-  { accessorKey: 'player_name', header: '受測選手' },
+  { accessorKey: 'player_name', header: '選手' },
   { accessorKey: 'team_name', header: '球隊' },
   { accessorKey: 'pitch_count', header: '投球數' },
   { accessorKey: 'ai_status', header: 'AI 狀態' },
   { accessorKey: 'actions', header: '操作' },
 ]
 
-// Modal 狀態
-const isCreateModalOpen = ref(false)
-const isDeleteModalOpen = ref(false)
-const selectedTraining = ref<Training | null>(null)
-
-// 表單 Schema
-const trainingSchema = z.object({
-  date: z.string().min(1, '請選擇日期'),
-  player_id: z.coerce.number().int().positive('請選擇受測選手'),
-  team_id: z.coerce.number().int().positive('請選擇球隊'),
-})
-
-type TrainingSchema = z.output<typeof trainingSchema>
-
-// 建立表單狀態
-const createForm = reactive({
-  date: new Date().toISOString().split('T')[0],
-  player_id: '',
-  team_id: '',
-})
-
-// 球隊選項
-const teamFormOptions = computed(() =>
-  teams.value.map(t => ({ label: t.name, value: String(t.id) })),
-)
-
-// 球員選項（依所選球隊篩選）
-const playerFormOptions = computed(() => {
-  if (!createForm.team_id)
-    return []
-  const teamId = Number(createForm.team_id)
-  return players.value
-    .filter(p => p.team_id === teamId)
-    .map(p => ({ label: `#${p.number} ${p.name}`, value: String(p.id) }))
-})
-
-// 選中的球員
-const selectedPlayer = computed(() => {
-  if (!createForm.player_id)
-    return null
-  return players.value.find(p => p.id === Number(createForm.player_id))
-})
-
-// 格式化日期
-function formatDate(dateString: string) {
-  return new Date(dateString).toLocaleDateString('zh-TW', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  })
+// 點擊列導航
+function handleRowSelect(_e: Event, row: { original: TrainingItem }) {
+  router.push(`/trainings/${row.original.id}`)
 }
 
-// 開啟建立 Modal
-function openCreateModal() {
-  createForm.date = new Date().toISOString().split('T')[0]!
-  createForm.player_id = ''
-  createForm.team_id = teams.value[0]?.id.toString() ?? ''
-  isCreateModalOpen.value = true
+// 表單 Modal
+const isFormOpen = ref(false)
+const isSubmitting = ref(false)
+const formDate = ref('')
+const formPlayerId = ref<number | undefined>(undefined)
+const formStrikeZoneTop = ref<number | undefined>(undefined)
+const formStrikeZoneBottom = ref<number | undefined>(undefined)
+const formErrors = ref<Record<string, string>>({})
+
+function openCreate() {
+  formDate.value = ''
+  formTeamId.value = undefined
+  formPlayerId.value = undefined
+  formStrikeZoneTop.value = undefined
+  formStrikeZoneBottom.value = undefined
+  formErrors.value = {}
+  isFormOpen.value = true
 }
 
-// 開啟刪除 Modal
-function openDeleteModal(training: Training) {
-  selectedTraining.value = training
-  isDeleteModalOpen.value = true
-}
+// 當球隊變更時清空球員選擇
+watch(formTeamId, () => {
+  formPlayerId.value = undefined
+})
 
-// 前往訓練詳情
-function goToTraining(training: Training) {
-  router.push(`/trainings/${training.id}`)
-}
+function validateForm(): boolean {
+  const errors: Record<string, string> = {}
 
-// 提交建立
-async function handleCreate(event: FormSubmitEvent<TrainingSchema>) {
-  const player = selectedPlayer.value
-  const success = await createTraining({
-    date: event.data.date,
-    player_id: Number(createForm.player_id),
-    team_id: Number(createForm.team_id),
-    strike_zone_top: player ? Math.round(player.height * 0.7) : 120,
-    strike_zone_bottom: player ? Math.round(player.height * 0.3) : 50,
-  })
-  if (success) {
-    isCreateModalOpen.value = false
+  if (!formDate.value) {
+    errors.date = '請選擇日期'
   }
+  if (!formTeamId.value) {
+    errors.team = '請選擇球隊'
+  }
+  if (!formPlayerId.value) {
+    errors.player = '請選擇選手'
+  }
+  if (formStrikeZoneTop.value !== undefined && formStrikeZoneBottom.value !== undefined) {
+    if (formStrikeZoneTop.value <= formStrikeZoneBottom.value) {
+      errors.strikeZone = '好球帶上緣必須大於下緣'
+    }
+  }
+
+  formErrors.value = errors
+  return Object.keys(errors).length === 0
 }
 
-// 確認刪除
-async function handleDelete() {
-  if (!selectedTraining.value)
+async function handleSave() {
+  if (isSubmitting.value)
     return
-  const success = await deleteTraining(selectedTraining.value.id)
-  if (success) {
-    isDeleteModalOpen.value = false
-    await fetchTrainings()
+  if (!validateForm())
+    return
+
+  isSubmitting.value = true
+  try {
+    await $fetch('/api/trainings', {
+      method: 'POST',
+      body: {
+        date: formDate.value,
+        player_id: formPlayerId.value,
+        strike_zone_top: formStrikeZoneTop.value,
+        strike_zone_bottom: formStrikeZoneBottom.value,
+      },
+    })
+    toast.add({ title: '訓練已新增', color: 'success' })
+    isFormOpen.value = false
+    await refresh()
+  }
+  catch (err: unknown) {
+    const message = (err as { data?: { message?: string } })?.data?.message ?? '操作失敗'
+    toast.add({ title: message, color: 'error' })
+  }
+  finally {
+    isSubmitting.value = false
   }
 }
 
-// 球隊變更時重新載入球員
-watch(() => createForm.team_id, async (teamId) => {
-  if (teamId) {
-    await fetchPlayers(Number(teamId))
-    createForm.player_id = ''
-  }
-})
+// 刪除 Modal
+const isDeleteOpen = ref(false)
+const deletingTraining = ref<TrainingItem | null>(null)
+const isDeleting = ref(false)
 
-// 載入資料
-onMounted(async () => {
-  await fetchTeams()
-  await fetchPlayers()
-  await fetchTrainings()
-})
+function openDelete(training: TrainingItem) {
+  deletingTraining.value = training
+  isDeleteOpen.value = true
+}
+
+async function handleDelete() {
+  if (isDeleting.value || !deletingTraining.value)
+    return
+
+  isDeleting.value = true
+  try {
+    await $fetch(`/api/trainings/${deletingTraining.value.id}`, { method: 'DELETE' })
+    toast.add({ title: '訓練已刪除', color: 'success' })
+    isDeleteOpen.value = false
+    await refresh()
+  }
+  catch {
+    toast.add({ title: '刪除失敗', color: 'error' })
+  }
+  finally {
+    isDeleting.value = false
+  }
+}
+
+// AI 狀態 Badge 顏色
+function getAiStatusColor(status: string) {
+  return status === 'running' ? 'success' : 'neutral'
+}
+
+function getAiStatusLabel(status: string) {
+  return status === 'running' ? '運行中' : '已停止'
+}
 </script>
 
 <template>
-  <div class="flex flex-col h-full">
-    <CommonPageHeader title="訓練管理" description="管理今天及未來的訓練">
-      <template #actions>
-        <UButton to="/trainings/history" variant="outline" color="neutral" icon="i-heroicons-clock">
-          歷史紀錄
-        </UButton>
-        <UButton icon="i-heroicons-plus" @click="openCreateModal">
-          新增訓練
-        </UButton>
-      </template>
-      <template #filters>
-        <div class="mt-4">
-          <CommonSearchInput v-model="searchQuery" placeholder="搜尋選手或球隊..." />
-        </div>
-      </template>
-    </CommonPageHeader>
+  <div data-testid="trainings-page" class="flex h-full flex-col">
+    <CommonPageHeader title="訓練列表" description="管理所有訓練排程" />
 
+    <!-- 工具列 -->
+    <div class="mb-4 flex items-center justify-end">
+      <UButton
+        data-testid="training-create"
+        icon="i-heroicons-plus"
+        label="新增訓練"
+        @click="openCreate"
+      />
+    </div>
+
+    <!-- 列表 -->
     <CommonListContainer
-      :loading="isLoading"
-      :empty="filteredTrainings.length === 0"
-      empty-title="目前沒有訓練"
-      empty-description="點擊上方按鈕建立第一個訓練"
+      v-model:page="page"
+      :total="total"
+      :page-size="pageSize"
+      data-testid="trainings-pagination"
     >
-      <template #empty-action>
-        <UButton icon="i-heroicons-plus" @click="openCreateModal">
-          新增訓練
-        </UButton>
-      </template>
-
-      <UTable :columns="columns" :data="filteredTrainings">
+      <UTable
+        data-testid="training-list"
+        :data="trainings"
+        :columns="columns"
+        class="w-full"
+        @select="handleRowSelect"
+      >
         <template #date-cell="{ row }">
-          <span class="font-medium text-neutral-900 dark:text-white">{{ formatDate((row.original as Training).date) }}</span>
+          <span class="text-neutral-900 dark:text-white">{{ row.original.date }}</span>
         </template>
 
         <template #player_name-cell="{ row }">
-          <span>{{ (row.original as Training).player_name }}</span>
+          <span class="text-neutral-900 dark:text-white">{{ row.original.player_name }}</span>
+        </template>
+
+        <template #team_name-cell="{ row }">
+          <span class="text-neutral-700 dark:text-neutral-300">{{ row.original.team_name }}</span>
         </template>
 
         <template #pitch_count-cell="{ row }">
-          <UBadge color="primary" variant="subtle">
-            {{ (row.original as Training).pitch_count }} 球
-          </UBadge>
+          <span class="text-neutral-700 dark:text-neutral-300">{{ row.original.pitch_count }}</span>
         </template>
 
         <template #ai_status-cell="{ row }">
-          <UBadge
-            :color="(row.original as Training).ai_status === 'running' ? 'success' : 'neutral'"
-            variant="subtle"
-          >
-            {{ (row.original as Training).ai_status === 'running' ? '運行中' : '已停止' }}
+          <UBadge :color="getAiStatusColor(row.original.ai_status)" variant="subtle">
+            {{ getAiStatusLabel(row.original.ai_status) }}
           </UBadge>
         </template>
 
         <template #actions-cell="{ row }">
-          <div class="flex items-center gap-1">
-            <UButton
-              icon="i-heroicons-eye"
-              variant="ghost"
-              color="neutral"
-              size="xs"
-              @click="goToTraining(row.original as Training)"
-            />
-            <UButton
-              icon="i-heroicons-trash"
-              variant="ghost"
-              color="error"
-              size="xs"
-              @click="openDeleteModal(row.original as Training)"
-            />
-          </div>
+          <UButton
+            data-testid="training-delete"
+            icon="i-heroicons-trash"
+            color="error"
+            variant="ghost"
+            size="xs"
+            @click.stop="openDelete(row.original)"
+          />
         </template>
       </UTable>
     </CommonListContainer>
 
-    <!-- 建立 Modal -->
-    <UModal v-model:open="isCreateModalOpen">
+    <!-- 新增 Modal -->
+    <UModal v-model:open="isFormOpen">
       <template #content>
-        <div class="p-6">
-          <h3 class="text-lg font-semibold text-neutral-900 dark:text-white mb-4">
+        <div data-testid="training-form-modal" class="p-6">
+          <h3 class="text-lg font-semibold text-neutral-900 dark:text-white">
             新增訓練
           </h3>
-          <UForm :schema="trainingSchema" :state="createForm" class="space-y-4" @submit="handleCreate">
-            <UFormField label="訓練日期" name="date" required>
+
+          <div class="mt-4 space-y-2">
+            <UFormField label="訓練日期" class="relative mb-8" :ui="{ error: 'absolute top-full left-0 mt-1' }" :error="formErrors.date">
               <UInput
-                v-model="createForm.date"
+                v-model="formDate"
+                data-testid="training-date"
                 type="date"
-                :disabled="isSubmitting"
+                class="w-full"
               />
             </UFormField>
 
-            <UFormField label="所屬球隊" name="team_id" required>
+            <UFormField label="球隊" class="relative mb-8" :ui="{ error: 'absolute top-full left-0 mt-1' }" :error="formErrors.team">
               <USelect
-                v-model="createForm.team_id"
-                :items="teamFormOptions"
-                placeholder="選擇球隊"
-                :disabled="isSubmitting"
+                v-model="formTeamId"
+                data-testid="training-team"
+                :items="teamOptions"
+                placeholder="請選擇球隊"
+                class="w-full"
               />
             </UFormField>
 
-            <UFormField label="受測選手" name="player_id" required>
+            <UFormField label="選手" class="relative mb-8" :ui="{ error: 'absolute top-full left-0 mt-1' }" :error="formErrors.player">
               <USelect
-                v-model="createForm.player_id"
-                :items="playerFormOptions"
-                placeholder="選擇球員"
-                :disabled="isSubmitting || !createForm.team_id"
+                v-model="formPlayerId"
+                data-testid="training-player"
+                :items="playerOptions"
+                placeholder="請先選擇球隊"
+                :disabled="!formTeamId"
+                class="w-full"
               />
             </UFormField>
 
-            <div v-if="selectedPlayer" class="p-3 bg-neutral-100 dark:bg-neutral-800 rounded-lg">
-              <p class="text-sm text-neutral-600 dark:text-neutral-400">
-                選手身高：{{ selectedPlayer.height }} cm
-              </p>
-              <p class="text-sm text-neutral-600 dark:text-neutral-400">
-                好球帶預設：{{ Math.round(selectedPlayer.height * 0.3) }} - {{ Math.round(selectedPlayer.height * 0.7) }} cm
-              </p>
-            </div>
+            <UFormField label="好球帶上緣 (cm)" class="relative mb-8" :ui="{ error: 'absolute top-full left-0 mt-1' }" :error="formErrors.strikeZone">
+              <UInput
+                v-model.number="formStrikeZoneTop"
+                type="number"
+                placeholder="留空自動計算"
+                class="w-full"
+              />
+            </UFormField>
 
-            <div class="mt-6 flex justify-end gap-3">
-              <UButton
-                label="取消"
-                color="neutral"
-                variant="outline"
-                :disabled="isSubmitting"
-                @click="isCreateModalOpen = false"
+            <UFormField label="好球帶下緣 (cm)" class="relative mb-8" :ui="{ error: 'absolute top-full left-0 mt-1' }">
+              <UInput
+                v-model.number="formStrikeZoneBottom"
+                type="number"
+                placeholder="留空自動計算"
+                class="w-full"
               />
-              <UButton
-                type="submit"
-                label="建立"
-                :loading="isSubmitting"
-                :disabled="isSubmitting"
-              />
-            </div>
-          </UForm>
+            </UFormField>
+          </div>
+
+          <div class="mt-6 flex justify-end gap-3">
+            <UButton
+              color="neutral"
+              variant="outline"
+              :disabled="isSubmitting"
+              @click="isFormOpen = false"
+            >
+              取消
+            </UButton>
+            <UButton
+              data-testid="training-save"
+              :loading="isSubmitting"
+              @click="handleSave"
+            >
+              新增
+            </UButton>
+          </div>
         </div>
       </template>
     </UModal>
 
     <!-- 刪除確認 Modal -->
     <CommonConfirmModal
-      v-model:open="isDeleteModalOpen"
+      v-model:open="isDeleteOpen"
       title="確認刪除"
-      description="確定要刪除這筆訓練嗎？所有相關的投球紀錄也會一併刪除。"
+      :description="`確定要刪除「${deletingTraining?.date ?? ''} - ${deletingTraining?.player_name ?? ''}」的訓練嗎？`"
       confirm-label="刪除"
-      :loading="isSubmitting"
+      confirm-color="error"
+      :loading="isDeleting"
       @confirm="handleDelete"
     />
   </div>

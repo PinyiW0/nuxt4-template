@@ -226,7 +226,7 @@ Then 應回傳錯誤 "球隊名稱已被使用"
 
 > **重要**：每個 Phase 和每個功能完成後都會詢問用戶確認，確認後才會繼續。
 
-詳細流程請參考：`.ai-prompts/ui/feature-to-ui-workflow.md`
+詳細流程請參考：`.claude/skills/feature-to-ui/SKILL.md`
 
 ---
 

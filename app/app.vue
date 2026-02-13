@@ -1,7 +1,7 @@
 <template>
   <div>
     <NuxtRouteAnnouncer />
-    <UApp :toaster="{ position: 'top-right', duration: 3000 }">
+    <UApp :toaster="{ position: 'top-right' }">
       <NuxtLayout>
         <NuxtPage />
       </NuxtLayout>

@@ -15,27 +15,33 @@
 
 ## Layout 響應式
 
+> 完整 Layout 範本 → 詳見 [phase-4-layout.md](phases/phase-4-layout.md)
+
 ```vue
 <template>
   <div class="flex h-screen overflow-hidden">
     <!-- Sidebar：lg 以上顯示 -->
-    <aside class="hidden lg:flex w-64">
+    <aside class="hidden shrink-0 lg:flex lg:flex-col w-64">
       <!-- Sidebar 內容 -->
     </aside>
 
-    <!-- 行動裝置選單按鈕 -->
-    <button class="fixed left-4 top-4 z-40 lg:hidden">
-      <UIcon name="i-heroicons-bars-3" class="size-6" />
-    </button>
-
     <!-- Mobile Drawer -->
-    <USlideover v-model="isMobileMenuOpen" side="left">
+    <USlideover v-model:open="isMobileMenuOpen" side="left">
       <!-- 行動選單內容 -->
     </USlideover>
 
     <!-- Main Content -->
-    <div class="flex flex-1 flex-col lg:ml-64">
-      <!-- ... -->
+    <div class="flex flex-1 flex-col overflow-hidden">
+      <!-- ⚠️ Mobile Top Bar：in-flow，禁止 fixed/absolute -->
+      <div class="flex h-14 shrink-0 items-center gap-3 border-b px-4 lg:hidden">
+        <button @click="isMobileMenuOpen = true">
+          <UIcon name="i-heroicons-bars-3" class="size-6" />
+        </button>
+        <span class="text-lg font-bold">網站名稱</span>
+      </div>
+      <main class="flex min-h-0 flex-1 flex-col overflow-auto p-6">
+        <slot />
+      </main>
     </div>
   </div>
 </template>

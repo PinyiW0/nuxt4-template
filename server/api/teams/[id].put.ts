@@ -1,45 +1,31 @@
-import { getTeamById, isTeamNameExists, updateTeam } from '../../mock/data/teams'
+import type { H3Event } from 'h3'
 
-export default defineEventHandler(async (event) => {
+import { mockTeams } from '../../mock/data/teams'
+
+export default defineEventHandler(async (event: H3Event) => {
   const id = Number(getRouterParam(event, 'id'))
   const body = await readBody(event)
-  const { name, user, role } = body
+  const { name } = body
 
-  const team = getTeamById(id)
-
+  const team = mockTeams.find(t => t.id === id && t.status === 'active')
   if (!team) {
-    throw createError({
-      statusCode: 404,
-      message: '球隊不存在或已刪除',
-    })
+    throw createError({ statusCode: 404, message: '球隊不存在' })
   }
 
-  // 權限檢查：管理者可編輯所有，教練只能編輯自己的
-  if (role !== '管理者' && team.created_by !== user) {
-    throw createError({
-      statusCode: 403,
-      message: '無權限操作此球隊',
-    })
+  if (!name || name.length < 1 || name.length > 50) {
+    throw createError({ statusCode: 400, message: '球隊名稱長度必須在 1-50 字元之間' })
   }
 
-  if (!name || !name.trim()) {
-    throw createError({
-      statusCode: 400,
-      message: '球隊名稱不可為空',
-    })
+  // 檢查名稱唯一（排除自己）
+  const exists = mockTeams.find(t => t.name === name && t.id !== id && t.status === 'active')
+  if (exists) {
+    throw createError({ statusCode: 409, message: '球隊名稱已存在' })
   }
 
-  if (isTeamNameExists(name, id)) {
-    throw createError({
-      statusCode: 409,
-      message: '球隊名稱已存在',
-    })
-  }
-
-  const updatedTeam = updateTeam(id, { name: name.trim() })
+  team.name = name
 
   return {
     status: 'success',
-    data: updatedTeam,
+    data: team,
   }
 })

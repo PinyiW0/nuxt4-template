@@ -1,32 +1,25 @@
-import { deleteTeam, getTeamById } from '../../mock/data/teams'
+import type { H3Event } from 'h3'
 
-export default defineEventHandler(async (event) => {
+import { mockPlayers } from '../../mock/data/players'
+import { mockTeams } from '../../mock/data/teams'
+
+export default defineEventHandler((event: H3Event) => {
   const id = Number(getRouterParam(event, 'id'))
-  const query = getQuery(event)
-  const user = query.user as string | undefined
-  const role = query.role as string | undefined
 
-  const team = getTeamById(id)
-
+  const team = mockTeams.find(t => t.id === id && t.status === 'active')
   if (!team) {
-    throw createError({
-      statusCode: 404,
-      message: '球隊不存在或已刪除',
-    })
+    throw createError({ statusCode: 404, message: '球隊不存在' })
   }
 
-  // 權限檢查
-  if (role !== '管理者' && team.created_by !== user) {
-    throw createError({
-      statusCode: 403,
-      message: '無權限操作此球隊',
-    })
-  }
+  // 軟刪除球隊
+  team.status = 'deleted'
 
-  deleteTeam(id)
+  // 連帶軟刪除所有球員
+  mockPlayers.forEach((p) => {
+    if (p.team_id === id) {
+      p.status = 'deleted'
+    }
+  })
 
-  return {
-    status: 'success',
-    message: '球隊已刪除',
-  }
+  return { status: 'success', message: '球隊已刪除' }
 })

@@ -1,35 +1,28 @@
-import { batchDeleteTrainings, getTrainingById } from '../../mock/data/trainings'
+import type { H3Event } from 'h3'
 
-export default defineEventHandler(async (event) => {
+import { mockPitches } from '../../mock/data/pitches'
+import { mockTrainings } from '../../mock/data/trainings'
+
+export default defineEventHandler(async (event: H3Event) => {
   const body = await readBody(event)
-  const { ids, user, role } = body
+  const { training_ids } = body
 
-  if (!Array.isArray(ids) || ids.length === 0) {
-    throw createError({
-      statusCode: 400,
-      message: '訓練 ID 列表不可為空',
-    })
+  if (!training_ids || !Array.isArray(training_ids) || training_ids.length === 0) {
+    throw createError({ statusCode: 400, message: '請選擇要刪除的訓練' })
   }
 
-  // 權限檢查
-  if (role !== '管理者') {
-    for (const id of ids) {
-      const training = getTrainingById(id)
-      if (training && training.created_by !== user) {
-        throw createError({
-          statusCode: 403,
-          message: '包含無權限操作的訓練',
-        })
-      }
+  training_ids.forEach((id: number) => {
+    const training = mockTrainings.find(t => t.id === id && t.status === 'active')
+    if (training) {
+      training.status = 'deleted'
+      // 連帶軟刪除投球
+      mockPitches.forEach((p) => {
+        if (p.training_id === id) {
+          p.status = 'deleted'
+        }
+      })
     }
-  }
+  })
 
-  const deletedCount = batchDeleteTrainings(ids)
-
-  return {
-    status: 'success',
-    data: {
-      deleted_count: deletedCount,
-    },
-  }
+  return { status: 'success', message: '訓練已批次刪除' }
 })

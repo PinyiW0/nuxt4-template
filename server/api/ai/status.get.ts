@@ -1,34 +1,14 @@
-import { getTrainingById } from '../../mock/data/trainings'
+import { mockTrainings } from '../../mock/data/trainings'
 
-export default defineEventHandler(async (event) => {
-  const query = getQuery(event)
-  const trainingId = query.training_id ? Number(query.training_id) : undefined
-
-  if (!trainingId) {
-    return {
-      status: 'success',
-      data: {
-        ai_status: 'stopped',
-        training_id: null,
-      },
-    }
-  }
-
-  const training = getTrainingById(trainingId)
-
-  if (!training) {
-    throw createError({
-      statusCode: 404,
-      message: '訓練不存在或已刪除',
-    })
-  }
+export default defineEventHandler(() => {
+  const running = mockTrainings.find(t => t.ai_status === 'running')
 
   return {
     status: 'success',
     data: {
-      training_id: trainingId,
-      ai_status: training.ai_status,
-      pitch_count: training.pitch_count,
+      ai_status: running ? 'running' : 'stopped',
+      training_id: running?.id ?? null,
+      created_by: running?.created_by ?? null,
     },
   }
 })

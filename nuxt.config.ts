@@ -13,7 +13,12 @@ export default defineNuxtConfig({
 
   // Pinia 配置 - 自動導入 stores
   pinia: {
-    storesDirs: ['./app/stores/**'],
+    storesDirs: ['./app/stores'],
+  },
+
+  // 自動導入配置
+  imports: {
+    dirs: ['./app/stores'],
   },
 
   // Nuxt UI 配置
@@ -23,7 +28,7 @@ export default defineNuxtConfig({
     },
   },
 
-  // 明暗模式：支援切換，預設跟隨系統
+  // 明暗模式：支援切換，跟隨系統偏好（支援 light/dark 切換）
   colorMode: {
     preference: 'system',
   },

@@ -1,29 +1,44 @@
-import { players } from '../../mock/data/players'
-import { getTeams, getTeamsByCreator } from '../../mock/data/teams'
+import type { H3Event } from 'h3'
 
-export default defineEventHandler(async (event) => {
+import { mockPlayers } from '../../mock/data/players'
+import { mockTeams } from '../../mock/data/teams'
+
+export default defineEventHandler((event: H3Event) => {
   const query = getQuery(event)
-  const userAccount = query.user as string | undefined
-  const userRole = query.role as string | undefined
+  const page = Number(query.page) || 1
+  const pageSize = Number(query.page_size) || 10
 
-  const teamList = userRole === '管理者' ? getTeams() : getTeamsByCreator(userAccount || '')
+  const user = query.user as string | undefined
+  const role = query.role as string | undefined
 
-  // 計算每個球隊的球員數量
-  const teamsWithPlayerCount = teamList.map((team) => {
-    const playerCount = players.filter(p => p.team_id === team.id && p.status === 'active').length
-    return {
-      ...team,
-      player_count: playerCount,
-    }
-  })
+  let activeTeams = mockTeams.filter(t => t.status === 'active')
 
-  // 依建立時間倒序排列
-  teamsWithPlayerCount.sort(
-    (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-  )
+  // 教練只能查詢自己建立的球隊
+  if (role !== '管理者' && user) {
+    activeTeams = activeTeams.filter(t => t.created_by === user)
+  }
+
+  // 計算 player_count
+  const teamsWithCount = activeTeams.map(t => ({
+    id: t.id,
+    name: t.name,
+    player_count: mockPlayers.filter(p => p.team_id === t.id && p.status === 'active').length,
+    created_by: t.created_by,
+    created_at: t.created_at,
+    status: t.status,
+  }))
+
+  // 按建立時間倒序
+  teamsWithCount.sort((a, b) => b.created_at.localeCompare(a.created_at))
+
+  const start = (page - 1) * pageSize
+  const paged = teamsWithCount.slice(start, start + pageSize)
 
   return {
     status: 'success',
-    data: teamsWithPlayerCount,
+    data: paged,
+    total: teamsWithCount.length,
+    page,
+    page_size: pageSize,
   }
 })

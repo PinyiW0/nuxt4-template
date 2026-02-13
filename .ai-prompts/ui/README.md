@@ -11,11 +11,15 @@
 ├── README.md                    # 本文件（系統說明）
 ├── ui-config-pm.yaml             # PM 填寫的設定檔（非技術人員）
 ├── ui-config.yaml                # 工程師設定檔（技術細節）
-├── feature-to-ui-workflow.md     # 完整工作流程（AI 執行依據）
-└── nuxt-ui-page-builder.md      # 頁面建構規範
+└── style-presets.yaml            # 風格預設（Phase 2 時選擇）
 
 .claude/skills/feature-to-ui/
-└── SKILL.md                     # Skill 入口定義
+├── SKILL.md                     # Skill 入口定義
+├── rules.md                     # 共用規則權威來源
+├── phases/                      # 各 Phase 執行步驟
+├── page-builder.md              # DSL 解析 + 表單範本
+├── components.md                # 元件使用規範
+└── responsive.md                # 響應式規範
 ```
 
 ---

@@ -1,457 +1,400 @@
 <script setup lang="ts">
-import type { FormSubmitEvent } from '@nuxt/ui'
-import type { Player } from '~/composables/usePlayers'
-import { z } from 'zod'
-import { POSITIONS } from '~/composables/usePlayers'
+import type { PlayerItem } from '~/types/api/players'
+import type { TeamItem } from '~/types/api/teams'
 
-const { isAuthenticated } = useAuth()
-const router = useRouter()
+import { useAuthStore } from '~/stores/auth'
 
-// 權限檢查
-watch(isAuthenticated, (value) => {
-  if (!value)
-    router.push('/login')
-}, { immediate: true })
+definePageMeta({ layout: 'default' })
 
-const { teams, fetchTeams } = useTeams()
-const {
-  players,
-  isLoading,
-  isSubmitting,
-  fetchPlayers,
-  createPlayer,
-  updatePlayer,
-  deletePlayer,
-  updateSortOrder,
-} = usePlayers()
+const authStore = useAuthStore()
+const toast = useToast()
 
-// 篩選
-const searchQuery = ref('')
+// 分頁
+const page = ref(1)
+const pageSize = 10
 
-// 依球隊篩選的球員
-const filteredPlayers = computed(() => {
-  let result = players.value
+// 球隊篩選
+const filterTeamId = ref<number | undefined>(undefined)
 
-  if (searchQuery.value) {
-    const query = searchQuery.value.toLowerCase()
-    result = result.filter(p =>
-      p.name.toLowerCase().includes(query)
-      || p.number.toString().includes(query),
-    )
-  }
-
-  // 依排序順序排列
-  return result.sort((a, b) => a.sort_order - b.sort_order)
+// 球隊列表（用於篩選與表單）
+const { data: teamsResponse } = useFetch('/api/teams', {
+  query: {
+    page_size: 999,
+    user: authStore.user?.account,
+    role: authStore.user?.role,
+  },
+})
+const teamOptions = computed(() => {
+  const list = (teamsResponse.value?.data ?? []) as TeamItem[]
+  return list.map(t => ({ label: t.name, value: t.id }))
 })
 
-// 球隊選項（用於篩選）
-const teamFilterOptions = computed(() => [
-  { label: '全部球隊', value: 'all' },
-  ...teams.value.map(t => ({ label: t.name, value: String(t.id) })),
-])
+// 球員列表
+const { data: playersResponse, refresh } = useFetch('/api/players', {
+  query: computed(() => ({
+    page: page.value,
+    page_size: pageSize,
+    team_id: filterTeamId.value,
+    user: authStore.user?.account,
+    role: authStore.user?.role,
+  })),
+})
 
-// 球隊選項（用於表單）
-const teamFormOptions = computed(() =>
-  teams.value.map(t => ({ label: t.name, value: String(t.id) })),
-)
+const players = computed(() => playersResponse.value?.data ?? [])
+const total = computed(() => (playersResponse.value as Record<string, unknown>)?.total as number ?? 0)
+
+// 當篩選條件變更時重置頁碼
+watch(filterTeamId, () => {
+  page.value = 1
+})
 
 // 守備位置選項
-const positionOptions: { label: string, value: string }[] = POSITIONS.map(p => ({ label: p, value: p }))
-
-// 篩選用的字串值
-const selectedTeamFilter = ref<string>('all')
-
-// 轉換篩選值為數字
-const selectedTeamId = computed(() => {
-  if (selectedTeamFilter.value === 'all')
-    return undefined
-  return Number(selectedTeamFilter.value)
-})
+const positionOptions = [
+  { label: '投手', value: '投手' },
+  { label: '捕手', value: '捕手' },
+  { label: '一壘手', value: '一壘手' },
+  { label: '二壘手', value: '二壘手' },
+  { label: '三壘手', value: '三壘手' },
+  { label: '游擊手', value: '游擊手' },
+  { label: '左外野手', value: '左外野手' },
+  { label: '中外野手', value: '中外野手' },
+  { label: '右外野手', value: '右外野手' },
+  { label: '指定打擊', value: '指定打擊' },
+]
 
 // 表格欄位
 const columns = [
-  { accessorKey: 'sort_order', header: '#' },
   { accessorKey: 'number', header: '背號' },
   { accessorKey: 'name', header: '姓名' },
-  { accessorKey: 'height', header: '身高' },
+  { accessorKey: 'height', header: '身高 (cm)' },
   { accessorKey: 'position', header: '守備位置' },
   { accessorKey: 'team_name', header: '球隊' },
+  { accessorKey: 'sort_order', header: '排序' },
   { accessorKey: 'actions', header: '操作' },
 ]
 
-// Modal 狀態
-const isCreateModalOpen = ref(false)
-const isEditModalOpen = ref(false)
-const isDeleteModalOpen = ref(false)
-const selectedPlayer = ref<Player | null>(null)
+// 表單 Modal
+const isFormOpen = ref(false)
+const isSubmitting = ref(false)
+const editingPlayer = ref<PlayerItem | null>(null)
+const formTeamId = ref<number | undefined>(undefined)
+const formNumber = ref<number | undefined>(undefined)
+const formName = ref('')
+const formHeight = ref<number | undefined>(undefined)
+const formPosition = ref<string | undefined>(undefined)
+const formErrors = ref<Record<string, string>>({})
 
-// 表單 Schema
-const playerSchema = z.object({
-  number: z.coerce.number().int().min(0, '背號必須為 0-999').max(999, '背號必須為 0-999'),
-  name: z.string().min(1, '球員姓名不可為空').max(50, '球員姓名最多 50 字'),
-  height: z.coerce.number().int().min(100, '身高必須為 100-250 公分').max(250, '身高必須為 100-250 公分'),
-  position: z.string().min(1, '請選擇守備位置'),
-  team_id: z.coerce.number().int().positive('請選擇球隊'),
-})
-
-type PlayerSchema = z.output<typeof playerSchema>
-
-// 建立表單狀態
-const createForm = reactive({
-  number: 0,
-  name: '',
-  height: 175,
-  position: '',
-  team_id: '',
-})
-
-// 編輯表單狀態
-const editForm = reactive({
-  number: 0,
-  name: '',
-  height: 175,
-  position: '',
-})
-
-// 開啟建立 Modal
-function openCreateModal() {
-  createForm.number = 0
-  createForm.name = ''
-  createForm.height = 175
-  createForm.position = ''
-  createForm.team_id = selectedTeamId.value?.toString() || (teams.value[0]?.id.toString() ?? '')
-  isCreateModalOpen.value = true
+function openCreate() {
+  editingPlayer.value = null
+  formTeamId.value = undefined
+  formNumber.value = undefined
+  formName.value = ''
+  formHeight.value = undefined
+  formPosition.value = undefined
+  formErrors.value = {}
+  isFormOpen.value = true
 }
 
-// 開啟編輯 Modal
-function openEditModal(player: Player) {
-  selectedPlayer.value = player
-  editForm.number = player.number
-  editForm.name = player.name
-  editForm.height = player.height
-  editForm.position = player.position
-  isEditModalOpen.value = true
+function openEdit(player: PlayerItem) {
+  editingPlayer.value = player
+  formTeamId.value = player.team_id
+  formNumber.value = player.number
+  formName.value = player.name
+  formHeight.value = player.height
+  formPosition.value = player.position
+  formErrors.value = {}
+  isFormOpen.value = true
 }
 
-// 開啟刪除 Modal
-function openDeleteModal(player: Player) {
-  selectedPlayer.value = player
-  isDeleteModalOpen.value = true
-}
+function validateForm(): boolean {
+  const errors: Record<string, string> = {}
 
-// 提交建立
-async function handleCreate(event: FormSubmitEvent<PlayerSchema>) {
-  const data = {
-    ...event.data,
-    team_id: Number(createForm.team_id),
+  if (!editingPlayer.value && !formTeamId.value) {
+    errors.team = '請選擇球隊'
   }
-  const success = await createPlayer(data)
-  if (success) {
-    isCreateModalOpen.value = false
+  if (formNumber.value === undefined || formNumber.value === null) {
+    errors.number = '請輸入背號'
   }
+  else if (formNumber.value < 0 || formNumber.value > 99) {
+    errors.number = '背號必須在 0-99 之間'
+  }
+  if (!formName.value.trim()) {
+    errors.name = '請輸入姓名'
+  }
+  if (!formHeight.value) {
+    errors.height = '請輸入身高'
+  }
+  else if (formHeight.value < 100 || formHeight.value > 250) {
+    errors.height = '身高必須在 100-250 公分之間'
+  }
+  if (!formPosition.value) {
+    errors.position = '請選擇守備位置'
+  }
+
+  formErrors.value = errors
+  return Object.keys(errors).length === 0
 }
 
-// 提交編輯
-async function handleEdit(event: FormSubmitEvent<Omit<PlayerSchema, 'team_id'>>) {
-  if (!selectedPlayer.value)
+async function handleSave() {
+  if (isSubmitting.value)
     return
-  const success = await updatePlayer(
-    selectedPlayer.value.id,
-    event.data,
-    selectedTeamId.value,
-  )
-  if (success) {
-    isEditModalOpen.value = false
+  if (!validateForm())
+    return
+
+  isSubmitting.value = true
+  try {
+    if (editingPlayer.value) {
+      await $fetch(`/api/players/${editingPlayer.value.id}`, {
+        method: 'PUT',
+        body: {
+          number: formNumber.value,
+          name: formName.value.trim(),
+          height: formHeight.value,
+          position: formPosition.value,
+        },
+      })
+      toast.add({ title: '球員已更新', color: 'success' })
+    }
+    else {
+      await $fetch('/api/players', {
+        method: 'POST',
+        body: {
+          team_id: formTeamId.value,
+          number: formNumber.value,
+          name: formName.value.trim(),
+          height: formHeight.value,
+          position: formPosition.value,
+          created_by: authStore.user?.account ?? '',
+        },
+      })
+      toast.add({ title: '球員已新增', color: 'success' })
+    }
+    isFormOpen.value = false
+    await refresh()
+  }
+  catch (err: unknown) {
+    const message = (err as { data?: { message?: string } })?.data?.message ?? '操作失敗'
+    toast.add({ title: message, color: 'error' })
+  }
+  finally {
+    isSubmitting.value = false
   }
 }
 
-// 確認刪除
+// 刪除 Modal
+const isDeleteOpen = ref(false)
+const deletingPlayer = ref<PlayerItem | null>(null)
+const isDeleting = ref(false)
+
+function openDelete(player: PlayerItem) {
+  deletingPlayer.value = player
+  isDeleteOpen.value = true
+}
+
 async function handleDelete() {
-  if (!selectedPlayer.value)
+  if (isDeleting.value || !deletingPlayer.value)
     return
-  const success = await deletePlayer(selectedPlayer.value.id, selectedTeamId.value)
-  if (success) {
-    isDeleteModalOpen.value = false
+
+  isDeleting.value = true
+  try {
+    await $fetch(`/api/players/${deletingPlayer.value.id}`, { method: 'DELETE' })
+    toast.add({ title: '球員已刪除', color: 'success' })
+    isDeleteOpen.value = false
+    await refresh()
+  }
+  catch {
+    toast.add({ title: '刪除失敗', color: 'error' })
+  }
+  finally {
+    isDeleting.value = false
   }
 }
-
-// 移動球員排序
-async function movePlayer(index: number, direction: 'up' | 'down') {
-  const newIndex = direction === 'up' ? index - 1 : index + 1
-  if (newIndex < 0 || newIndex >= filteredPlayers.value.length)
-    return
-
-  const newOrder = [...filteredPlayers.value]
-  const [removed] = newOrder.splice(index, 1)
-  newOrder.splice(newIndex, 0, removed!)
-
-  const playerIds = newOrder.map(p => p.id)
-  await updateSortOrder(playerIds)
-  await fetchPlayers(selectedTeamId.value)
-}
-
-// 篩選球隊變更
-watch(selectedTeamFilter, () => {
-  fetchPlayers(selectedTeamId.value)
-})
-
-// 載入資料
-onMounted(async () => {
-  await fetchTeams()
-  await fetchPlayers()
-})
 </script>
 
 <template>
-  <div class="flex flex-col h-full">
-    <CommonPageHeader title="球員管理" description="管理您的球員資料">
-      <template #actions>
-        <UButton icon="i-heroicons-plus" @click="openCreateModal">
-          新增球員
-        </UButton>
-      </template>
-      <template #filters>
-        <div class="mt-4 flex flex-wrap items-center gap-4">
-          <USelect
-            v-model="selectedTeamFilter"
-            :items="teamFilterOptions"
-            placeholder="選擇球隊"
-            class="w-48"
-          />
-          <CommonSearchInput v-model="searchQuery" placeholder="搜尋球員..." />
-        </div>
-      </template>
-    </CommonPageHeader>
+  <div data-testid="players-page" class="flex h-full flex-col">
+    <CommonPageHeader title="球員管理" description="管理所有球員資料" />
 
+    <!-- 工具列 -->
+    <div class="mb-4 flex items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <USelect
+          v-model="filterTeamId"
+          data-testid="player-filter-team"
+          :items="[{ label: '全部球隊', value: undefined }, ...teamOptions]"
+          placeholder="篩選球隊"
+          class="w-48"
+        />
+      </div>
+      <UButton
+        data-testid="player-create"
+        icon="i-heroicons-plus"
+        label="新增球員"
+        @click="openCreate"
+      />
+    </div>
+
+    <!-- 列表 -->
     <CommonListContainer
-      :loading="isLoading"
-      :empty="filteredPlayers.length === 0"
-      empty-title="目前沒有球員"
-      empty-description="點擊上方按鈕新增第一位球員"
+      v-model:page="page"
+      :total="total"
+      :page-size="pageSize"
+      data-testid="players-pagination"
     >
-      <template #empty-action>
-        <UButton icon="i-heroicons-plus" @click="openCreateModal">
-          新增球員
-        </UButton>
-      </template>
-
-      <UTable :columns="columns" :data="filteredPlayers">
-        <template #sort_order-cell="{ row }">
-          <div class="flex items-center gap-1">
-            <span class="text-neutral-500 w-6">{{ (row.original as Player).sort_order }}</span>
-            <div class="flex flex-col">
-              <UButton
-                icon="i-heroicons-chevron-up"
-                variant="ghost"
-                color="neutral"
-                size="xs"
-                :disabled="row.index === 0"
-                @click="movePlayer(row.index, 'up')"
-              />
-              <UButton
-                icon="i-heroicons-chevron-down"
-                variant="ghost"
-                color="neutral"
-                size="xs"
-                :disabled="row.index === filteredPlayers.length - 1"
-                @click="movePlayer(row.index, 'down')"
-              />
-            </div>
-          </div>
-        </template>
-
+      <UTable
+        data-testid="player-list"
+        :data="players"
+        :columns="columns"
+        class="w-full"
+      >
         <template #number-cell="{ row }">
-          <UBadge color="primary" variant="subtle">
-            #{{ (row.original as Player).number }}
-          </UBadge>
+          <span class="font-mono text-neutral-900 dark:text-white">{{ row.original.number }}</span>
         </template>
 
         <template #name-cell="{ row }">
-          <span class="font-medium text-neutral-900 dark:text-white">{{ (row.original as Player).name }}</span>
+          <span class="text-neutral-900 dark:text-white">{{ row.original.name }}</span>
         </template>
 
         <template #height-cell="{ row }">
-          <span>{{ (row.original as Player).height }} cm</span>
+          <span class="text-neutral-700 dark:text-neutral-300">{{ row.original.height }}</span>
         </template>
 
         <template #position-cell="{ row }">
-          <UBadge color="secondary" variant="subtle">
-            {{ (row.original as Player).position }}
+          <UBadge color="neutral" variant="subtle">
+            {{ row.original.position }}
           </UBadge>
         </template>
 
+        <template #team_name-cell="{ row }">
+          <span class="text-neutral-700 dark:text-neutral-300">{{ row.original.team_name }}</span>
+        </template>
+
+        <template #sort_order-cell="{ row }">
+          <span data-testid="player-sort-handle" class="text-neutral-500 dark:text-neutral-400">{{ row.original.sort_order }}</span>
+        </template>
+
         <template #actions-cell="{ row }">
-          <div class="flex items-center gap-1">
+          <div class="flex gap-2">
             <UButton
-              icon="i-heroicons-pencil"
-              variant="ghost"
+              data-testid="player-edit"
+              icon="i-heroicons-pencil-square"
               color="neutral"
+              variant="ghost"
               size="xs"
-              @click="openEditModal(row.original as Player)"
+              @click="openEdit(row.original)"
             />
             <UButton
+              data-testid="player-delete"
               icon="i-heroicons-trash"
-              variant="ghost"
               color="error"
+              variant="ghost"
               size="xs"
-              @click="openDeleteModal(row.original as Player)"
+              @click="openDelete(row.original)"
             />
           </div>
         </template>
       </UTable>
     </CommonListContainer>
 
-    <!-- 建立 Modal -->
-    <UModal v-model:open="isCreateModalOpen">
+    <!-- 新增/編輯 Modal -->
+    <UModal v-model:open="isFormOpen">
       <template #content>
-        <div class="p-6">
-          <h3 class="text-lg font-semibold text-neutral-900 dark:text-white mb-4">
-            新增球員
+        <div data-testid="player-form-modal" class="p-6">
+          <h3 class="text-lg font-semibold text-neutral-900 dark:text-white">
+            {{ editingPlayer ? '編輯球員' : '新增球員' }}
           </h3>
-          <UForm :schema="playerSchema" :state="createForm" class="space-y-4" @submit="handleCreate">
-            <UFormField label="所屬球隊" name="team_id" required>
+
+          <div class="mt-4 space-y-2">
+            <!-- 球隊選擇（新增時才顯示） -->
+            <UFormField
+              v-if="!editingPlayer"
+              label="球隊"
+              class="relative mb-8"
+              :ui="{ error: 'absolute top-full left-0 mt-1' }"
+              :error="formErrors.team"
+            >
               <USelect
-                v-model="createForm.team_id"
-                :items="teamFormOptions"
-                placeholder="選擇球隊"
-                :disabled="isSubmitting"
+                v-model="formTeamId"
+                data-testid="player-team"
+                :items="teamOptions"
+                placeholder="請選擇球隊"
+                class="w-full"
               />
             </UFormField>
 
-            <div class="grid grid-cols-2 gap-4">
-              <UFormField label="背號" name="number" required>
-                <UInput
-                  v-model="createForm.number"
-                  type="number"
-                  placeholder="0-999"
-                  :disabled="isSubmitting"
-                />
-              </UFormField>
-
-              <UFormField label="身高 (cm)" name="height" required>
-                <UInput
-                  v-model="createForm.height"
-                  type="number"
-                  placeholder="100-250"
-                  :disabled="isSubmitting"
-                />
-              </UFormField>
-            </div>
-
-            <UFormField label="姓名" name="name" required>
+            <UFormField label="背號" class="relative mb-8" :ui="{ error: 'absolute top-full left-0 mt-1' }" :error="formErrors.number">
               <UInput
-                v-model="createForm.name"
-                placeholder="請輸入球員姓名"
-                :disabled="isSubmitting"
+                v-model.number="formNumber"
+                data-testid="player-number"
+                type="number"
+                placeholder="0-99"
+                :min="0"
+                :max="99"
+                class="w-full"
               />
             </UFormField>
 
-            <UFormField label="守備位置" name="position" required>
-              <USelect
-                v-model="createForm.position"
-                :items="positionOptions"
-                placeholder="選擇守備位置"
-                :disabled="isSubmitting"
-              />
-            </UFormField>
-
-            <div class="mt-6 flex justify-end gap-3">
-              <UButton
-                label="取消"
-                color="neutral"
-                variant="outline"
-                :disabled="isSubmitting"
-                @click="isCreateModalOpen = false"
-              />
-              <UButton
-                type="submit"
-                label="新增"
-                :loading="isSubmitting"
-                :disabled="isSubmitting"
-              />
-            </div>
-          </UForm>
-        </div>
-      </template>
-    </UModal>
-
-    <!-- 編輯 Modal -->
-    <UModal v-model:open="isEditModalOpen">
-      <template #content>
-        <div class="p-6">
-          <h3 class="text-lg font-semibold text-neutral-900 dark:text-white mb-4">
-            編輯球員
-          </h3>
-          <UForm
-            :schema="playerSchema.omit({ team_id: true })"
-            :state="editForm"
-            class="space-y-4"
-            @submit="handleEdit"
-          >
-            <div class="grid grid-cols-2 gap-4">
-              <UFormField label="背號" name="number" required>
-                <UInput
-                  v-model="editForm.number"
-                  type="number"
-                  placeholder="0-999"
-                  :disabled="isSubmitting"
-                />
-              </UFormField>
-
-              <UFormField label="身高 (cm)" name="height" required>
-                <UInput
-                  v-model="editForm.height"
-                  type="number"
-                  placeholder="100-250"
-                  :disabled="isSubmitting"
-                />
-              </UFormField>
-            </div>
-
-            <UFormField label="姓名" name="name" required>
+            <UFormField label="姓名" class="relative mb-8" :ui="{ error: 'absolute top-full left-0 mt-1' }" :error="formErrors.name">
               <UInput
-                v-model="editForm.name"
-                placeholder="請輸入球員姓名"
-                :disabled="isSubmitting"
+                v-model="formName"
+                data-testid="player-name"
+                placeholder="請輸入姓名"
+                class="w-full"
               />
             </UFormField>
 
-            <UFormField label="守備位置" name="position" required>
+            <UFormField label="身高 (cm)" class="relative mb-8" :ui="{ error: 'absolute top-full left-0 mt-1' }" :error="formErrors.height">
+              <UInput
+                v-model.number="formHeight"
+                data-testid="player-height"
+                type="number"
+                placeholder="100-250"
+                :min="100"
+                :max="250"
+                class="w-full"
+              />
+            </UFormField>
+
+            <UFormField label="守備位置" class="relative mb-8" :ui="{ error: 'absolute top-full left-0 mt-1' }" :error="formErrors.position">
               <USelect
-                v-model="editForm.position"
+                v-model="formPosition"
+                data-testid="player-position"
                 :items="positionOptions"
-                placeholder="選擇守備位置"
-                :disabled="isSubmitting"
+                placeholder="請選擇守備位置"
+                class="w-full"
               />
             </UFormField>
+          </div>
 
-            <div class="mt-6 flex justify-end gap-3">
-              <UButton
-                label="取消"
-                color="neutral"
-                variant="outline"
-                :disabled="isSubmitting"
-                @click="isEditModalOpen = false"
-              />
-              <UButton
-                type="submit"
-                label="儲存"
-                :loading="isSubmitting"
-                :disabled="isSubmitting"
-              />
-            </div>
-          </UForm>
+          <div class="mt-6 flex justify-end gap-3">
+            <UButton
+              color="neutral"
+              variant="outline"
+              :disabled="isSubmitting"
+              @click="isFormOpen = false"
+            >
+              取消
+            </UButton>
+            <UButton
+              data-testid="player-save"
+              :loading="isSubmitting"
+              @click="handleSave"
+            >
+              {{ editingPlayer ? '更新' : '新增' }}
+            </UButton>
+          </div>
         </div>
       </template>
     </UModal>
 
     <!-- 刪除確認 Modal -->
     <CommonConfirmModal
-      v-model:open="isDeleteModalOpen"
+      v-model:open="isDeleteOpen"
       title="確認刪除"
-      :description="`確定要刪除球員「${selectedPlayer?.name}」嗎？`"
+      :description="`確定要刪除「${deletingPlayer?.name ?? ''}」嗎？`"
       confirm-label="刪除"
-      :loading="isSubmitting"
+      confirm-color="error"
+      :loading="isDeleting"
       @confirm="handleDelete"
     />
   </div>

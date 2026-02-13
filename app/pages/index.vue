@@ -1,108 +1,49 @@
 <script setup lang="ts">
-const { isAuthenticated, user } = useAuth()
-const router = useRouter()
+import { useAuthStore } from '~/stores/auth'
 
-// 未登入則導向登入頁
-watch(isAuthenticated, (value) => {
-  if (!value) {
-    router.push('/login')
-  }
-}, { immediate: true })
+definePageMeta({ layout: 'default' })
+
+const authStore = useAuthStore()
+
+const quickLinks = [
+  { label: '球隊管理', description: '管理球隊資訊', icon: 'i-heroicons-user-group', to: '/teams' },
+  { label: '球員管理', description: '管理球員資料', icon: 'i-heroicons-users', to: '/players' },
+  { label: '訓練列表', description: '建立與管理訓練', icon: 'i-heroicons-clipboard-document-list', to: '/trainings' },
+  { label: '歷史訓練', description: '查看過往訓練紀錄', icon: 'i-heroicons-clock', to: '/trainings/history' },
+  { label: '選手分析', description: '查看選手統計數據', icon: 'i-heroicons-chart-bar', to: '/analysis' },
+]
 </script>
 
 <template>
-  <div class="flex flex-col h-full">
+  <div data-testid="home-page" class="flex h-full flex-col">
     <CommonPageHeader
-      title="儀表板"
-      description="歡迎使用鷹眼偵測系統"
+      title="首頁"
+      :description="`歡迎回來，${authStore.user?.account ?? '使用者'}`"
     />
 
-    <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-      <!-- Quick Stats Cards -->
-      <UCard>
-        <div class="flex items-center gap-4">
-          <div class="flex size-12 items-center justify-center rounded-lg bg-primary-500/10">
-            <UIcon name="i-heroicons-calendar" class="size-6 text-primary-500" />
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <NuxtLink
+        v-for="link in quickLinks"
+        :key="link.to"
+        :to="link.to"
+        class="group"
+      >
+        <UCard class="transition-colors duration-300 group-hover:border-primary-400 dark:group-hover:border-primary-600">
+          <div class="flex items-center gap-4">
+            <div class="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary-50 dark:bg-primary-950">
+              <UIcon :name="link.icon" class="size-5 text-primary-600 dark:text-primary-400" />
+            </div>
+            <div>
+              <h3 class="font-semibold text-neutral-900 dark:text-white">
+                {{ link.label }}
+              </h3>
+              <p class="text-sm text-neutral-500 dark:text-neutral-400">
+                {{ link.description }}
+              </p>
+            </div>
           </div>
-          <div>
-            <p class="text-sm text-neutral-500 dark:text-neutral-400">
-              今日訓練
-            </p>
-            <p class="text-2xl font-semibold text-neutral-900 dark:text-white">
-              3
-            </p>
-          </div>
-        </div>
-      </UCard>
-
-      <UCard>
-        <div class="flex items-center gap-4">
-          <div class="flex size-12 items-center justify-center rounded-lg bg-secondary-500/10">
-            <UIcon name="i-heroicons-user-group" class="size-6 text-secondary-500" />
-          </div>
-          <div>
-            <p class="text-sm text-neutral-500 dark:text-neutral-400">
-              球隊數量
-            </p>
-            <p class="text-2xl font-semibold text-neutral-900 dark:text-white">
-              2
-            </p>
-          </div>
-        </div>
-      </UCard>
-
-      <UCard>
-        <div class="flex items-center gap-4">
-          <div class="flex size-12 items-center justify-center rounded-lg bg-accent-500/10">
-            <UIcon name="i-heroicons-users" class="size-6 text-accent-500" />
-          </div>
-          <div>
-            <p class="text-sm text-neutral-500 dark:text-neutral-400">
-              球員人數
-            </p>
-            <p class="text-2xl font-semibold text-neutral-900 dark:text-white">
-              8
-            </p>
-          </div>
-        </div>
-      </UCard>
-
-      <UCard>
-        <div class="flex items-center gap-4">
-          <div class="flex size-12 items-center justify-center rounded-lg bg-success-500/10">
-            <UIcon name="i-heroicons-chart-bar" class="size-6 text-success-500" />
-          </div>
-          <div>
-            <p class="text-sm text-neutral-500 dark:text-neutral-400">
-              總投球數
-            </p>
-            <p class="text-2xl font-semibold text-neutral-900 dark:text-white">
-              1,250
-            </p>
-          </div>
-        </div>
-      </UCard>
+        </UCard>
+      </NuxtLink>
     </div>
-
-    <!-- Welcome Message -->
-    <UCard class="mt-6">
-      <div class="text-center py-8">
-        <UIcon name="i-heroicons-hand-raised" class="size-16 text-primary-500 mx-auto" />
-        <h2 class="mt-4 text-xl font-semibold text-neutral-900 dark:text-white">
-          歡迎回來，{{ user?.account }}
-        </h2>
-        <p class="mt-2 text-neutral-500 dark:text-neutral-400">
-          您的角色是：{{ user?.role }}
-        </p>
-        <div class="mt-6 flex justify-center gap-4">
-          <UButton to="/trainings" icon="i-heroicons-calendar">
-            查看訓練
-          </UButton>
-          <UButton to="/teams" variant="outline" color="neutral" icon="i-heroicons-user-group">
-            管理球隊
-          </UButton>
-        </div>
-      </div>
-    </UCard>
   </div>
 </template>

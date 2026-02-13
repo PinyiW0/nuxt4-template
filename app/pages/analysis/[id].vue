@@ -1,250 +1,169 @@
 <script setup lang="ts">
-import type { PlayerStatistics } from '~/composables/usePlayerAnalysis'
+import type { PlayerStatistics } from '~/types/api/analysis'
+
+definePageMeta({ layout: 'default' })
 
 const route = useRoute()
 const router = useRouter()
-const { isAuthenticated } = useAuth()
-const toast = useToast()
+const playerId = computed(() => route.params.id as string)
 
-// 權限檢查
-watch(isAuthenticated, (value) => {
-  if (!value)
-    router.push('/login')
-}, { immediate: true })
+// 取得選手統計
+const { data: statsResponse } = useFetch(() => `/api/players/${playerId.value}/statistics`)
 
-const { fetchPlayerStatistics } = usePlayerAnalysis()
+const stats = computed(() => (statsResponse.value?.data ?? null) as PlayerStatistics | null)
 
-const playerId = computed(() => Number(route.params.id))
-const statistics = ref<PlayerStatistics | null>(null)
-const isLoading = ref(false)
+// 是否有投球數據
+const hasData = computed(() => stats.value && stats.value.total_pitches > 0)
 
-// 載入選手統計
-async function loadStatistics() {
-  isLoading.value = true
-  try {
-    statistics.value = await fetchPlayerStatistics(playerId.value)
-    if (!statistics.value) {
-      router.push('/analysis')
-    }
-  }
-  catch {
-    toast.add({
-      title: '載入失敗',
-      description: '無法載入選手統計資料',
-      color: 'error',
-    })
-    router.push('/analysis')
-  }
-  finally {
-    isLoading.value = false
-  }
-}
+// 熱區圖數據點
+interface HeatMapPoint { x: number, y: number, density: number }
 
-// 取得熱區格子的顏色（根據投球數量顯示熱度）
-function getHeatmapColor(cell: PlayerStatistics['strike_zone_heatmap'][0]) {
-  if (cell.count === 0)
-    return 'bg-neutral-100 dark:bg-neutral-800'
-  if (cell.count >= 40)
-    return 'bg-error-500/60'
-  if (cell.count >= 25)
-    return 'bg-warning-500/60'
-  return 'bg-success-500/60'
-}
-
-// 取得球速趨勢最大值
-const maxTrendVelocity = computed(() => {
-  if (!statistics.value?.velocity_trend.length)
-    return 150
-  return Math.max(...statistics.value.velocity_trend.map(v => v.value)) + 5
+const heatMapPoints = computed(() => {
+  if (!stats.value?.heat_map_data)
+    return []
+  return stats.value.heat_map_data as unknown as HeatMapPoint[]
 })
 
-const minTrendVelocity = computed(() => {
-  if (!statistics.value?.velocity_trend.length)
-    return 100
-  return Math.min(...statistics.value.velocity_trend.map(v => v.value)) - 5
-})
-
-// 格式化日期
-function formatDate(dateString: string | null) {
-  if (!dateString)
-    return '-'
-  return new Date(dateString).toLocaleDateString('zh-TW', {
-    month: '2-digit',
-    day: '2-digit',
-  })
+// 將 x, y 座標轉換為 SVG 座標
+// x: -0.5 ~ 0.5 → 好球帶寬度範圍
+// y: 0 ~ 1 → 好球帶高度範圍
+function toSvgX(x: number): number {
+  // 好球帶中心在 150, 寬度 200
+  return 150 + x * 200
 }
 
-// 載入資料
-onMounted(async () => {
-  await loadStatistics()
-})
+function toSvgY(y: number): number {
+  // 好球帶 y: 50~250, 反轉（y=1 在上方）
+  return 250 - y * 200
+}
+
+function dotSize(density: number): number {
+  return 6 + density * 14
+}
 </script>
 
 <template>
-  <div class="flex flex-col h-full">
-    <CommonPageHeader
-      :title="statistics ? `#${statistics.player_number} ${statistics.player_name}` : '選手分析'"
-      :description="statistics ? statistics.team_name : ''"
-    >
-      <template #actions>
-        <UButton to="/analysis" variant="outline" color="neutral" icon="i-heroicons-arrow-left">
-          返回列表
-        </UButton>
-      </template>
-    </CommonPageHeader>
-
-    <div v-if="isLoading" class="flex-1 flex items-center justify-center">
-      <UIcon name="i-heroicons-arrow-path" class="size-8 animate-spin text-primary-500" />
+  <div data-testid="player-stats-page" class="flex h-full flex-col">
+    <!-- 返回按鈕 + 標題 -->
+    <div class="mb-6 flex items-center gap-3">
+      <UButton
+        icon="i-heroicons-arrow-left"
+        color="neutral"
+        variant="ghost"
+        @click="router.push('/analysis')"
+      />
+      <CommonPageHeader title="選手統計" />
     </div>
 
-    <template v-else-if="statistics">
-      <!-- 總覽卡片 -->
-      <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-6">
-        <UCard>
-          <p class="text-sm text-neutral-500 dark:text-neutral-400">
-            訓練次數
-          </p>
-          <p class="text-2xl font-semibold text-neutral-900 dark:text-white">
-            {{ statistics.training_count }}
-          </p>
-        </UCard>
+    <!-- 無數據時顯示空狀態 -->
+    <template v-if="!hasData">
+      <CommonEmptyState title="尚無投球數據" description="此選手目前沒有訓練投球紀錄" />
+    </template>
 
-        <UCard>
+    <!-- 有數據時顯示統計 -->
+    <template v-else-if="stats">
+      <!-- 統計數據卡片 -->
+      <div class="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-5">
+        <!-- 期間 -->
+        <div data-testid="player-stats-period" class="rounded-lg border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
           <p class="text-sm text-neutral-500 dark:text-neutral-400">
-            總投球數
+            統計期間
           </p>
-          <p class="text-2xl font-semibold text-neutral-900 dark:text-white">
-            {{ statistics.total_pitches }}
+          <p class="mt-1 text-lg font-semibold text-neutral-900 dark:text-white">
+            {{ stats.period || '-' }}
           </p>
-        </UCard>
+        </div>
 
-        <UCard>
+        <!-- 平均球速 -->
+        <div data-testid="player-stats-avg-velocity" class="rounded-lg border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
           <p class="text-sm text-neutral-500 dark:text-neutral-400">
             平均球速
           </p>
-          <p class="text-2xl font-semibold text-neutral-900 dark:text-white">
-            {{ statistics.avg_velocity ? `${statistics.avg_velocity} km/h` : '-' }}
+          <p class="mt-1 text-lg font-semibold text-neutral-900 dark:text-white">
+            {{ stats.avg_velocity != null ? `${stats.avg_velocity} km/h` : '-' }}
           </p>
-        </UCard>
+        </div>
 
-        <UCard>
+        <!-- 平均轉速 -->
+        <div data-testid="player-stats-avg-spin-rate" class="rounded-lg border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
+          <p class="text-sm text-neutral-500 dark:text-neutral-400">
+            平均轉速
+          </p>
+          <p class="mt-1 text-lg font-semibold text-neutral-900 dark:text-white">
+            {{ stats.avg_spin_rate != null ? `${stats.avg_spin_rate} rpm` : '-' }}
+          </p>
+        </div>
+
+        <!-- 好球率 -->
+        <div data-testid="player-stats-strike-rate" class="rounded-lg border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
           <p class="text-sm text-neutral-500 dark:text-neutral-400">
             好球率
           </p>
-          <p class="text-2xl font-semibold text-neutral-900 dark:text-white">
-            {{ statistics.strike_rate ? `${statistics.strike_rate}%` : '-' }}
+          <p class="mt-1 text-lg font-semibold text-neutral-900 dark:text-white">
+            {{ stats.strike_rate != null ? `${stats.strike_rate}%` : '-' }}
           </p>
-        </UCard>
-      </div>
-
-      <div class="grid gap-6 lg:grid-cols-2">
-        <!-- 球速趨勢 -->
-        <UCard>
-          <template #header>
-            <h3 class="font-semibold text-neutral-900 dark:text-white">
-              球速趨勢
-            </h3>
-            <p class="text-sm text-neutral-500 dark:text-neutral-400">
-              最近訓練的平均球速變化
-            </p>
-          </template>
-
-          <div v-if="statistics.velocity_trend.length > 0" class="h-48 flex items-end gap-2">
-            <div
-              v-for="(point, index) in statistics.velocity_trend"
-              :key="index"
-              class="flex-1 flex flex-col items-center"
-            >
-              <span class="text-xs text-neutral-900 dark:text-white mb-1">{{ Math.round(point.value * 10) / 10 }}</span>
-              <div
-                class="w-full bg-primary-500 rounded-t transition-all duration-300"
-                :style="{
-                  height: `${((point.value - minTrendVelocity) / (maxTrendVelocity - minTrendVelocity)) * 100}%`,
-                }"
-              />
-              <span class="text-xs text-neutral-500 mt-1">{{ formatDate(point.date) }}</span>
-            </div>
-          </div>
-          <div v-else class="h-48 flex items-center justify-center">
-            <p class="text-neutral-500">
-              尚無足夠資料
-            </p>
-          </div>
-        </UCard>
-
-        <!-- 投球熱區 -->
-        <UCard>
-          <template #header>
-            <h3 class="font-semibold text-neutral-900 dark:text-white">
-              投球熱區分布
-            </h3>
-            <p class="text-sm text-neutral-500 dark:text-neutral-400">
-              好球帶 3x3 九宮格
-            </p>
-          </template>
-
-          <div v-if="statistics.strike_zone_heatmap.length > 0" class="flex justify-center">
-            <div class="grid grid-cols-3 gap-1 w-64">
-              <template v-for="cell in statistics.strike_zone_heatmap" :key="`${cell.y}-${cell.x}`">
-                <div
-                  class="aspect-square flex flex-col items-center justify-center rounded-lg transition-colors" :class="[
-                    getHeatmapColor(cell),
-                  ]"
-                >
-                  <span class="text-lg font-semibold text-white">{{ cell.count }}</span>
-                </div>
-              </template>
-            </div>
-          </div>
-          <div v-else class="flex justify-center items-center h-64">
-            <p class="text-neutral-500">
-              尚無足夠資料
-            </p>
-          </div>
-
-          <template v-if="statistics.strike_zone_heatmap.length > 0" #footer>
-            <div class="flex items-center justify-center gap-4 text-xs text-neutral-500 dark:text-neutral-400">
-              <span class="flex items-center gap-1">
-                <span class="w-3 h-3 rounded bg-success-500/60" />
-                &lt;25 球
-              </span>
-              <span class="flex items-center gap-1">
-                <span class="w-3 h-3 rounded bg-warning-500/60" />
-                25-40 球
-              </span>
-              <span class="flex items-center gap-1">
-                <span class="w-3 h-3 rounded bg-error-500/60" />
-                ≥40 球
-              </span>
-            </div>
-          </template>
-        </UCard>
-      </div>
-
-      <!-- 最近訓練資訊 -->
-      <UCard class="mt-6">
-        <div class="flex items-center justify-between">
-          <div>
-            <h3 class="font-semibold text-neutral-900 dark:text-white">
-              最近訓練
-            </h3>
-            <p v-if="statistics.last_training_date" class="text-sm text-neutral-500 dark:text-neutral-400">
-              {{ new Date(statistics.last_training_date).toLocaleDateString('zh-TW') }}
-            </p>
-            <p v-else class="text-sm text-neutral-500 dark:text-neutral-400">
-              尚無訓練紀錄
-            </p>
-          </div>
-          <div class="text-right">
-            <p class="text-sm text-neutral-500 dark:text-neutral-400">
-              平均轉速
-            </p>
-            <p class="text-xl font-semibold text-neutral-900 dark:text-white">
-              {{ statistics.avg_spin_rate ? `${statistics.avg_spin_rate} rpm` : '-' }}
-            </p>
-          </div>
         </div>
-      </UCard>
+
+        <!-- 總投球數 -->
+        <div data-testid="player-stats-total-pitches" class="rounded-lg border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
+          <p class="text-sm text-neutral-500 dark:text-neutral-400">
+            總投球數
+          </p>
+          <p class="mt-1 text-lg font-semibold text-neutral-900 dark:text-white">
+            {{ stats.total_pitches }}
+          </p>
+        </div>
+      </div>
+
+      <!-- 落點熱區圖 -->
+      <div data-testid="player-stats-heat-map" class="rounded-lg border border-neutral-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
+        <h3 class="mb-4 text-lg font-semibold text-neutral-900 dark:text-white">
+          落點熱區圖
+        </h3>
+
+        <template v-if="heatMapPoints.length > 0">
+          <div class="flex justify-center">
+            <svg
+              viewBox="0 0 300 300"
+              class="h-72 w-72"
+            >
+              <!-- 背景 -->
+              <rect
+                x="0"
+                y="0"
+                width="300"
+                height="300"
+                fill="none"
+              />
+
+              <!-- 好球帶框線 -->
+              <rect
+                x="50"
+                y="50"
+                width="200"
+                height="200"
+                fill="none"
+                class="stroke-neutral-400 dark:stroke-neutral-500"
+                stroke-width="2"
+              />
+
+              <!-- 數據點 -->
+              <circle
+                v-for="(point, index) in heatMapPoints"
+                :key="index"
+                :cx="toSvgX(point.x)"
+                :cy="toSvgY(point.y)"
+                :r="dotSize(point.density)"
+                class="fill-primary-500/70"
+              />
+            </svg>
+          </div>
+        </template>
+
+        <template v-else>
+          <CommonEmptyState title="尚無落點數據" />
+        </template>
+      </div>
     </template>
   </div>
 </template>

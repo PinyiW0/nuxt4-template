@@ -5,13 +5,14 @@
 
   // Cucumber (Gherkin) Full Support 配置
   "cucumberautocomplete.steps": [
-    "test/bdd/steps/**/*.ts"
+    "test/bdd/steps/**/*.ts",
+  // "test/e2e/steps/**/*.ts"    
   ],
   "cucumberautocomplete.formatConfOverride": {
     "And": 3,
     "But": "relative"
   },
-  "cucumberautocomplete.syncfeatures": "docs/gherkin-spec/**/*.feature",
+  "cucumberautocomplete.syncfeatures": "{docs/gherkin-spec/**/*.feature,test/e2e/features/**/*.feature}",
   "cucumberautocomplete.strictGherkinCompletion": false,
   "cucumberautocomplete.smartSnippets": true,
   "cucumberautocomplete.stepsInvariants": true,

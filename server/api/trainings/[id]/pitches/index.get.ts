@@ -1,33 +1,23 @@
-import { getPitchesByTraining } from '../../../../mock/data/pitches'
-import { getTrainingById } from '../../../../mock/data/trainings'
+import type { H3Event } from 'h3'
 
-export default defineEventHandler(async (event) => {
+import { mockPitches } from '../../../../mock/data/pitches'
+
+export default defineEventHandler((event: H3Event) => {
   const id = Number(getRouterParam(event, 'id'))
-  const query = getQuery(event)
-  const user = query.user as string | undefined
-  const role = query.role as string | undefined
 
-  const training = getTrainingById(id)
+  const pitches = mockPitches
+    .filter(p => p.training_id === id && p.status === 'active')
+    .map(p => ({
+      id: p.id,
+      sequence: p.sequence,
+      time: p.time,
+      velocity: p.velocity,
+      spin_rate: p.spin_rate,
+      is_strike: p.is_strike,
+      location_x: p.location_x,
+      location_y: p.location_y,
+    }))
+    .sort((a, b) => a.sequence - b.sequence)
 
-  if (!training) {
-    throw createError({
-      statusCode: 404,
-      message: '訓練不存在或已刪除',
-    })
-  }
-
-  // 權限檢查
-  if (role !== '管理者' && training.created_by !== user) {
-    throw createError({
-      statusCode: 403,
-      message: '無權限查看此訓練',
-    })
-  }
-
-  const pitches = getPitchesByTraining(id)
-
-  return {
-    status: 'success',
-    data: pitches,
-  }
+  return { status: 'success', data: pitches }
 })

@@ -1,33 +1,18 @@
-export default defineEventHandler(async (event) => {
+import type { H3Event } from 'h3'
+
+export default defineEventHandler(async (event: H3Event) => {
   const body = await readBody(event)
-  const { refreshToken } = body
+  const { refresh_token } = body
 
-  if (!refreshToken) {
-    throw createError({
-      statusCode: 400,
-      message: 'Refresh Token 為必填',
-    })
+  if (!refresh_token) {
+    throw createError({ statusCode: 401, message: 'refresh token 無效' })
   }
-
-  // Mock: 檢查 refresh token 格式
-  if (!refreshToken.startsWith('mock-refresh-token-')) {
-    throw createError({
-      statusCode: 401,
-      message: '請重新登入',
-    })
-  }
-
-  // 從 token 提取帳號
-  const parts = refreshToken.split('-')
-  const account = parts[3]
-
-  // 生成新的 access token
-  const newAccessToken = `mock-access-token-${account}-${Date.now()}`
 
   return {
     status: 'success',
     data: {
-      accessToken: newAccessToken,
+      access_token: `mock-token-refreshed-${Date.now()}`,
+      refresh_token: `mock-refresh-new-${Date.now()}`,
     },
   }
 })

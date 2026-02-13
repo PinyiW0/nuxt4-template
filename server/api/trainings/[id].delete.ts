@@ -1,32 +1,24 @@
-import { deleteTraining, getTrainingById } from '../../mock/data/trainings'
+import type { H3Event } from 'h3'
 
-export default defineEventHandler(async (event) => {
+import { mockPitches } from '../../mock/data/pitches'
+import { mockTrainings } from '../../mock/data/trainings'
+
+export default defineEventHandler((event: H3Event) => {
   const id = Number(getRouterParam(event, 'id'))
-  const query = getQuery(event)
-  const user = query.user as string | undefined
-  const role = query.role as string | undefined
 
-  const training = getTrainingById(id)
-
+  const training = mockTrainings.find(t => t.id === id && t.status === 'active')
   if (!training) {
-    throw createError({
-      statusCode: 404,
-      message: '訓練不存在或已刪除',
-    })
+    throw createError({ statusCode: 404, message: '訓練不存在' })
   }
 
-  // 權限檢查
-  if (role !== '管理者' && training.created_by !== user) {
-    throw createError({
-      statusCode: 403,
-      message: '無權限操作此訓練',
-    })
-  }
+  training.status = 'deleted'
 
-  deleteTraining(id)
+  // 連帶軟刪除所有投球
+  mockPitches.forEach((p) => {
+    if (p.training_id === id) {
+      p.status = 'deleted'
+    }
+  })
 
-  return {
-    status: 'success',
-    message: '訓練已刪除',
-  }
+  return { status: 'success', message: '訓練已刪除' }
 })

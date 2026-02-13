@@ -1,43 +1,32 @@
-import { getTrainingStats } from '../../mock/data/pitches'
-import { getPlayerById } from '../../mock/data/players'
-import { getTeamById } from '../../mock/data/teams'
-import { getTrainingById } from '../../mock/data/trainings'
+import type { H3Event } from 'h3'
 
-export default defineEventHandler(async (event) => {
+import { mockPlayers } from '../../mock/data/players'
+import { mockTeams } from '../../mock/data/teams'
+import { mockTrainings } from '../../mock/data/trainings'
+
+export default defineEventHandler((event: H3Event) => {
   const id = Number(getRouterParam(event, 'id'))
-  const query = getQuery(event)
-  const user = query.user as string | undefined
-  const role = query.role as string | undefined
 
-  const training = getTrainingById(id)
-
+  const training = mockTrainings.find(t => t.id === id && t.status === 'active')
   if (!training) {
-    throw createError({
-      statusCode: 404,
-      message: '訓練不存在或已刪除',
-    })
+    throw createError({ statusCode: 404, message: '訓練不存在' })
   }
-
-  // 權限檢查
-  if (role !== '管理者' && training.created_by !== user) {
-    throw createError({
-      statusCode: 403,
-      message: '無權限查看此訓練',
-    })
-  }
-
-  const player = getPlayerById(training.player_id)
-  const team = getTeamById(training.team_id)
-  const stats = getTrainingStats(id)
 
   return {
     status: 'success',
     data: {
-      ...training,
-      player_name: player?.name || '未知球員',
-      player_height: player?.height,
-      team_name: team?.name || '未知球隊',
-      stats,
+      id: training.id,
+      date: training.date,
+      player_id: training.player_id,
+      player_name: mockPlayers.find(p => p.id === training.player_id)?.name || '',
+      team_id: training.team_id,
+      team_name: mockTeams.find(t => t.id === training.team_id)?.name || '',
+      strike_zone_top: training.strike_zone_top,
+      strike_zone_bottom: training.strike_zone_bottom,
+      pitch_count: training.pitch_count,
+      ai_status: training.ai_status,
+      created_by: training.created_by,
+      created_at: training.created_at,
     },
   }
 })

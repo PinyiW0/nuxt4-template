@@ -1,30 +1,36 @@
-import { createTeam, isTeamNameExists } from '../../mock/data/teams'
+import type { H3Event } from 'h3'
 
-export default defineEventHandler(async (event) => {
+import { mockTeams } from '../../mock/data/teams'
+
+export default defineEventHandler(async (event: H3Event) => {
   const body = await readBody(event)
-  const { name, created_by } = body
+  const { name } = body
 
-  if (!name || !name.trim()) {
-    throw createError({
-      statusCode: 400,
-      message: '球隊名稱不可為空',
-    })
+  if (!name || name.length < 1 || name.length > 50) {
+    throw createError({ statusCode: 400, message: '球隊名稱長度必須在 1-50 字元之間' })
   }
 
-  if (isTeamNameExists(name)) {
-    throw createError({
-      statusCode: 409,
-      message: '球隊名稱已存在',
-    })
+  // 檢查名稱唯一
+  const exists = mockTeams.find(t => t.name === name && t.status === 'active')
+  if (exists) {
+    throw createError({ statusCode: 409, message: '球隊名稱已存在' })
   }
 
-  const team = createTeam({
-    name: name.trim(),
-    created_by: created_by || 'unknown',
-  })
+  const newTeam = {
+    id: mockTeams.length + 1,
+    name,
+    created_by: 'coach1',
+    created_at: new Date().toISOString(),
+    status: 'active' as const,
+  }
+
+  mockTeams.push(newTeam)
 
   return {
     status: 'success',
-    data: team,
+    data: {
+      ...newTeam,
+      player_count: 0,
+    },
   }
 })

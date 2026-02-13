@@ -1,33 +1,24 @@
-export const useAuthStore = defineStore('auth', () => {
-  // State
-  const user = ref<{
-    id: number
-    account: string
-    role: '管理者' | '教練'
-  } | null>(null)
+import type { LoginData, LoginUser } from '~/types/api/auth'
 
+export const useAuthStore = defineStore('auth', () => {
+  const user = ref<LoginUser | null>(null)
   const accessToken = ref<string | null>(null)
   const refreshToken = ref<string | null>(null)
 
-  // Getters
   const isAuthenticated = computed(() => !!accessToken.value && !!user.value)
-  const isAdmin = computed(() => user.value?.role === '管理者')
-  const userAccount = computed(() => user.value?.account || '')
-  const userRole = computed(() => user.value?.role || '')
 
-  // Actions
-  function setAuth(data: {
-    accessToken: string
-    refreshToken: string
-    user: { id: number, account: string, role: '管理者' | '教練' }
-  }) {
-    accessToken.value = data.accessToken
-    refreshToken.value = data.refreshToken
+  function setAuth(data: LoginData) {
+    accessToken.value = data.access_token
+    refreshToken.value = data.refresh_token
     user.value = data.user
   }
 
-  function setAccessToken(token: string) {
-    accessToken.value = token
+  async function login(account: string, password: string) {
+    const response = await $fetch('/api/auth/login', {
+      method: 'POST',
+      body: { account, password },
+    })
+    setAuth(response.data)
   }
 
   function clearAuth() {
@@ -36,21 +27,7 @@ export const useAuthStore = defineStore('auth', () => {
     user.value = null
   }
 
-  return {
-    // State
-    user,
-    accessToken,
-    refreshToken,
-    // Getters
-    isAuthenticated,
-    isAdmin,
-    userAccount,
-    userRole,
-    // Actions
-    setAuth,
-    setAccessToken,
-    clearAuth,
-  }
+  return { user, accessToken, refreshToken, isAuthenticated, setAuth, login, clearAuth }
 }, {
   persist: {
     pick: ['user', 'accessToken', 'refreshToken'],

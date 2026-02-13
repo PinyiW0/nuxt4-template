@@ -1,193 +1,205 @@
 <script setup lang="ts">
-const route = useRoute()
+import { useAuthStore } from '~/stores/auth'
+
+const authStore = useAuthStore()
+const router = useRouter()
 const colorMode = useColorMode()
-const { logout, user } = useAuth()
-
-// Sidebar 狀態
-const isSidebarCollapsed = ref(false)
 const isMobileMenuOpen = ref(false)
+const isCollapsed = ref(false)
 
-// 導航項目
-const navigationItems = [
-  {
-    label: '訓練管理',
-    icon: 'i-heroicons-calendar',
-    to: '/trainings',
-    children: [
-      { label: '訓練列表', to: '/trainings', icon: 'i-heroicons-list-bullet' },
-      { label: '歷史紀錄', to: '/trainings/history', icon: 'i-heroicons-clock' },
-    ],
-  },
-  {
-    label: '球隊管理',
-    icon: 'i-heroicons-user-group',
-    to: '/teams',
-  },
-  {
-    label: '球員管理',
-    icon: 'i-heroicons-users',
-    to: '/players',
-  },
-  {
-    label: '選手分析',
-    icon: 'i-heroicons-chart-bar',
-    to: '/analysis',
-  },
+const navigation = [
+  { label: '首頁', icon: 'i-heroicons-home', to: '/' },
+  { label: '球隊管理', icon: 'i-heroicons-user-group', to: '/teams' },
+  { label: '球員管理', icon: 'i-heroicons-users', to: '/players' },
+  { label: '訓練列表', icon: 'i-heroicons-clipboard-document-list', to: '/trainings' },
+  { label: '歷史訓練', icon: 'i-heroicons-clock', to: '/trainings/history' },
+  { label: '選手分析', icon: 'i-heroicons-chart-bar', to: '/analysis' },
 ]
 
-// 切換 sidebar
 function toggleSidebar() {
-  isSidebarCollapsed.value = !isSidebarCollapsed.value
+  isCollapsed.value = !isCollapsed.value
 }
 
-// 切換行動裝置選單
-function toggleMobileMenu() {
-  isMobileMenuOpen.value = !isMobileMenuOpen.value
-}
-
-// 切換深淺模式
 function toggleColorMode() {
   colorMode.preference = colorMode.value === 'dark' ? 'light' : 'dark'
 }
 
-// 檢查是否為當前路徑
-function isActive(path: string) {
-  return route.path === path || route.path.startsWith(`${path}/`)
-}
-
-// 關閉行動選單
-function closeMobileMenu() {
-  isMobileMenuOpen.value = false
+async function handleLogout() {
+  authStore.clearAuth()
+  await router.push('/login')
 }
 </script>
 
 <template>
   <div class="flex h-screen overflow-hidden bg-neutral-100 dark:bg-neutral-950">
-    <!-- Desktop Sidebar -->
+    <!-- Sidebar：lg 以上顯示，可收合 -->
     <aside
-      class="hidden lg:flex flex-col border-r border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 transition-all duration-300"
-      :class="isSidebarCollapsed ? 'w-16' : 'w-64'"
+      class="hidden shrink-0 border-r border-neutral-200 bg-white transition-all duration-300 lg:flex lg:flex-col dark:border-neutral-800 dark:bg-neutral-900"
+      :class="isCollapsed ? 'w-16' : 'w-64'"
     >
-      <!-- Logo Area -->
-      <div class="flex h-16 items-center justify-between border-b border-neutral-200 dark:border-neutral-800 px-4">
-        <NuxtLink v-if="!isSidebarCollapsed" to="/" class="flex items-center gap-2">
-          <UIcon name="i-heroicons-eye" class="size-8 text-primary-500" />
-          <span class="font-bold text-lg text-neutral-900 dark:text-white">鷹眼偵測系統</span>
-        </NuxtLink>
-        <UIcon v-else name="i-heroicons-eye" class="size-8 text-primary-500 mx-auto" />
-      </div>
-
-      <!-- Navigation -->
-      <nav class="flex-1 overflow-y-auto p-2">
-        <ul class="space-y-1">
-          <li v-for="item in navigationItems" :key="item.to">
-            <NuxtLink
-              :to="item.to"
-              class="flex items-center gap-3 rounded-lg px-3 py-2 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-white transition-colors"
-              :class="{ 'bg-primary-500/10 text-primary-600 dark:text-primary-400': isActive(item.to) }"
-            >
-              <UIcon :name="item.icon" class="size-5 shrink-0" />
-              <span v-if="!isSidebarCollapsed" class="truncate">{{ item.label }}</span>
-            </NuxtLink>
-          </li>
-        </ul>
-      </nav>
-
-      <!-- Collapse Toggle -->
-      <div class="border-t border-neutral-200 dark:border-neutral-800 p-2">
+      <!-- Logo + 收合按鈕 -->
+      <div
+        class="flex h-16 shrink-0 items-center border-b border-neutral-200 dark:border-neutral-800"
+        :class="isCollapsed ? 'justify-center px-2' : 'justify-between px-4'"
+      >
+        <span
+          v-if="!isCollapsed"
+          class="truncate text-lg font-bold text-neutral-900 dark:text-white"
+        >
+          鷹眼偵測系統
+        </span>
         <UButton
-          :icon="isSidebarCollapsed ? 'i-heroicons-chevron-double-right' : 'i-heroicons-chevron-double-left'"
-          variant="ghost"
+          :icon="isCollapsed ? 'i-heroicons-chevron-right' : 'i-heroicons-chevron-left'"
           color="neutral"
-          class="w-full justify-center"
+          variant="ghost"
+          size="sm"
           @click="toggleSidebar"
         />
       </div>
+
+      <!-- Navigation -->
+      <nav class="flex-1 space-y-1 overflow-y-auto p-2">
+        <NuxtLink
+          v-for="item in navigation"
+          :key="item.to"
+          :to="item.to"
+          class="flex items-center rounded-lg px-3 py-2 text-neutral-700 transition-colors duration-300 hover:bg-primary-50 hover:text-primary-600 dark:text-neutral-300 dark:hover:bg-primary-950 dark:hover:text-primary-400"
+          :class="isCollapsed ? 'justify-center' : 'gap-3'"
+        >
+          <UIcon :name="item.icon" class="size-5 shrink-0" />
+          <span v-if="!isCollapsed" class="truncate">{{ item.label }}</span>
+        </NuxtLink>
+      </nav>
+
+      <!-- 底部功能區：深淺模式 + 會員名稱 + 登出 -->
+      <div class="shrink-0 border-t border-neutral-200 p-2 dark:border-neutral-800">
+        <!-- 深淺模式切換 -->
+        <button
+          class="flex w-full items-center rounded-lg px-3 py-2 text-neutral-700 transition-colors duration-300 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800"
+          :class="isCollapsed ? 'justify-center' : 'gap-3'"
+          @click="toggleColorMode"
+        >
+          <UIcon
+            :name="colorMode.value === 'dark' ? 'i-heroicons-sun' : 'i-heroicons-moon'"
+            class="size-5 shrink-0"
+          />
+          <span v-if="!isCollapsed" class="truncate text-sm">
+            {{ colorMode.value === 'dark' ? '淺色模式' : '深色模式' }}
+          </span>
+        </button>
+
+        <!-- 會員名稱 + 登出 -->
+        <div
+          v-if="!isCollapsed"
+          class="flex items-center gap-3 rounded-lg px-3 py-2"
+        >
+          <UIcon
+            name="i-heroicons-user-circle"
+            class="size-5 shrink-0 text-primary-600 dark:text-primary-400"
+          />
+          <span class="flex-1 truncate text-sm text-neutral-700 dark:text-neutral-300">
+            {{ authStore.user?.account ?? '未登入' }}
+          </span>
+          <UButton
+            data-testid="logout-button"
+            icon="i-heroicons-arrow-right-on-rectangle"
+            color="neutral"
+            variant="ghost"
+            size="xs"
+            @click="handleLogout"
+          />
+        </div>
+        <div v-else class="flex flex-col items-center gap-1">
+          <UTooltip text="使用者">
+            <UIcon
+              name="i-heroicons-user-circle"
+              class="size-5 text-primary-600 dark:text-primary-400"
+            />
+          </UTooltip>
+          <UTooltip text="登出">
+            <UButton
+              icon="i-heroicons-arrow-right-on-rectangle"
+              color="neutral"
+              variant="ghost"
+              size="xs"
+              @click="handleLogout"
+            />
+          </UTooltip>
+        </div>
+      </div>
     </aside>
 
-    <!-- Mobile Sidebar (Drawer) -->
-    <USlideover v-model:open="isMobileMenuOpen" side="left" class="lg:hidden">
-      <div class="flex h-full flex-col bg-white dark:bg-neutral-900">
-        <!-- Header -->
-        <div class="flex h-16 items-center justify-between border-b border-neutral-200 dark:border-neutral-800 px-4">
-          <div class="flex items-center gap-2">
-            <UIcon name="i-heroicons-eye" class="size-8 text-primary-500" />
-            <span class="font-bold text-lg text-neutral-900 dark:text-white">鷹眼偵測系統</span>
+    <!-- Mobile Drawer -->
+    <USlideover v-model:open="isMobileMenuOpen" side="left">
+      <template #content>
+        <div class="flex h-full flex-col bg-white dark:bg-neutral-900">
+          <!-- Mobile Header -->
+          <div class="flex h-14 items-center justify-between border-b border-neutral-200 px-4 dark:border-neutral-800">
+            <span class="text-lg font-bold text-neutral-900 dark:text-white">鷹眼偵測系統</span>
+            <UButton
+              icon="i-heroicons-x-mark"
+              color="neutral"
+              variant="ghost"
+              @click="isMobileMenuOpen = false"
+            />
           </div>
-          <UButton
-            icon="i-heroicons-x-mark"
-            variant="ghost"
-            color="neutral"
-            @click="closeMobileMenu"
-          />
+          <!-- Mobile Navigation -->
+          <nav class="flex-1 space-y-1 overflow-y-auto p-4">
+            <NuxtLink
+              v-for="item in navigation"
+              :key="item.to"
+              :to="item.to"
+              class="flex items-center gap-3 rounded-lg px-3 py-2 text-neutral-700 transition-colors duration-300 hover:bg-primary-50 hover:text-primary-600 dark:text-neutral-300 dark:hover:bg-primary-950 dark:hover:text-primary-400"
+              @click="isMobileMenuOpen = false"
+            >
+              <UIcon :name="item.icon" class="size-5" />
+              <span>{{ item.label }}</span>
+            </NuxtLink>
+          </nav>
+          <!-- Mobile 底部功能區 -->
+          <div class="shrink-0 border-t border-neutral-200 p-4 dark:border-neutral-800">
+            <button
+              class="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-neutral-700 transition-colors duration-300 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800"
+              @click="toggleColorMode"
+            >
+              <UIcon
+                :name="colorMode.value === 'dark' ? 'i-heroicons-sun' : 'i-heroicons-moon'"
+                class="size-5"
+              />
+              <span class="text-sm">{{ colorMode.value === 'dark' ? '淺色模式' : '深色模式' }}</span>
+            </button>
+            <div class="flex items-center gap-3 rounded-lg px-3 py-2">
+              <UIcon
+                name="i-heroicons-user-circle"
+                class="size-5 text-primary-600 dark:text-primary-400"
+              />
+              <span class="flex-1 truncate text-sm text-neutral-700 dark:text-neutral-300">
+                {{ authStore.user?.account ?? '未登入' }}
+              </span>
+              <UButton
+                icon="i-heroicons-arrow-right-on-rectangle"
+                color="neutral"
+                variant="ghost"
+                size="xs"
+                @click="handleLogout"
+              />
+            </div>
+          </div>
         </div>
-
-        <!-- Navigation -->
-        <nav class="flex-1 overflow-y-auto p-4">
-          <ul class="space-y-1">
-            <li v-for="item in navigationItems" :key="item.to">
-              <NuxtLink
-                :to="item.to"
-                class="flex items-center gap-3 rounded-lg px-3 py-2 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-white transition-colors"
-                :class="{ 'bg-primary-500/10 text-primary-600 dark:text-primary-400': isActive(item.to) }"
-                @click="closeMobileMenu"
-              >
-                <UIcon :name="item.icon" class="size-5" />
-                <span>{{ item.label }}</span>
-              </NuxtLink>
-            </li>
-          </ul>
-        </nav>
-      </div>
+      </template>
     </USlideover>
 
-    <!-- Main Content Area -->
+    <!-- Main Content -->
     <div class="flex flex-1 flex-col overflow-hidden">
-      <!-- Header -->
-      <header class="flex h-16 items-center justify-between border-b border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-4 lg:px-6">
-        <!-- Left: Mobile menu button -->
-        <div class="flex items-center gap-4">
-          <UButton
-            icon="i-heroicons-bars-3"
-            variant="ghost"
-            color="neutral"
-            class="lg:hidden"
-            @click="toggleMobileMenu"
-          />
-          <!-- Breadcrumb or page title can go here -->
-        </div>
-
-        <!-- Right: Actions -->
-        <div class="flex items-center gap-2">
-          <!-- Color Mode Toggle -->
-          <UButton
-            :icon="colorMode.value === 'dark' ? 'i-heroicons-sun' : 'i-heroicons-moon'"
-            variant="ghost"
-            color="neutral"
-            @click="toggleColorMode"
-          />
-
-          <!-- User Menu -->
-          <UDropdownMenu
-            :items="[
-              [{ label: user?.account || '使用者', icon: 'i-heroicons-user', disabled: true }],
-              [{ label: '登出', icon: 'i-heroicons-arrow-right-on-rectangle', onSelect: logout }],
-            ]"
-          >
-            <UButton
-              icon="i-heroicons-user-circle"
-              variant="ghost"
-              color="neutral"
-            />
-          </UDropdownMenu>
-        </div>
-      </header>
-
-      <!-- Main Content -->
-      <main class="flex-1 overflow-hidden">
-        <div class="h-full overflow-auto p-4 lg:p-6">
-          <slot />
-        </div>
+      <!-- Mobile Top Bar（in-flow，不會覆蓋內容） -->
+      <div class="flex h-14 shrink-0 items-center gap-3 border-b border-neutral-200 bg-white px-4 lg:hidden dark:border-neutral-800 dark:bg-neutral-900">
+        <button @click="isMobileMenuOpen = true">
+          <UIcon name="i-heroicons-bars-3" class="size-6 text-neutral-900 dark:text-white" />
+        </button>
+        <span class="text-lg font-bold text-neutral-900 dark:text-white">鷹眼偵測系統</span>
+      </div>
+      <main class="flex min-h-0 flex-1 flex-col overflow-auto p-6">
+        <slot />
       </main>
     </div>
   </div>

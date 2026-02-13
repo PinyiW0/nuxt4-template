@@ -1,57 +1,35 @@
-import {
-  getPlayerAnalyses,
-  getPlayerAnalysesByCreator,
-  getPlayerAnalysesByTeam,
-} from '../../mock/data/playerAnalysis'
-import { players } from '../../mock/data/players'
-import { teams } from '../../mock/data/teams'
+import type { H3Event } from 'h3'
 
-export default defineEventHandler(async (event) => {
+import { mockPlayerAnalysis } from '../../mock/data/playerAnalysis'
+
+export default defineEventHandler((event: H3Event) => {
   const query = getQuery(event)
-  const userAccount = query.user as string | undefined
-  const userRole = query.role as string | undefined
-  const teamId = query.team_id ? Number(query.team_id) : undefined
-  const keyword = query.keyword as string | undefined
-  const isAdmin = userRole === '管理者'
+  const page = Number(query.page) || 1
+  const pageSize = Number(query.page_size) || 10
+  const teamId = query.team_id ? Number(query.team_id) : null
+  const search = (query.search as string) || ''
 
-  let analysisList
-  if (isAdmin) {
-    analysisList = teamId ? getPlayerAnalysesByTeam(teamId) : getPlayerAnalyses()
-  }
-  else {
-    analysisList = getPlayerAnalysesByCreator(userAccount || '')
-    if (teamId) {
-      analysisList = analysisList.filter((pa) => {
-        const player = players.find(p => p.id === pa.player_id)
-        return player && player.team_id === teamId
-      })
-    }
+  let filtered = [...mockPlayerAnalysis]
+
+  if (teamId) {
+    filtered = filtered.filter(a => a.team_id === teamId)
   }
 
-  // 加入球員和球隊資訊
-  let analysesWithDetails = analysisList.map((analysis) => {
-    const player = players.find(p => p.id === analysis.player_id)
-    const team = player ? teams.find(t => t.id === player.team_id) : null
-    return {
-      id: player?.id,
-      name: player?.name || '未知球員',
-      number: player?.number,
-      team_name: team?.name || '未知球隊',
-      team_id: player?.team_id,
-      training_count: analysis.training_count,
-      total_pitches: analysis.total_pitches,
-      last_training_date: analysis.last_training_date,
-      avg_velocity: analysis.avg_velocity,
-    }
-  })
-
-  // 關鍵字搜尋（姓名）
-  if (keyword) {
-    analysesWithDetails = analysesWithDetails.filter(a => a.name.includes(keyword))
+  if (search) {
+    filtered = filtered.filter(a => a.name.includes(search))
   }
+
+  const start = (page - 1) * pageSize
+  const paged = filtered.slice(start, start + pageSize)
+
+  // 移除 team_id（內部欄位，不回傳）
+  const data = paged.map(({ team_id: _tid, ...rest }) => rest)
 
   return {
     status: 'success',
-    data: analysesWithDetails,
+    data,
+    total: filtered.length,
+    page,
+    page_size: pageSize,
   }
 })

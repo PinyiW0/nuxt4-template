@@ -1,43 +1,25 @@
-import { batchDeletePlayerAnalyses, getPlayerAnalysisById } from '../../mock/data/playerAnalysis'
-import { players } from '../../mock/data/players'
-import { teams } from '../../mock/data/teams'
+import type { H3Event } from 'h3'
 
-export default defineEventHandler(async (event) => {
+import { mockPlayerAnalysis } from '../../mock/data/playerAnalysis'
+
+export default defineEventHandler(async (event: H3Event) => {
   const body = await readBody(event)
-  const { player_ids, user, role } = body
+  const { player_ids } = body
 
-  if (!Array.isArray(player_ids) || player_ids.length === 0) {
-    throw createError({
-      statusCode: 400,
-      message: '球員 ID 列表不可為空',
-    })
+  if (!player_ids || !Array.isArray(player_ids) || player_ids.length === 0) {
+    throw createError({ statusCode: 400, message: '請選擇要刪除的選手分析' })
   }
 
-  // 權限檢查
-  if (role !== '管理者') {
-    for (const playerId of player_ids) {
-      const analysis = getPlayerAnalysisById(playerId)
-      if (analysis) {
-        const player = players.find(p => p.id === playerId)
-        if (player) {
-          const team = teams.find(t => t.id === player.team_id)
-          if (team && team.created_by !== user) {
-            throw createError({
-              statusCode: 403,
-              message: '無權限操作此球員',
-            })
-          }
-        }
-      }
+  // 從 mock 資料中移除（模擬清除分析數據）
+  player_ids.forEach((pid: number) => {
+    const index = mockPlayerAnalysis.findIndex(a => a.player_id === pid)
+    if (index !== -1) {
+      const item = mockPlayerAnalysis[index]!
+      item.training_count = 0
+      item.total_pitches = 0
+      item.avg_velocity = null
     }
-  }
+  })
 
-  const deletedCount = batchDeletePlayerAnalyses(player_ids)
-
-  return {
-    status: 'success',
-    data: {
-      deleted_count: deletedCount,
-    },
-  }
+  return { status: 'success', message: '選手分析已批次刪除' }
 })

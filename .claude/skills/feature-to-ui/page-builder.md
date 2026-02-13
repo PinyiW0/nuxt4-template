@@ -1,58 +1,8 @@
 # Nuxt UI Page Builder 規範
 
-## 前置作業（必須先執行）
-
-### 1. 讀取並分類顏色
-
-讀取 `ui-config.yaml` 中的 `theme.colors`：
-
-| 類型 | 判斷方式 | 範例 |
-|------|----------|------|
-| Hex 色碼 | 以 `#` 開頭 | `"#FF359A"` |
-| Tailwind 預設色 | 不以 `#` 開頭 | `"purple"`, `"green"` |
-
-### 2. 處理 Hex 色碼
-
-每個 Hex 色碼需在 `main.css` 定義完整色階：
-
-```css
-/* app/assets/css/main.css */
-@import "tailwindcss";
-@import "@nuxt/ui";
-
-@theme static {
-  --color-primary-50: #fff0f7;
-  --color-primary-100: #ffe3f1;
-  /* ... 50-950 完整色階 ... */
-  --color-primary-950: #580024;
-}
-```
-
-> ⚠️ **必須使用 `@theme static`**（注意 `static` 關鍵字）
-
-色階產生：https://uicolors.app
-
-### 3. 產生 app.config.ts
-
-```typescript
-// app/app.config.ts
-export default defineAppConfig({
-  ui: {
-    colors: {
-      // Hex → 使用顏色名稱
-      primary: 'primary',
-      // Tailwind 預設 → 直接使用
-      secondary: 'indigo',
-      success: 'green',
-      warning: 'amber',
-      error: 'red',
-    },
-    toast: {
-      position: 'top-right', // 從 ui-config.yaml 讀取
-    },
-  },
-})
-```
+> 配色、深淺模式、Nuxt UI 類型、API 規範、Pinia store 規範 → 詳見 [rules.md](rules.md)
+>
+> 色彩主題設定（app.config.ts、main.css）→ 詳見 [phase-2-theme.md](phases/phase-2-theme.md)
 
 ---
 
@@ -113,6 +63,12 @@ And 系統顯示 "帳號或密碼錯誤"
 | `編輯 XXX` | 表單（預填） | |
 | `刪除 XXX` | 確認 Modal | |
 | `查詢 XXX 列表` | UTable | **必須有搜尋框** |
+| `排序 XXX` / `調整順序` | vuedraggable（拖曳） | drag handle icon |
+| `篩選 XXX` | USelect / USelectMenu | 篩選條件選項 |
+| `批次刪除` / `批次操作` | UTable checkbox + 批次按鈕 | 全選/取消全選 |
+| `上傳 XXX` | UInput type="file" / 拖放區 | 檔案格式提示 |
+| `切換狀態` / `啟用/停用` | UToggle / USwitch | 狀態標籤文字 |
+| `匯出 XXX` | UButton（下載觸發） | loading 狀態 |
 
 > **重要**：「查詢」關鍵字 → UI **必須**包含搜尋框
 
@@ -133,23 +89,88 @@ And 系統顯示 "帳號或密碼錯誤"
 
 | 禁止 | 正確做法 |
 |------|----------|
+| app.vue 缺少 UApp 或 NuxtLayout | Phase 4 建 Layout 後必須更新 app.vue |
 | 自行定義網站名稱 | 從 `project.name` 讀取 |
 | 寫死色彩值 | 從 `theme.colors` 讀取 |
 | 寫死 Toast 時間 | 從 `toast.duration` 讀取 |
 | 直接用 `color="blue"` | 用語意化 `color="primary"` |
 | 查詢頁沒搜尋框 | 「查詢」必須有搜尋框 |
 | `@theme` 不加 `static` | 必須 `@theme static` |
-| 使用 `text-white` 固定白色 | 使用 `text-neutral-900 dark:text-white` |
-| 使用 `bg-neutral-900` 固定深色背景 | 使用 `bg-white dark:bg-neutral-900` |
 | UFormField 不預留錯誤訊息空間 | 加上 `class="relative mb-8"` 和 `:ui="{ error: 'absolute top-full left-0 mt-1' }"` |
+
+> 完整禁止事項清單 → 詳見 [rules.md](rules.md)
+
+---
+
+## data-testid 命名規則
+
+> testid 來源優先級與命名格式 → 詳見 [rules.md](rules.md) > testid 規範
+
+### 從 Gherkin 推導
+
+```gherkin
+When 使用者以帳號 "coach1" 密碼 "pass123" 登入
+```
+
+→ `login-account`, `login-password`, `login-submit`
+
+> **注意**：列表內的按鈕（如 `team-delete`）可以重複，E2E 測試時用 `first()`, `nth()`, 或 `hasText` 定位
 
 ---
 
 ## 表單範本
 
+### 登入表單（含 Auth Store）
+
 ```vue
 <script setup lang="ts">
-import type { FormSubmitEvent } from '#ui/types'
+import type { FormSubmitEvent } from '@nuxt/ui'
+import { z } from 'zod'
+// ⚠️ 重要：必須明確 import store，不可依賴 auto-import
+import { useAuthStore } from '~/stores/auth'
+
+const authStore = useAuthStore()
+const router = useRouter()
+const toast = useToast()
+
+const schema = z.object({
+  account: z.string().trim().min(1, '請輸入帳號'),
+  password: z.string().min(1, '請輸入密碼'),
+})
+
+type Schema = z.output<typeof schema>
+
+const state = reactive<Schema>({
+  account: '',
+  password: '',
+})
+
+const isSubmitting = ref(false)
+
+async function onSubmit(event: FormSubmitEvent<Schema>) {
+  if (isSubmitting.value) return  // 防止重複提交
+  isSubmitting.value = true
+  try {
+    await authStore.login(event.data.account, event.data.password)
+    toast.add({ title: '登入成功', color: 'success' })
+    router.push('/')
+  }
+  catch (error: any) {
+    const message = error?.data?.message || '帳號或密碼錯誤'
+    toast.add({ title: '登入失敗', description: message, color: 'error' })
+  }
+  finally {
+    isSubmitting.value = false
+  }
+}
+</script>
+```
+
+### 一般表單
+
+```vue
+<script setup lang="ts">
+import type { FormSubmitEvent } from '@nuxt/ui'
 import { z } from 'zod'
 
 const schema = z.object({
@@ -188,14 +209,24 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
 </script>
 
 <template>
-  <UForm :schema="schema" :state="state" class="space-y-4" @submit="onSubmit">
+  <UForm
+    :schema="schema"
+    :state="state"
+    data-testid="login-form"
+    class="space-y-4"
+    @submit="onSubmit"
+  >
     <UFormField
       label="帳號"
       name="account"
       class="relative mb-8"
       :ui="{ error: 'absolute top-full left-0 mt-1' }"
     >
-      <UInput v-model="state.account" class="w-full" />
+      <UInput
+        v-model="state.account"
+        data-testid="login-account"
+        class="w-full"
+      />
     </UFormField>
     <UFormField
       label="密碼"
@@ -203,9 +234,18 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
       class="relative mb-8"
       :ui="{ error: 'absolute top-full left-0 mt-1' }"
     >
-      <UInput v-model="state.password" type="password" class="w-full" />
+      <UInput
+        v-model="state.password"
+        data-testid="login-password"
+        type="password"
+        class="w-full"
+      />
     </UFormField>
-    <UButton type="submit" :loading="loading">
+    <UButton
+      type="submit"
+      data-testid="login-submit"
+      :loading="loading"
+    >
       登入
     </UButton>
   </UForm>
@@ -230,6 +270,7 @@ const showPassword = ref(false)
   >
     <UInput
       v-model="state.password"
+      data-testid="login-password"
       :type="showPassword ? 'text' : 'password'"
       class="w-full"
     >
@@ -250,88 +291,7 @@ const showPassword = ref(false)
 
 ---
 
-## 深淺模式（Dark/Light Mode）規範
-
-所有 UI 必須同時支援深色和淺色模式，使用響應式 Tailwind class：
-
-### 文字顏色
-
-```vue
-<!-- ❌ 錯誤：只在深色模式可見 -->
-<h1 class="text-white">
-標題
-</h1>
-
-<!-- ✅ 正確：深淺模式都可見 -->
-<h1 class="text-neutral-900 dark:text-white">
-標題
-</h1>
-
-<!-- 次要文字 -->
-<p class="text-neutral-500 dark:text-neutral-400">
-描述
-</p>
-```
-
-### 背景顏色
-
-```vue
-<!-- ❌ 錯誤：只適合深色模式 -->
-<div class="bg-neutral-900">
-...
-</div>
-
-<!-- ✅ 正確：響應式背景 -->
-<div class="bg-white dark:bg-neutral-900">
-...
-</div>
-
-<div class="bg-neutral-100 dark:bg-neutral-800">
-...
-</div>
-```
-
-### 邊框顏色
-
-```vue
-<!-- ❌ 錯誤 -->
-<div class="border border-neutral-800">
-...
-</div>
-
-<!-- ✅ 正確 -->
-<div class="border border-neutral-200 dark:border-neutral-800">
-...
-</div>
-```
-
-### 例外：彩色背景上的文字
-
-在 `bg-success-500`、`bg-error-500`、`bg-primary-500` 等彩色背景上，可以固定使用 `text-white`，因為這些背景在深淺模式下都是深色。
-
----
-
 ## 技術注意事項
-
-### Server 端 Import
-
-```typescript
-// ❌ 錯誤
-import { mockUsers } from '~/server/mock/data/users'
-
-// ✅ 正確
-import { mockUsers } from '../../mock/data/users'
-```
-
-### Pinia Store + Persist
-
-```typescript
-// ❌ 錯誤：persist 無法恢復 readonly
-return { accessToken: readonly(accessToken) }
-
-// ✅ 正確
-return { accessToken }
-```
 
 ### Tailwind v4 !important
 
