@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Edit",
+      "Write",
+      "Bash",
+      "WebSearch",
+      "WebFetch(domain:*)",
+      "Skill"
+    ],
+    "additionalDirectories": [
+      "/Users/pinyi/Desktop/ai/nuxt4-template/docs/gherkin-spec"
+    ]
+  }
+}
