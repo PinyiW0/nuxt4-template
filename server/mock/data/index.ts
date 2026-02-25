@@ -1,6 +1,0 @@
-export { mockPitches } from './pitches'
-export { mockPlayerAnalysis } from './playerAnalysis'
-export { mockPlayers } from './players'
-export { mockTeams } from './teams'
-export { mockTrainings } from './trainings'
-export { mockUsers } from './users'

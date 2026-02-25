@@ -4,64 +4,80 @@
 
 ```
 僅需讀取：
-- .ai-prompts/ui/style-presets.yaml（風格預設）
-- ui-config.yaml > theme.colors.light（淺色模式色彩）
-- ui-config.yaml > theme.colors.dark（深色模式色彩）
+- ui-config.yaml > theme.colors（色彩設定）
 - ui-config.yaml > colorMode（深淺模式設定）
 ```
 
 ## 執行步驟
 
-1. **讀取 `ui-config.yaml` 的 `theme.colors.light` 和 `theme.colors.dark`**
+1. **讀取 `ui-config.yaml` 的 `theme.colors`**
 2. **建立 app.config.ts**（色彩映射）
-3. **建立 main.css**（三層 CSS 色階）：
-   - 第 1 層：`:root` / `.dark` 定義 `--raw-*` 原始色值
-   - 第 2 層：`@theme inline` 註冊 `--color-*`（Tailwind utility class）
-   - 第 3 層：`:root` / `.dark` 定義 `--ui-color-*` 色票 + `--ui-*` 語義變數（Nuxt UI 元件）
+3. **建立 main.css**（自訂色階）：
+   - 有 `"#hex"` → 用 `@theme static` 寫入 `--color-{名稱}-50~950`
+   - 有 `"名稱"` 或空值 → 不產生 CSS
 4. **詢問用戶確認**
 
 ## 色彩翻譯規則
 
 ### 判斷邏輯
 
-讀取 `ui-config.yaml > theme.colors.light` 和 `theme.colors.dark`，每個顏色依據值的格式決定處理方式：
+讀取 `ui-config.yaml > theme.colors`，每個顏色依據值的格式決定處理方式：
 
-| 值的格式 | 範例 | 處理方式 |
-|---------|------|---------|
-| `"#hex"` | `"#00ba7b"` | 自訂色 → 產生 CSS 色階 + app.config 映射 |
-| `"名稱"` | `"emerald"` | Tailwind 內建 → 只需 app.config 映射 |
+| 值的格式 | 範例 | main.css | app.config.ts |
+|---------|------|----------|---------------|
+| `"#hex"` | `"#00ba7b"` | 產生 50-950 色階 | `'{語義色名}'` |
+| `"名稱"` | `"emerald"` | 不產生 CSS | `'{Tailwind 色名}'` |
+| `""`（空值） | `""` | 不產生 CSS | 預設 Tailwind 內建色 |
 
-### 雙模式色彩處理
+### 空值預設對應表
 
-Light 和 Dark 可以為同一語義色使用**完全不同的色相**。
-
-判斷某個語義色是否需要產生雙模式 CSS：
-
-| light 值 | dark 值 | 處理方式 |
-|-----------|---------|---------|
-| `"#hex"` | `"#hex"`（相同） | 單一色階，寫入 `@theme static` |
-| `"#hex"` | `"#hex"`（不同） | 雙色階，用 `:root` / `.dark` + `@theme inline` |
-| `"#hex"` | `"名稱"` | light 自訂 + dark 內建，用 `:root` / `.dark` + `@theme inline` |
-| `"名稱"` | `"名稱"`（相同） | 只需 app.config 映射 |
-| `"名稱"` | `"名稱"`（不同） | 用 `:root` / `.dark` + `@theme inline` 搭配 Tailwind 內建色 |
+| 語義色 | 預設 Tailwind 內建色 |
+|--------|---------------------|
+| primary | `green` |
+| secondary | `sky` |
+| success | `green` |
+| warning | `amber` |
+| error | `red` |
+| info | `blue` |
+| neutral | `neutral` |
 
 ### 自訂 hex 的產出規則
 
 1. 用 https://uicolors.app 從 hex 產生 50-950 共 11 個色階
-2. Light 色階寫入 `:root { --raw-{色名}-50~950 }`
-3. Dark 色階寫入 `.dark { --raw-{色名}-50~950 }`
-4. 在 `@theme inline` 用 `var()` 引用中介變數
-5. 寫入 app.config.ts：`{語義色名}: '{語義色名}'`
+2. 寫入 `@theme static { --color-{色名}-50~950 }`
+3. 寫入 app.config.ts：`{語義色名}: '{語義色名}'`
 
 **關鍵：CSS 變數名稱必須和 app.config 映射名稱一致。**
 
-### 為什麼必須用 `@theme inline` 而不是 `@theme static`？
+### app.config.ts 映射規則（極重要！）
 
-- `@theme static` 會在 build time 把值直接寫進 CSS，`var()` 引用會被解析，`.dark` 覆蓋無效
-- `@theme inline` 保留 `var()` 引用，runtime 可隨 `.dark` class 動態切換
-- NuxtUI 使用 `.dark` class 切換深淺模式（不是 `@media prefers-color-scheme`）
+Nuxt UI plugin 會根據 `app.config.ts` 的映射值去尋找 `--color-{value}-{shade}` CSS 變數。
+**映射值必須指向一個實際存在的 Tailwind 顏色名稱**，否則元件顏色不會生效。
 
-> ⚠️ **只有 light/dark 色碼完全相同時，才能用 `@theme static`。有任何差異就必須用 `@theme inline`。**
+| ui-config.yaml 值 | main.css 是否有定義色階 | app.config.ts 映射 |
+|-------------------|----------------------|-------------------|
+| `"#hex"` | ✅ 有（`@theme` 定義了 `--color-{名稱}-*`） | `'{語義色名}'`（映射到自訂色） |
+| `"red"` | ❌ 沒有（沿用 Tailwind 內建） | `'red'`（映射到 Tailwind 內建色） |
+| `""` | ❌ 沒有（空值 fallback） | 查預設對應表 |
+
+```typescript
+// ❌ error 沒有在 main.css 定義色階，卻映射到 'error'
+// Tailwind 沒有內建叫 'error' 的顏色 → bg-error 無色！
+error: 'error',
+
+// ✅ 沒有自訂色階 → 映射到 Tailwind 內建色名
+error: 'red',
+warning: 'amber',
+success: 'green',
+info: 'blue',
+
+// ✅ 有在 main.css 用 @theme 自訂色階 → 映射到自身名稱
+primary: 'primary',
+secondary: 'secondary',
+neutral: 'neutral',
+```
+
+> ⚠️ **只有在 `main.css` 用 `@theme` 定義了 `--color-{名稱}-*` 色階的顏色，才能用自身語義名稱映射。沒有自訂色階的語義色，必須映射到 Tailwind 內建色名（如 `red`、`amber`、`green`、`blue`）。**
 
 ### NuxtUI 支援的語義色名（只有這 7 個）
 
@@ -69,68 +85,78 @@ Light 和 Dark 可以為同一語義色使用**完全不同的色相**。
 
 > ⚠️ **禁止使用 `tertiary`、`accent` 等 NuxtUI 不支援的色名**
 
+## Nuxt UI 色彩自動橋接原理
+
+Nuxt UI 的 `colors.js` plugin 會在 runtime **自動處理 light/dark 切換**：
+
+```javascript
+// node_modules/@nuxt/ui/dist/runtime/plugins/colors.js
+
+// 1. 映射 Tailwind 色階 → Nuxt UI 色票
+":root, :host {
+  --ui-color-primary-{50-950}: var(--color-primary-{50-950}, <fallback>);
+}"
+
+// 2. Light mode：語義色 = 500 色階
+":root, :host, .light {
+  --ui-primary: var(--ui-color-primary-500);
+}"
+
+// 3. Dark mode：語義色 = 400 色階
+".dark {
+  --ui-primary: var(--ui-color-primary-400);
+}"
+```
+
+**因此你只需要定義 `--color-{name}-{shade}`（Tailwind 層），Nuxt UI 會自動：**
+- 建立 `--ui-color-{name}-{shade}` 色票（讀取 `--color-{name}-{shade}`）
+- 設定 `--ui-{name}` 語義色（light=500, dark=400）
+- 設定 `--ui-text-*`、`--ui-bg-*`、`--ui-border-*` 等 neutral 相關變數
+
+> ⚠️ **禁止手動定義 `--ui-color-*`、`--ui-primary`、`--ui-text-*`、`--ui-bg-*` 等變數 — 這些由 Nuxt UI plugin 自動管理，手動覆蓋會造成衝突。**
+
 ## 資料流
 
 ```
-ui-config.yaml                  main.css                              app.config.ts
-──────────────                  ────────                              ─────────────
-theme.colors.light              :root { --raw-primary-50~950 }
-  primary: "#00ba7b"        →   .dark { --raw-primary-50~950 }    →   primary: 'primary'
-theme.colors.dark               @theme inline {
-  primary: "#e50006"              --color-primary-*: var(--raw-*)     ← Tailwind utility
-                                }
-                                :root { --ui-color-primary-*: var(--raw-*) }  ← Nuxt UI 元件
-                                :root { --ui-primary: var(--ui-color-primary-500) }
-                                .dark { --ui-primary: var(--ui-color-primary-400) }
+ui-config.yaml              main.css                          app.config.ts
+──────────────              ────────                          ─────────────
+theme.colors
+  primary: "#00ba7b"    →   @theme static {                →   primary: 'primary'
+                              --color-primary-50~950
+                            }
+                                                               ↓ Nuxt UI plugin 自動處理
+                                                               --ui-color-primary-*
+                                                               --ui-primary (light=500, dark=400)
 
-theme.colors.light              （不需要 CSS）
-  success: "emerald"        →                                     →   success: 'emerald'
-theme.colors.dark
-  success: "#009764"        →   :root { } .dark { --raw-success-* }   （需要改為自訂）
+  success: ""           →   （不需要 CSS）                  →   success: 'green'
+                                                               （Nuxt UI 直接讀 Tailwind 內建色）
+
+  info: "blue"          →   （不需要 CSS）                  →   info: 'blue'
+                                                               （Nuxt UI 直接讀 Tailwind 內建色）
 ```
-
-### CSS 變數的三層架構（重要！）
-
-Nuxt UI 元件**不會直接讀取** `--color-*`（Tailwind 層），而是讀取 `--ui-color-*` 和 `--ui-*`。
-使用自訂色時必須手動橋接這三層：
-
-```
-第 1 層：--raw-primary-500          ← 原始色值（:root / .dark 切換）
-第 2 層：--color-primary-500        ← Tailwind utility（bg-primary-500 等）
-第 3 層：--ui-color-primary-500     ← Nuxt UI 元件色票（按鈕 hover、ring 等）
-         --ui-primary               ← Nuxt UI 語義色（元件 color="primary" 讀取）
-```
-
-> ⚠️ **只用 `@theme inline` 只解決第 2 層。第 3 層（Nuxt UI 元件）必須額外定義 `--ui-color-*` 和 `--ui-*` 變數，否則元件顏色不會生效。**
-
-### 特殊情況：light 用 Tailwind 內建 + dark 用自訂 hex
-
-當 light 和 dark 不同時，即使其中一方是 Tailwind 內建色，也必須**兩方都產生完整色階**，
-因為 `@theme inline` 的 `var()` 引用必須在兩個模式都有定義。
-
-做法：查出 Tailwind 內建色的實際色碼，產生對應的 `--raw-*` 變數。
 
 ## app.config.ts 範例
 
 ```typescript
 // app/app.config.ts
+// 假設 primary/secondary/neutral 有在 main.css 自訂色階
+// success/warning/error/info 沿用 Tailwind 內建色
 export default defineAppConfig({
   ui: {
     colors: {
-      primary: 'primary',       // 映射到 --color-primary-*
-      secondary: 'secondary',   // 映射到 --color-secondary-*
-      success: 'success',       // 映射到 --color-success-*
-      warning: 'warning',       // 映射到 --color-warning-*
-      error: 'error',           // 映射到 --color-error-*
-      info: 'info',             // 映射到 --color-info-*
-      neutral: 'neutral',       // 映射到 --color-neutral-*
+      primary: 'primary',       // 有自訂色階 → 映射到自身名稱
+      secondary: 'secondary',   // 有自訂色階 → 映射到自身名稱
+      success: 'green',         // 沒自訂 → 映射到 Tailwind 內建色
+      warning: 'amber',         // 沒自訂 → 映射到 Tailwind 內建色
+      error: 'red',             // 沒自訂 → 映射到 Tailwind 內建色
+      info: 'blue',             // 沒自訂 → 映射到 Tailwind 內建色
+      neutral: 'neutral',       // 有自訂色階 → 映射到自身名稱
     },
   },
 })
 ```
 
-> 當 light/dark 有任何差異時，所有顏色都統一映射到自身名稱（`'primary'` 而不是 `'emerald'`），
-> 因為實際色值由 CSS 的 `:root` / `.dark` 控制。
+> **映射規則：有自訂色階 → `'{語義名}'`，沒自訂 → `'{Tailwind 內建色名}'`**
 
 ## main.css 範例
 
@@ -139,181 +165,53 @@ export default defineAppConfig({
 @import "tailwindcss";
 @import "@nuxt/ui";
 
-/* ═══════════════════════════════════════════════════════════════════
-   Light Mode 色值（:root = 預設）
-   ═══════════════════════════════════════════════════════════════════ */
-:root {
+/* 只有 ui-config.yaml 中填入 "#hex" 的顏色才需要產生色階 */
+/* 空值或 Tailwind 內建色名不需要產生 CSS */
+@theme static {
   /* primary — 青綠 (base: #00ba7b) */
-  --raw-primary-50: #EFFDF5;
-  --raw-primary-100: #D9FBE8;
-  --raw-primary-200: #B3F5D1;
-  --raw-primary-300: #75EDAE;
-  --raw-primary-400: #00DC82;
-  --raw-primary-500: #00BA7B;
-  --raw-primary-600: #00A155;
-  --raw-primary-700: #007F45;
-  --raw-primary-800: #016538;
-  --raw-primary-900: #0A5331;
-  --raw-primary-950: #052E16;
+  --color-primary-50: #EFFDF5;
+  --color-primary-100: #D9FBE8;
+  --color-primary-200: #B3F5D1;
+  --color-primary-300: #75EDAE;
+  --color-primary-400: #00DC82;
+  --color-primary-500: #00BA7B;
+  --color-primary-600: #00A155;
+  --color-primary-700: #007F45;
+  --color-primary-800: #016538;
+  --color-primary-900: #0A5331;
+  --color-primary-950: #052E16;
 
   /* secondary — 萊姆綠 (base: #7acc00) */
-  --raw-secondary-50: #F7FFE0;
-  --raw-secondary-100: #EEFFB8;
+  --color-secondary-50: #F7FFE0;
+  --color-secondary-100: #EEFFB8;
   /* ... 完整 50-950 */
-  --raw-secondary-950: #1A3300;
+  --color-secondary-950: #1A3300;
 
   /* neutral — 深藍灰 (base: #314157) */
-  --raw-neutral-50: #F4F7FA;
-  --raw-neutral-100: #E8ECF2;
+  --color-neutral-50: #F4F7FA;
+  --color-neutral-100: #E8ECF2;
   /* ... 完整 50-950 */
-  --raw-neutral-950: #0D1117;
-}
+  --color-neutral-950: #0D1117;
 
-/* ═══════════════════════════════════════════════════════════════════
-   Dark Mode 色值（.dark 覆蓋）
-   ═══════════════════════════════════════════════════════════════════ */
-.dark {
-  /* primary — 日落紅 (base: #e50006) */
-  --raw-primary-50: #FEF2F2;
-  --raw-primary-100: #FEE2E2;
-  --raw-primary-200: #FECACA;
-  --raw-primary-300: #FCA5A5;
-  --raw-primary-400: #F87171;
-  --raw-primary-500: #E50006;
-  --raw-primary-600: #DC2626;
-  --raw-primary-700: #B91C1C;
-  --raw-primary-800: #991B1B;
-  --raw-primary-900: #7F1D1D;
-  --raw-primary-950: #450A0A;
-
-  /* secondary — 純黑 (base: #000000) */
-  --raw-secondary-50: #F5F5F5;
-  --raw-secondary-100: #E5E5E5;
-  /* ... 完整 50-950 */
-  --raw-secondary-950: #000000;
-
-  /* neutral — 極深灰 (base: #09090b) */
-  --raw-neutral-50: #FAFAFA;
-  --raw-neutral-100: #F4F4F5;
-  /* ... 完整 50-950 */
-  --raw-neutral-950: #09090B;
-}
-
-/* ═══════════════════════════════════════════════════════════════════
-   第 2 層：註冊到 Tailwind 主題（用 inline，不是 static！）
-   用途：讓 Tailwind utility class（bg-primary-500 等）生效
-   ═══════════════════════════════════════════════════════════════════ */
-@theme inline {
-  --color-primary-50: var(--raw-primary-50);
-  --color-primary-100: var(--raw-primary-100);
-  /* ... 完整 50-950 */
-  --color-primary-950: var(--raw-primary-950);
-
-  --color-secondary-50: var(--raw-secondary-50);
-  /* ... 完整 50-950 */
-  --color-secondary-950: var(--raw-secondary-950);
-
-  --color-neutral-50: var(--raw-neutral-50);
-  /* ... 完整 50-950 */
-  --color-neutral-950: var(--raw-neutral-950);
-
-  /* success/warning/error/info — 若 light/dark 不同也需要加入 */
-}
-
-/* ═══════════════════════════════════════════════════════════════════
-   第 3 層：Nuxt UI 元件色票映射（--ui-color-{name}-{shade}）
-   Nuxt UI 元件不讀 --color-*，而是讀 --ui-color-*
-   對每個自訂色，都必須產生完整的 --ui-color-* 映射
-   ═══════════════════════════════════════════════════════════════════ */
-:root {
-  --ui-color-primary-50: var(--raw-primary-50);
-  --ui-color-primary-100: var(--raw-primary-100);
-  /* ... 完整 50-950，每個自訂色都要 */
-  --ui-color-primary-950: var(--raw-primary-950);
-
-  --ui-color-secondary-50: var(--raw-secondary-50);
-  /* ... */
-  --ui-color-neutral-50: var(--raw-neutral-50);
-  /* ... success / warning / error / info 同理 */
-}
-
-/* ═══════════════════════════════════════════════════════════════════
-   第 3 層：Nuxt UI 語義變數（--ui-primary, --ui-text, --ui-bg 等）
-   這些是 Nuxt UI 元件最終讀取的變數
-   ═══════════════════════════════════════════════════════════════════ */
-
-/* --- Light Mode --- */
-:root {
-  /* 語義色彩 */
-  --ui-primary: var(--ui-color-primary-500);
-  --ui-secondary: var(--ui-color-secondary-500);
-  --ui-success: var(--ui-color-success-500);
-  --ui-info: var(--ui-color-info-500);
-  --ui-warning: var(--ui-color-warning-500);
-  --ui-error: var(--ui-color-error-500);
-
-  /* 文字 */
-  --ui-text-dimmed: var(--ui-color-neutral-400);
-  --ui-text-muted: var(--ui-color-neutral-500);
-  --ui-text-toned: var(--ui-color-neutral-600);
-  --ui-text: var(--ui-color-neutral-700);
-  --ui-text-highlighted: var(--ui-color-neutral-900);
-  --ui-text-inverted: white;
-
-  /* 背景 */
-  --ui-bg: white;
-  --ui-bg-muted: var(--ui-color-neutral-50);
-  --ui-bg-elevated: var(--ui-color-neutral-100);
-  --ui-bg-accented: var(--ui-color-neutral-200);
-  --ui-bg-inverted: var(--ui-color-neutral-900);
-
-  /* 邊框 */
-  --ui-border: var(--ui-color-neutral-200);
-  --ui-border-muted: var(--ui-color-neutral-200);
-  --ui-border-accented: var(--ui-color-neutral-300);
-  --ui-border-inverted: var(--ui-color-neutral-900);
-}
-
-/* --- Dark Mode --- */
-.dark {
-  /* 語義色彩（改用 -400 色階） */
-  --ui-primary: var(--ui-color-primary-400);
-  --ui-secondary: var(--ui-color-secondary-400);
-  --ui-success: var(--ui-color-success-400);
-  --ui-info: var(--ui-color-info-400);
-  --ui-warning: var(--ui-color-warning-400);
-  --ui-error: var(--ui-color-error-400);
-
-  /* 文字 */
-  --ui-text-dimmed: var(--ui-color-neutral-500);
-  --ui-text-muted: var(--ui-color-neutral-400);
-  --ui-text-toned: var(--ui-color-neutral-300);
-  --ui-text: var(--ui-color-neutral-200);
-  --ui-text-highlighted: white;
-  --ui-text-inverted: var(--ui-color-neutral-900);
-
-  /* 背景 */
-  --ui-bg: var(--ui-color-neutral-900);
-  --ui-bg-muted: var(--ui-color-neutral-800);
-  --ui-bg-elevated: var(--ui-color-neutral-800);
-  --ui-bg-accented: var(--ui-color-neutral-700);
-  --ui-bg-inverted: white;
-
-  /* 邊框 */
-  --ui-border: var(--ui-color-neutral-800);
-  --ui-border-muted: var(--ui-color-neutral-700);
-  --ui-border-accented: var(--ui-color-neutral-700);
-  --ui-border-inverted: white;
+  /* success/warning/error/info — 空值，不產生 CSS，沿用 Tailwind 內建 */
 }
 ```
 
-> ⚠️ **必須使用 `@theme inline`**（不是 `static`！）
->
-> ⚠️ **第 3 層（`--ui-color-*` + `--ui-*`）是必要的！** 缺少這層，Nuxt UI 元件（UButton、UBadge 等）的顏色不會生效。
+> ⚠️ **禁止手動定義 `--ui-color-*`、`--ui-primary`、`--ui-text-*`、`--ui-bg-*` 等變數**，Nuxt UI 的 `colors.js` plugin 會自動從 `--color-*` 橋接產生這些變數。
 >
 > 色階產生：https://uicolors.app
 
 ## 常見錯誤
+
+```typescript
+// ❌ 沒有自訂色階卻映射到語義名稱 — Tailwind 沒有 'error' 這個內建色！
+error: 'error',        // NuxtUI 去找 --color-error-*，找不到 → bg-error 無色
+warning: 'warning',    // NuxtUI 去找 --color-warning-*，找不到 → bg-warning 無色
+
+// ✅ 沒有自訂色階 → 映射到 Tailwind 內建色名
+error: 'red',          // NuxtUI 去找 --color-red-*，Tailwind 內建有 ✅
+warning: 'amber',      // NuxtUI 去找 --color-amber-*，Tailwind 內建有 ✅
+```
 
 ```typescript
 // ❌ app.config 映射名稱和 CSS 變數名稱不一致
@@ -330,47 +228,16 @@ accent: 'slate',       // NuxtUI 元件沒有 color="accent"
 ```
 
 ```css
-/* ❌ 只有 @theme inline，缺少 --ui-color-* 和 --ui-* */
-/* Tailwind utility（bg-primary-500）會生效，但 Nuxt UI 元件顏色不會 */
-@theme inline {
-  --color-primary-500: var(--raw-primary-500);
-}
-
-/* ✅ 三層都要：@theme inline + --ui-color-* + --ui-* */
-@theme inline {
-  --color-primary-500: var(--raw-primary-500);   /* Tailwind utility */
-}
+/* ❌ 手動定義 --ui-color-* 和 --ui-*（會和 Nuxt UI plugin 衝突） */
 :root {
-  --ui-color-primary-500: var(--raw-primary-500); /* Nuxt UI 色票 */
-  --ui-primary: var(--ui-color-primary-500);      /* Nuxt UI 語義色 */
+  --ui-color-primary-500: #00BA7B;
+  --ui-primary: var(--ui-color-primary-500);
+  --ui-text-dimmed: var(--ui-color-neutral-400);
+  --ui-bg: white;
 }
-```
 
-```css
-/* ❌ 雙模式時用 @theme static — .dark 覆蓋無效 */
+/* ✅ 只定義 Tailwind 層（--color-*），Nuxt UI 自動處理其餘 */
 @theme static {
-  --color-primary-500: var(--raw-primary-500);  /* build time 被解析，runtime 不會切換 */
-}
-
-/* ✅ 雙模式時用 @theme inline — 保留 var() 引用 */
-@theme inline {
-  --color-primary-500: var(--raw-primary-500);  /* runtime 隨 .dark class 切換 ✅ */
-}
-```
-
-```css
-/* ❌ 在 @theme 內放選擇器（不支援巢狀） */
-@theme inline {
-  .dark {
-    --color-primary-500: #E50006;  /* 語法錯誤！ */
-  }
-}
-
-/* ✅ 選擇器放在 @theme 外面 */
-.dark {
-  --raw-primary-500: #E50006;
-}
-@theme inline {
-  --color-primary-500: var(--raw-primary-500);
+  --color-primary-500: #00BA7B;
 }
 ```

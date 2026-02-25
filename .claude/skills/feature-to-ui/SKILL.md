@@ -37,7 +37,7 @@ metadata:
 |-------|------|------|----------|
 | 0 | 準備工作 | 功能清單、路由規劃、**route-map.yaml** | [phase-0](phases/phase-0-prep.md) |
 | 1 | Mock API | **app/types/api/**, server/mock/, server/api/ | [phase-1](phases/phase-1-mock-api.md) + [rules.md](rules.md) |
-| 2 | 基礎設定 | app.config.ts, main.css | [phase-2](phases/phase-2-theme.md) + [style-presets.yaml](../../.ai-prompts/ui/style-presets.yaml) |
+| 2 | 基礎設定 | app.config.ts, main.css | [phase-2](phases/phase-2-theme.md) |
 | 3 | 路由骨架 | 所有 pages/*.vue 空殼（含 testid） | [phase-3](phases/phase-3-skeleton.md) + [rules.md](rules.md) |
 | 4 | Layout 建置 | layouts/*.vue | [phase-4](phases/phase-4-layout.md) + [rules.md](rules.md) + [responsive.md](responsive.md) |
 | 5 | 共用元件 | components/common/*.vue | [phase-5](phases/phase-5-components.md) + [components.md](components.md) + [rules.md](rules.md) |

@@ -14,39 +14,35 @@ project:
 # 參考：https://ui.nuxt.com/getting-started/theme#colors
 #
 # NuxtUI 支援 7 個語義色名：primary, secondary, success, info, warning, error, neutral
+# Nuxt UI 自動處理 light/dark：light 取 500 色階，dark 取 400 色階
 #
 # 格式說明：
 #   - "#hex"   → 自訂色碼，Phase 2 會用 https://uicolors.app 產生 50-950 色階
-#                 寫入 main.css 的 :root / .dark + @theme inline
-#                 並在 app.config.ts 映射 {名稱}: '{名稱}'
+#                 寫入 main.css 的 @theme static { --color-{名稱}-* }
+#                 app.config.ts 映射 {名稱}: '{名稱}'
 #   - "名稱"   → Tailwind 內建色（如 emerald, amber, red, blue）
-#                 Phase 2 只需在 app.config.ts 映射，不需產生 CSS
+#                 不需產生 CSS，app.config.ts 映射 {名稱}: '{Tailwind色名}'
+#   - ""（空值）→ 不產生 CSS，app.config.ts 映射到預設 Tailwind 內建色
+#
+# 空值預設對應：
+#   primary → green | secondary → sky | success → green
+#   warning → amber | error → red | info → blue | neutral → neutral
 #
 # Phase 2 實作方式：
-#   - light 色階寫入 :root { --raw-{色名}-50~950 }
-#   - dark 色階寫入 .dark { --raw-{色名}-50~950 }
-#   - @theme inline { --color-{色名}-*: var(--raw-{色名}-*) } 註冊到 Tailwind
-#   - app.config.ts 統一映射到自身名稱（primary: 'primary'）
-#   - PM 若有在 ui-config-pm.yaml 的 customColors 填入色碼，則覆蓋對應欄位
+#   - 有 "#hex" → @theme static { --color-{色名}-50~950 } 寫入 main.css
+#   - 有 "名稱" 或空值 → 不產生 CSS
+#   - app.config.ts：有自訂色階 → 映射自身名稱；沒有 → 映射 Tailwind 內建色名
+#   - Nuxt UI plugin 自動從 --color-* 橋接 --ui-color-* 和 --ui-*（不需手動處理）
 # =============================================================================
 theme:
   colors:
-    light:
-      primary: "#00ba7b"      # 主色（青綠）
-      secondary: "#7acc00"    # 輔色（萊姆綠）
-      neutral: "#314157"      # 中性色（深藍灰）
-      success: "#5ca300"      # 成功狀態（綠）
-      warning: "#f34700"      # 警告狀態（橘紅）
-      error: "#e50076"        # 錯誤狀態（桃紅）
-      info: "#0082ce"         # 資訊提示（藍）
-    dark:
-      primary: "#e50006"      # 主色（日落紅）
-      secondary: "#000000"    # 輔色（純黑）
-      neutral: "#09090b"      # 中性色（極深灰）
-      success: "#009764"      # 成功狀態（青綠）
-      warning: "#d08700"      # 警告狀態（琥珀）
-      error: "#c50035"        # 錯誤狀態（深紅）
-      info: "#135bf9"         # 資訊提示（寶藍）
+    primary: "#00ba7b"      # 主色（青綠）→ 產生自訂色階
+    secondary: "#7acc00"    # 輔色（萊姆綠）→ 產生自訂色階
+    neutral: "#314157"      # 中性色（深藍灰）→ 產生自訂色階
+    success: ""             # 成功狀態 → 空值，使用 Tailwind green
+    warning: ""             # 警告狀態 → 空值，使用 Tailwind amber
+    error: ""               # 錯誤狀態 → 空值，使用 Tailwind red
+    info: ""                # 資訊提示 → 空值，使用 Tailwind blue
 
 # =============================================================================
 # 測試帳號（從 ui-config-pm.yaml 同步）

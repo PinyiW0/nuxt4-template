@@ -95,7 +95,7 @@ And 系統顯示 "帳號或密碼錯誤"
 | 寫死 Toast 時間 | 從 `toast.duration` 讀取 |
 | 直接用 `color="blue"` | 用語意化 `color="primary"` |
 | 查詢頁沒搜尋框 | 「查詢」必須有搜尋框 |
-| 雙模式色彩用 `@theme static` | 必須 `@theme inline`（保留 `var()` 引用才能切換 light/dark） |
+| 手動定義 `--ui-color-*` / `--ui-*` 變數 | Nuxt UI plugin 自動從 `--color-*` 橋接，禁止手動覆蓋 |
 | UFormField 不預留錯誤訊息空間 | 加上 `class="relative mb-8"` 和 `:ui="{ error: 'absolute top-full left-0 mt-1' }"` |
 
 > 完整禁止事項清單 → 詳見 [rules.md](rules.md)

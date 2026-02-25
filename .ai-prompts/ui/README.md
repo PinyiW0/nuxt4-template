@@ -10,8 +10,7 @@
 .ai-prompts/ui/
 ├── README.md                    # 本文件（系統說明）
 ├── ui-config-pm.yaml            # PM 填寫的設定檔（非技術人員）
-├── ui-config.yaml               # 工程師設定檔（技術細節）
-└── style-presets.yaml           # 風格預設（light/dark 預設色碼）
+└── ui-config.yaml               # 工程師設定檔（技術細節）
 
 .claude/skills/feature-to-ui/
 ├── SKILL.md                     # Skill 入口定義
@@ -30,7 +29,6 @@
 |------|--------|------|
 | `ui-config-pm.yaml` | PM | 專案名稱、品牌色彩、UX 偏好、測試帳號 |
 | `ui-config.yaml` | 工程師 / AI 自動同步 | 技術細節、CSS class、組件配置 |
-| `style-presets.yaml` | 工程師 | light/dark 預設色碼（PM 未填時的 fallback） |
 
 ### PM → 工程師 同步對照表
 
@@ -40,8 +38,7 @@ ui-config-pm.yaml                    ui-config.yaml
 project.name                    →    project.name
 project.description             →    project.description
 project.locale                  →    project.locale
-customColors.light.*            →    theme.colors.light.*（非空值覆蓋）
-customColors.dark.*             →    theme.colors.dark.*（非空值覆蓋）
+customColors.*                  →    theme.colors.*（非空值覆蓋，空值 fallback 到 Tailwind 內建色）
 colorMode.default               →    colorMode.default
 colorMode.enableToggle          →    colorMode.enabled
 toast.displaySeconds            →    toast.duration（×1000）
@@ -73,9 +70,9 @@ additionalFeatures.*            →    additionalPackages.*.required
 │   └── 詢問用戶確認
 │
 ├── Phase 2: 基礎設定（色彩主題）
-│   ├── 讀取 theme.colors.light + theme.colors.dark
+│   ├── 讀取 theme.colors（有 hex 產生色階，空值用 Tailwind 內建）
+│   ├── 建立 main.css（@theme static 自訂色階）
 │   ├── 建立 app.config.ts（色彩映射）
-│   ├── 建立 main.css（:root / .dark + @theme inline 雙模式色階）
 │   └── 詢問用戶確認
 │
 ├── Phase 3: 路由骨架
@@ -101,23 +98,27 @@ additionalFeatures.*            →    additionalPackages.*.required
 
 ## 色彩系統
 
-### 雙模式架構
-
-支援 light/dark 使用**完全不同的色相**，透過三層 CSS 結構實現：
+### 架構
 
 ```
-ui-config.yaml (theme.colors.light / dark)
-  → main.css (:root + .dark + @theme inline)
+ui-config.yaml (theme.colors)
+  → main.css (@theme static 自訂色階)
     → app.config.ts (語義色名映射)
+      → Nuxt UI plugin 自動橋接 (--ui-color-*, --ui-*)
 ```
 
-### 技術細節
+### 色彩值處理規則
 
-- `:root` 定義 light 色值（`--raw-{色名}-50~950`）
-- `.dark` 覆蓋 dark 色值
-- `@theme inline` 用 `var()` 引用，讓 Tailwind utility class 隨模式切換
-- **必須用 `@theme inline`**（不是 `static`），否則 `.dark` 覆蓋無效
-- NuxtUI 透過 `.dark` class 切換深淺模式
+| ui-config.yaml 值 | main.css | app.config.ts |
+|-------------------|----------|---------------|
+| `"#hex"` | `@theme static { --color-{名稱}-50~950 }` | `'{語義名}'` |
+| `"名稱"` (如 `"red"`) | 不產生 CSS | `'{Tailwind 色名}'` |
+| `""` (空值) | 不產生 CSS | 預設 Tailwind 內建色 |
+
+### Light/Dark 自動切換
+
+Nuxt UI plugin 自動處理：light 取 500 色階，dark 取 400 色階。
+不需要手動定義 `:root` / `.dark` 或 `--ui-*` 變數。
 
 ### 支援的語義色名（7 個）
 
@@ -138,10 +139,8 @@ project:
   locale: "zh-TW"
 
 customColors:
-  light:
-    primary: "#00ba7b"
-  dark:
-    primary: "#e50006"
+  primary: "#00ba7b"
+  error: ""              # 空值 → 使用 Tailwind red
 
 testAccounts:
   - username: "admin"
@@ -167,7 +166,7 @@ testAccounts:
 app/
 ├── app.vue                      # 根組件（UApp + NuxtLayout）
 ├── app.config.ts                # 色彩主題映射
-├── assets/css/main.css          # 雙模式色階（:root / .dark + @theme inline）
+├── assets/css/main.css          # 自訂色階（@theme static）
 ├── layouts/
 │   ├── default.vue              # 主要 Layout（含 Sidebar）
 │   └── auth.vue                 # 登入頁 Layout
