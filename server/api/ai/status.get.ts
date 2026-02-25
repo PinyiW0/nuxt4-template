@@ -1,14 +1,13 @@
-import { mockTrainings } from '../../mock/data/trainings'
+import type { H3Event } from 'h3'
 
-export default defineEventHandler(() => {
-  const running = mockTrainings.find(t => t.ai_status === 'running')
+import { aiState } from './start.post'
 
+export default defineEventHandler((_event: H3Event) => {
   return {
     status: 'success',
     data: {
-      ai_status: running ? 'running' : 'stopped',
-      training_id: running?.id ?? null,
-      created_by: running?.created_by ?? null,
+      status: aiState.status,
+      training_id: aiState.training_id,
     },
   }
 })

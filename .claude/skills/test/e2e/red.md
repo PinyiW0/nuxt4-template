@@ -140,11 +140,11 @@ E2E 紅燈報告：{NN}-{name}
 ```
 E2E 紅燈批次報告：01 → 05
 
-  01-使用者登入         ✅ 全部通過（3 pass, 5 skip）
-  02-使用者登出         ❌ 1 fail / 2 pass / 1 skip
-  03-查詢球隊列表       ❌ 3 fail / 1 pass / 0 skip
-  04-建立球隊           ❌ 2 fail / 1 pass / 1 skip
-  05-編輯球隊           ✅ 全部通過（2 pass, 1 skip）
+  01-{feature-A}       ✅ 全部通過（3 pass, 5 skip）
+  02-{feature-B}       ❌ 1 fail / 2 pass / 1 skip
+  03-{feature-C}       ❌ 3 fail / 1 pass / 0 skip
+  04-{feature-D}       ❌ 2 fail / 1 pass / 1 skip
+  05-{feature-E}       ✅ 全部通過（2 pass, 1 skip）
 
   失敗統計：6 fail / 9 pass / 8 skip（共 23 測試）
 
@@ -166,17 +166,11 @@ E2E 紅燈報告：{NN}-{name}
 
 ---
 
-## Playwright 踩坑提醒
+## Playwright 規則參考
 
-執行過程中注意以下常見問題：
+Playwright 語法規則的權威來源為 [spec.md](spec.md) >「Playwright 必遵守規則」。
 
-1. `page.goto()` 必須加 `{ waitUntil: 'networkidle' }`（Nuxt SSR hydration）
-2. `toHaveURL` 不支援 glob，用 `waitForURL` 代替
-3. Toast 文字匹配需 `{ exact: true }`（Nuxt UI 產生 2 個元素）
-4. `test.skip` callback 禁用 `{ _page }`，用空 `async () =>`
-5. Mock 資料密碼必須與 fixtures.ts 一致
-
-> 如果發現 spec 本身有這些問題，在報告中標記為「spec 問題」而非「UI 問題」。
+> 如果發現 spec 違反這些規則，在報告中標記為「spec 問題」而非「UI 問題」。
 
 ---
 

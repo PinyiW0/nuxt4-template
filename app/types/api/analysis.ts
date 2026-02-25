@@ -1,5 +1,11 @@
+export interface HeatMapPoint {
+  location_x: number
+  location_y: number
+  count: number
+}
+
 export interface TrainingAnalysis {
-  training_id: number
+  training_id?: number
   total_pitches: number
   strike_count: number
   ball_count: number
@@ -8,14 +14,15 @@ export interface TrainingAnalysis {
   max_velocity: number
   min_velocity: number
   avg_spin_rate: number
-  heat_map_data: Record<string, unknown>
+  heat_map_data: HeatMapPoint[]
 }
 
 export interface PlayerAnalysisItem {
   id: number
-  player_id: number
+  player_id?: number
   name: string
   number: number
+  team_id?: number
   team_name: string
   training_count: number
   total_pitches: number
@@ -28,11 +35,11 @@ export interface BatchDeleteAnalysisBody {
 }
 
 export interface PlayerStatistics {
-  player_id: number
-  period: string
+  player_id?: number
+  period?: string
   avg_velocity: number | null
   avg_spin_rate: number | null
   strike_rate: number | null
   total_pitches: number
-  heat_map_data: Record<string, unknown>[] | null
+  heat_map_data: HeatMapPoint[]
 }

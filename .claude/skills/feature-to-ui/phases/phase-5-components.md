@@ -78,7 +78,7 @@ const props = withDefaults(defineProps<{
   title?: string
   description?: string
   confirmLabel?: string
-  confirmColor?: string
+  confirmColor?: 'primary' | 'secondary' | 'success' | 'info' | 'warning' | 'error' | 'neutral'
   loading?: boolean
 }>(), {
   title: '確認操作',
@@ -99,7 +99,7 @@ const isOpen = defineModel<boolean>('open', { default: false })
 <template>
   <UModal v-model:open="isOpen">
     <template #content>
-      <div data-testid="modal" class="p-6">
+      <div data-testid="confirm-modal" class="p-6">
         <h3 class="text-lg font-semibold text-neutral-900 dark:text-white">
           {{ title }}
         </h3>
@@ -108,7 +108,7 @@ const isOpen = defineModel<boolean>('open', { default: false })
         </p>
         <div class="mt-6 flex justify-end gap-3">
           <UButton
-            data-testid="modal-cancel"
+            data-testid="confirm-cancel"
             color="neutral"
             variant="outline"
             :disabled="loading"
@@ -117,7 +117,7 @@ const isOpen = defineModel<boolean>('open', { default: false })
             取消
           </UButton>
           <UButton
-            data-testid="modal-confirm"
+            data-testid="confirm-ok"
             :color="confirmColor"
             :loading="loading"
             @click="emit('confirm')"

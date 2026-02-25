@@ -43,10 +43,17 @@
 | PM 設定欄位 | ui-config.yaml 欄位 | 轉換規則 |
 |------------|---------------------|----------|
 | `project.name` | `project.name` | 直接複製 |
-| `selectedPreset` | `selectedPreset` + `theme.colors` | 同時更新色彩 |
+| `project.description` | `project.description` | 直接複製 |
+| `project.locale` | `project.locale` | 直接複製 |
+| `customColors.light.*` | `theme.colors.light.*` | 非空值覆蓋預設，空值保留 style-presets 預設 |
+| `customColors.dark.*` | `theme.colors.dark.*` | 非空值覆蓋預設，空值保留 style-presets 預設 |
+| `colorMode.default` | `colorMode.default` | 直接複製（system / light / dark） |
+| `colorMode.enableToggle` | `colorMode.enabled` | 直接複製 |
 | `toast.displaySeconds` | `toast.duration` | 秒 → 毫秒 (×1000) |
 | `toast.position` | `toast.position` | 中文轉英文 |
 | `table.itemsPerPage` | `table.pagination.defaultPageSize` | 直接複製 |
+| `deleteConfirmation.*` | `delete.confirmation.*` | 對應欄位複製 |
+| `testAccounts` | `testAccounts` | 直接複製 |
 
 ---
 

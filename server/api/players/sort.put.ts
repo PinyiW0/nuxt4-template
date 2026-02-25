@@ -4,18 +4,17 @@ import { mockPlayers } from '../../mock/data/players'
 
 export default defineEventHandler(async (event: H3Event) => {
   const body = await readBody(event)
-  const { team_id, player_ids } = body
 
-  if (!team_id || !player_ids || !Array.isArray(player_ids)) {
-    throw createError({ statusCode: 400, message: '參數錯誤' })
+  if (!body.items || !Array.isArray(body.items)) {
+    throw createError({ statusCode: 400, message: '缺少排序資料' })
   }
 
-  player_ids.forEach((playerId: number, index: number) => {
-    const player = mockPlayers.find(p => p.id === playerId && p.team_id === team_id)
+  for (const item of body.items) {
+    const player = mockPlayers.find(p => p.id === item.id && p.status === 'active')
     if (player) {
-      player.sort_order = index + 1
+      player.sort_order = item.sort_order
     }
-  })
+  }
 
   return { status: 'success', message: '排序已更新' }
 })

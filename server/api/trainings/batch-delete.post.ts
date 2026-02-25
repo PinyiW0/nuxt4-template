@@ -5,24 +5,21 @@ import { mockTrainings } from '../../mock/data/trainings'
 
 export default defineEventHandler(async (event: H3Event) => {
   const body = await readBody(event)
-  const { training_ids } = body
 
-  if (!training_ids || !Array.isArray(training_ids) || training_ids.length === 0) {
+  if (!body.ids || !Array.isArray(body.ids) || body.ids.length === 0) {
     throw createError({ statusCode: 400, message: '請選擇要刪除的訓練' })
   }
 
-  training_ids.forEach((id: number) => {
+  for (const id of body.ids) {
     const training = mockTrainings.find(t => t.id === id && t.status === 'active')
     if (training) {
       training.status = 'deleted'
-      // 連帶軟刪除投球
-      mockPitches.forEach((p) => {
-        if (p.training_id === id) {
-          p.status = 'deleted'
-        }
-      })
+      // 級聯刪除投球
+      mockPitches
+        .filter(p => p.training_id === id && p.status === 'active')
+        .forEach((p) => { p.status = 'deleted' })
     }
-  })
+  }
 
-  return { status: 'success', message: '訓練已批次刪除' }
+  return { status: 'success', message: `已刪除 ${body.ids.length} 筆訓練紀錄` }
 })

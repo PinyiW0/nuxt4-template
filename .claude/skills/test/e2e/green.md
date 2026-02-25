@@ -100,8 +100,7 @@ npx playwright test test/e2e/specs/{NN}-{name}.spec.ts 2>&1
 │     → 修 Spec：加 waitForURL / waitForNavigation
 │
 ├─ Spec 本身問題（hydration / glob / toast）
-│  → 修 Spec：套用 e2e-gotchas.md 的修復模式
-│  → 套用 spec.md / red.md 的 Playwright 踩坑修復模式
+│  → 修 Spec：套用 spec.md「Playwright 必遵守規則」的修復模式
 │
 └─ 不確定
    → 不修改，標記為「待人工確認」
@@ -112,7 +111,7 @@ npx playwright test test/e2e/specs/{NN}-{name}.spec.ts 2>&1
 **修復優先順序**（低風險 → 高風險）：
 
 1. **加 testid**（最安全）：只加 `data-testid` attribute
-2. **修 spec 語法**（低風險）：修正 Playwright 踩坑問題
+2. **修 spec 語法**（低風險）：依 spec.md「Playwright 必遵守規則」修正
 3. **修 mock data**（低風險）：調整測試數據
 4. **修 UI 顯示邏輯**（中風險）：格式化、條件渲染
 5. **補 UI 區塊**（高風險）：新增模板元素

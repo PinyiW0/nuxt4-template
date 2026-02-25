@@ -1,85 +1,19 @@
-import type { PlayerAnalysisItem, PlayerStatistics } from '../../../app/types/api/analysis'
+import type { MockPlayerAnalysis } from './types'
 
-// 選手分析列表 mock 資料（feature 24-25）
-// coach1 看到 2 筆（藍鷹隊），admin 看到 3 筆（全部）
-export const mockPlayerAnalysis: (PlayerAnalysisItem & { team_id: number })[] = [
-  {
-    id: 1,
-    player_id: 1,
-    name: '王小明',
-    number: 1,
-    team_name: '藍鷹隊',
-    team_id: 1,
-    training_count: 5,
-    total_pitches: 50,
-    last_training_date: '2025-06-15',
-    avg_velocity: 118.5,
-  },
-  {
-    id: 2,
-    player_id: 2,
-    name: '李大華',
-    number: 2,
-    team_name: '藍鷹隊',
-    team_id: 1,
-    training_count: 3,
-    total_pitches: 30,
-    last_training_date: '2025-05-20',
-    avg_velocity: 115.2,
-  },
-  {
-    id: 3,
-    player_id: 3,
-    name: '張三',
-    number: 10,
-    team_name: '紅虎隊',
-    team_id: 2,
-    training_count: 4,
-    total_pitches: 40,
-    last_training_date: '2025-07-01',
-    avg_velocity: 125.8,
-  },
+export const mockPlayerAnalysis: MockPlayerAnalysis[] = [
+  // 藍鷹隊 (team_id: 1)
+  { player_id: 1, training_count: 10, total_pitches: 500, last_training_date: '2026-02-24', avg_velocity: 128.5, avg_spin_rate: 2200, strike_rate: 62 },
+  { player_id: 2, training_count: 8, total_pitches: 400, last_training_date: '2026-02-20', avg_velocity: 125.3, avg_spin_rate: 2150, strike_rate: 58 },
+  { player_id: 3, training_count: 6, total_pitches: 280, last_training_date: '2026-02-10', avg_velocity: 122.8, avg_spin_rate: 2050, strike_rate: 55 },
+  { player_id: 4, training_count: 4, total_pitches: 180, last_training_date: '2026-02-08', avg_velocity: 119.2, avg_spin_rate: 1980, strike_rate: 60 },
+  { player_id: 5, training_count: 3, total_pitches: 120, last_training_date: '2026-02-01', avg_velocity: 115.6, avg_spin_rate: 1900, strike_rate: 52 },
+  // 紅龍隊 (team_id: 2)
+  { player_id: 6, training_count: 7, total_pitches: 350, last_training_date: '2026-02-18', avg_velocity: 126.1, avg_spin_rate: 2180, strike_rate: 61 },
+  { player_id: 7, training_count: 9, total_pitches: 450, last_training_date: '2026-02-22', avg_velocity: 130.2, avg_spin_rate: 2300, strike_rate: 65 },
+  { player_id: 8, training_count: 5, total_pitches: 220, last_training_date: '2026-02-12', avg_velocity: 121.5, avg_spin_rate: 2020, strike_rate: 57 },
+  // 白虎隊 (team_id: 3)
+  { player_id: 9, training_count: 5, total_pitches: 250, last_training_date: '2026-02-22', avg_velocity: 130.2, avg_spin_rate: 2280, strike_rate: 63 },
+  { player_id: 10, training_count: 4, total_pitches: 200, last_training_date: '2026-02-19', avg_velocity: 132.1, avg_spin_rate: 2350, strike_rate: 59 },
+  { player_id: 11, training_count: 3, total_pitches: 150, last_training_date: '2026-02-14', avg_velocity: 118.7, avg_spin_rate: 1950, strike_rate: 54 },
+  { player_id: 12, training_count: 2, total_pitches: 80, last_training_date: '2026-02-06', avg_velocity: 114.3, avg_spin_rate: 1880, strike_rate: 50 },
 ]
-
-// 選手統計 mock 資料（feature 26）
-export const mockPlayerStatistics: Record<number, PlayerStatistics> = {
-  // 王小明：有完整統計
-  1: {
-    player_id: 1,
-    period: '2025-06-01 至今',
-    avg_velocity: 118.5,
-    avg_spin_rate: 2180,
-    strike_rate: 62,
-    total_pitches: 150,
-    heat_map_data: [
-      { x: 0.1, y: 0.5, density: 0.8 },
-      { x: -0.1, y: 0.55, density: 0.6 },
-      { x: 0.0, y: 0.6, density: 0.9 },
-      { x: 0.15, y: 0.45, density: 0.5 },
-      { x: -0.2, y: 0.5, density: 0.4 },
-    ],
-  },
-  // 李大華：無投球數據
-  2: {
-    player_id: 2,
-    period: '',
-    avg_velocity: null,
-    avg_spin_rate: null,
-    strike_rate: null,
-    total_pitches: 0,
-    heat_map_data: null,
-  },
-  // 張三：有部分統計
-  3: {
-    player_id: 3,
-    period: '2025-07-01 至今',
-    avg_velocity: 125.8,
-    avg_spin_rate: 2150,
-    strike_rate: 58,
-    total_pitches: 40,
-    heat_map_data: [
-      { x: 0.0, y: 0.5, density: 0.7 },
-      { x: 0.1, y: 0.6, density: 0.5 },
-    ],
-  },
-}

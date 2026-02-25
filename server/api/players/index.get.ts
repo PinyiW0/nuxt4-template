@@ -6,55 +6,32 @@ import { mockTeams } from '../../mock/data/teams'
 export default defineEventHandler((event: H3Event) => {
   const query = getQuery(event)
   const page = Number(query.page) || 1
-  const pageSize = Number(query.page_size) || 10
+  const perPage = Number(query.per_page) || 20
   const teamId = query.team_id ? Number(query.team_id) : null
-  const search = (query.search as string) || ''
-  const user = query.user as string | undefined
-  const role = query.role as string | undefined
 
-  let filtered = mockPlayers.filter(p => p.status === 'active')
+  let players = mockPlayers.filter(p => p.status === 'active')
 
-  // 教練只能查詢自己球隊的球員
-  if (role !== '管理者' && user) {
-    const userTeamIds = mockTeams
-      .filter(t => t.created_by === user && t.status === 'active')
-      .map(t => t.id)
-    filtered = filtered.filter(p => userTeamIds.includes(p.team_id))
-  }
-
+  // 篩選球隊
   if (teamId) {
-    filtered = filtered.filter(p => p.team_id === teamId)
+    players = players.filter(p => p.team_id === teamId)
   }
 
-  if (search) {
-    filtered = filtered.filter(p => p.name.includes(search))
-  }
+  // 依建立時間倒序
+  players = players.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
 
-  // 依 sort_order 排序
-  filtered.sort((a, b) => a.sort_order - b.sort_order)
+  // 附加球隊名稱
+  const playersWithTeam = players.map((p) => {
+    const team = mockTeams.find(t => t.id === p.team_id)
+    return { ...p, team_name: team?.name || '未知' }
+  })
 
-  // 加入 team_name
-  const withTeamName = filtered.map(p => ({
-    id: p.id,
-    number: p.number,
-    name: p.name,
-    height: p.height,
-    position: p.position,
-    team_id: p.team_id,
-    team_name: mockTeams.find(t => t.id === p.team_id)?.name || '',
-    sort_order: p.sort_order,
-    created_at: p.created_at,
-    status: p.status,
-  }))
-
-  const start = (page - 1) * pageSize
-  const paged = withTeamName.slice(start, start + pageSize)
+  // 分頁
+  const start = (page - 1) * perPage
+  const paged = playersWithTeam.slice(start, start + perPage)
 
   return {
     status: 'success',
     data: paged,
-    total: withTeamName.length,
-    page,
-    page_size: pageSize,
+    meta: { total: playersWithTeam.length, page, per_page: perPage },
   }
 })

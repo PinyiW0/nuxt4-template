@@ -1,11 +1,13 @@
-// Mock 專用型別（含密碼等敏感資料，不匯出到前端）
+// Mock 資料內部型別（含密碼等非 API 公開欄位）
+
+import type { AiStatus, Position } from '../../../types/api'
 
 export interface MockUser {
   id: number
   account: string
   password: string
   role: '管理者' | '教練'
-  status: 'active' | 'deleted'
+  status: 'active' | 'locked'
   failed_attempts: number
   locked_until: string | null
 }
@@ -20,11 +22,11 @@ export interface MockTeam {
 
 export interface MockPlayer {
   id: number
-  team_id: number
   number: number
   name: string
   height: number
-  position: string
+  position: Position
+  team_id: number
   sort_order: number
   created_at: string
   status: 'active' | 'deleted'
@@ -35,10 +37,10 @@ export interface MockTraining {
   date: string
   player_id: number
   team_id: number
+  pitch_count: number
+  ai_status: AiStatus
   strike_zone_top: number
   strike_zone_bottom: number
-  pitch_count: number
-  ai_status: 'running' | 'stopped'
   created_by: string
   created_at: string
   status: 'active' | 'deleted'
@@ -56,4 +58,14 @@ export interface MockPitch {
   location_y: number
   trajectory_data: Record<string, unknown>
   status: 'active' | 'deleted'
+}
+
+export interface MockPlayerAnalysis {
+  player_id: number
+  training_count: number
+  total_pitches: number
+  last_training_date: string
+  avg_velocity: number
+  avg_spin_rate: number
+  strike_rate: number
 }

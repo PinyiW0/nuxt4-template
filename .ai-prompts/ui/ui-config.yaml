@@ -5,35 +5,48 @@
 # 專案資訊（必填）
 # =============================================================================
 project:
-  name: "鷹眼偵測系統" # 網站名稱，由使用者定義，AI 不可自行決定
+  name: "鷹眼偵測系統" # 網站名稱
   description: "智能訓練分析平台，提供即時動作偵測與數據分析" # 網站描述
   locale: "zh-TW" # 語系
 
 # =============================================================================
-# 風格預設
-# 完整預設列表見 style-presets.yaml（Phase 2 時選擇）
-# =============================================================================
-selectedPreset: light-default
-
-# =============================================================================
-# 色彩主題（根據 selectedPreset 自動填入）
+# 色彩主題
 # 參考：https://ui.nuxt.com/getting-started/theme#colors
+#
+# NuxtUI 支援 7 個語義色名：primary, secondary, success, info, warning, error, neutral
+#
+# 格式說明：
+#   - "#hex"   → 自訂色碼，Phase 2 會用 https://uicolors.app 產生 50-950 色階
+#                 寫入 main.css 的 :root / .dark + @theme inline
+#                 並在 app.config.ts 映射 {名稱}: '{名稱}'
+#   - "名稱"   → Tailwind 內建色（如 emerald, amber, red, blue）
+#                 Phase 2 只需在 app.config.ts 映射，不需產生 CSS
+#
+# Phase 2 實作方式：
+#   - light 色階寫入 :root { --raw-{色名}-50~950 }
+#   - dark 色階寫入 .dark { --raw-{色名}-50~950 }
+#   - @theme inline { --color-{色名}-*: var(--raw-{色名}-*) } 註冊到 Tailwind
+#   - app.config.ts 統一映射到自身名稱（primary: 'primary'）
+#   - PM 若有在 ui-config-pm.yaml 的 customColors 填入色碼，則覆蓋對應欄位
 # =============================================================================
 theme:
   colors:
-    primary: "#FF6F61"     # 主色：珊瑚紅
-    secondary: "#FFAB91"   # 次要色：蜜桃色
-    tertiary: "#E0E7EE"    # 第三層級：淺藍灰
-    accent: "#E0E7EE"      # 強調色：淺藍灰
-    success: "#059669"     # 成功：翡翠綠 (emerald)
-    warning: "#d97708"     # 警告：琥珀色 (amber)
-    error: "#dc2626"       # 錯誤：鮮紅色 (red)
-    info: "#2563eb"        # 資訊：寶藍色 (blue)
-    neutral: "#222831"     # 中性色：深灰藍
-
-  # 進階：自定義 hex 色彩
-  # 若需要 hex 色碼，用 https://uicolors.app 產生 50-950 色階
-  # 在 app/assets/css/main.css 中以 @theme static 定義
+    light:
+      primary: "#00ba7b"      # 主色（青綠）
+      secondary: "#7acc00"    # 輔色（萊姆綠）
+      neutral: "#314157"      # 中性色（深藍灰）
+      success: "#5ca300"      # 成功狀態（綠）
+      warning: "#f34700"      # 警告狀態（橘紅）
+      error: "#e50076"        # 錯誤狀態（桃紅）
+      info: "#0082ce"         # 資訊提示（藍）
+    dark:
+      primary: "#e50006"      # 主色（日落紅）
+      secondary: "#000000"    # 輔色（純黑）
+      neutral: "#09090b"      # 中性色（極深灰）
+      success: "#009764"      # 成功狀態（青綠）
+      warning: "#d08700"      # 警告狀態（琥珀）
+      error: "#c50035"        # 錯誤狀態（深紅）
+      info: "#135bf9"         # 資訊提示（寶藍）
 
 # =============================================================================
 # 測試帳號（從 ui-config-pm.yaml 同步）
@@ -47,14 +60,7 @@ testAccounts:
     password: "coach123"
     role: "教練"
     description: "教練帳號（藍鷹隊）"
-  - username: "coach2"
-    password: "coach123"
-    role: "教練"
-    description: "教練帳號（紅虎隊）"
-  - username: "locked1"
-    password: "locked123"
-    role: "教練"
-    description: "已鎖定帳號（測試鎖定流程）"
+
 
 # =============================================================================
 # Toast 通知設定

@@ -1,4 +1,3 @@
-import { resolve } from 'node:path'
 import { defineVitestProject } from '@nuxt/test-utils/config'
 import { quickpickle } from 'quickpickle'
 import { defineConfig } from 'vitest/config'
@@ -7,20 +6,6 @@ export default defineConfig({
   plugins: [quickpickle()],
   test: {
     projects: [
-      // 純單元測試 (Node 環境，速度最快)
-      {
-        resolve: {
-          alias: {
-            '~': resolve(__dirname, '.'),
-          },
-        },
-        test: {
-          name: 'unit',
-          include: ['test/unit/**/*.{test,spec}.ts'],
-          environment: 'node',
-          setupFiles: ['test/unit/setup.ts'],
-        },
-      },
       // Nuxt 環境測試 (composables、components)
       await defineVitestProject({
         test: {

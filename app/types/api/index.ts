@@ -1,8 +1,8 @@
 // AI
-export type { AiControlBody, AiStatusResponse } from './ai'
+export type { AiControlBody, AiStatusResponse, AiSystemStatus, StartAiBody } from './ai'
 
 // Analysis
-export type { BatchDeleteAnalysisBody, PlayerAnalysisItem, PlayerStatistics, TrainingAnalysis } from './analysis'
+export type { BatchDeleteAnalysisBody, HeatMapPoint, PlayerAnalysisItem, PlayerStatistics, TrainingAnalysis } from './analysis'
 
 // Auth
 export type { LoginData, LoginRequest, LoginUser, RefreshData, RefreshRequest } from './auth'
@@ -11,7 +11,7 @@ export type { LoginData, LoginRequest, LoginUser, RefreshData, RefreshRequest } 
 export type { PitchDetail, PitchItem } from './pitches'
 
 // Players
-export type { CreatePlayerBody, PlayerItem, SortPlayersBody, UpdatePlayerBody } from './players'
+export type { CreatePlayerBody, PlayerItem, Position, SortPlayersBody, UpdatePlayerBody } from './players'
 
 // Teams
 export type { CreateTeamBody, TeamItem, UpdateTeamBody } from './teams'

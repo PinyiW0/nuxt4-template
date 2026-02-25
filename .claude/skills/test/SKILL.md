@@ -342,9 +342,9 @@ Then('登入失敗次數重置為 0', async (world: TestWorld) => {
 ```
 test/e2e/
 ├── helpers/
-│   ├── selectors.ts          # testid → CSS 選擇器（集中管理）
-│   ├── fixtures.ts           # 測試資料（帳號、路由）
-│   └── index.ts              # 匯出
+│   ├── actions.ts             # 共用操作（login, selectOption, confirmDelete）
+│   ├── fixtures.ts            # 測試資料（帳號、路由）
+│   └── index.ts               # 匯出
 ├── specs/                    # Playwright 測試檔案（由 /test e2e spec 產出）
 │   ├── 01-使用者登入.spec.ts
 │   └── ...
@@ -356,13 +356,13 @@ test/e2e/
 
 ### Phase: e2e setup（測試基礎架構）
 
-建立 Playwright 環境和 `test/e2e/helpers/`（selectors、fixtures）。
+建立 Playwright 環境和 `test/e2e/helpers/`（actions、fixtures）。
 
 ### Phase: e2e spec（Spec 生成）
 
 1. 讀取 `.flow.md` + `_common.flow.md`（由 `/feature-to-flow` 產出）
 2. 動詞→Playwright 轉換（前往→goto、點擊→click、輸入→fill...）
-3. 更新 `selectors.ts` 和 `fixtures.ts`
+3. 更新 `fixtures.ts`
 4. 產出 Playwright `.spec.ts`
 
 ### Phase: e2e batch / auto

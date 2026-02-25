@@ -1,254 +1,205 @@
 <script setup lang="ts">
+import type { TableColumn } from '@nuxt/ui'
 import type { PlayerAnalysisItem } from '~/types/api/analysis'
 import type { TeamItem } from '~/types/api/teams'
 
-import { useAuthStore } from '~/stores/auth'
-
 definePageMeta({ layout: 'default' })
 
-const authStore = useAuthStore()
 const router = useRouter()
 const toast = useToast()
 
-// 篩選條件
-const filterTeam = ref<number | null>(null)
+// 篩選
 const searchQuery = ref('')
-const debouncedSearch = ref('')
-
-// Debounce 搜尋（300ms）
-let searchTimer: ReturnType<typeof setTimeout> | null = null
-watch(searchQuery, (val) => {
-  if (searchTimer)
-    clearTimeout(searchTimer)
-  searchTimer = setTimeout(() => {
-    debouncedSearch.value = val
-  }, 300)
-})
-
-// 取得球隊列表（用於篩選下拉）
-const { data: teamsResponse } = useFetch('/api/teams', {
-  query: { page: 1, page_size: 100 },
-})
-
-const teamOptions = computed(() => {
-  const teams = (teamsResponse.value?.data ?? []) as TeamItem[]
-  return [
-    { label: '全部球隊', value: null },
-    ...teams.map(t => ({ label: t.name, value: t.id })),
-  ]
-})
-
-// 球隊 ID → 名稱映射（用於客戶端過濾）
-const teamNameMap = computed(() => {
-  const teams = (teamsResponse.value?.data ?? []) as TeamItem[]
-  const map = new Map<number, string>()
-  teams.forEach(t => map.set(t.id, t.name))
-  return map
-})
-
-// 取得選手分析列表
-const { data: analysisResponse, refresh } = useFetch('/api/player-analysis', {
-  query: computed(() => ({
-    page: 1,
-    page_size: 100,
-    user: authStore.user?.account,
-    role: authStore.user?.role,
-  })),
-})
-
-const allItems = computed(() => (analysisResponse.value?.data ?? []) as PlayerAnalysisItem[])
-
-// 客戶端過濾
-const filteredItems = computed(() => {
-  let items = allItems.value
-  if (filterTeam.value) {
-    items = items.filter(a => a.team_name === teamNameMap.value.get(filterTeam.value!))
-  }
-  if (debouncedSearch.value) {
-    const keyword = debouncedSearch.value.toLowerCase()
-    items = items.filter(a => a.name.toLowerCase().includes(keyword))
-  }
-  return items
-})
+const selectedTeamId = ref<number | null>(null)
 
 // 分頁
-const page = ref(1)
+const currentPage = ref(1)
 const pageSize = 10
-const total = computed(() => filteredItems.value.length)
+
+// 勾選（批次刪除）
+const selectedIds = ref<number[]>([])
+
+// 取得球隊
+const { data: teamsData } = await useFetch<{ status: string, data: TeamItem[] }>('/api/teams')
+const teams = computed(() => teamsData.value?.data ?? [])
+const teamFilterOptions = computed(() => [
+  { label: '全部球隊', value: null },
+  ...teams.value.map(t => ({ label: t.name, value: t.id })),
+])
+
+// 取得選手分析列表
+const { data, refresh } = await useFetch<{
+  status: string
+  data: PlayerAnalysisItem[]
+  meta: { total: number }
+}>('/api/player-analysis', {
+  query: computed(() => {
+    const q: Record<string, any> = {}
+    if (selectedTeamId.value)
+      q.team_id = selectedTeamId.value
+    if (searchQuery.value.trim())
+      q.keyword = searchQuery.value.trim()
+    return q
+  }),
+})
+
+const allItems = computed(() => data.value?.data ?? [])
+const totalItems = computed(() => allItems.value.length)
 
 const pagedItems = computed(() => {
-  const start = (page.value - 1) * pageSize
-  return filteredItems.value.slice(start, start + pageSize)
+  const start = (currentPage.value - 1) * pageSize
+  return allItems.value.slice(start, start + pageSize)
 })
 
-// 篩選條件變更時重置頁碼
-watch([filterTeam, debouncedSearch], () => {
-  page.value = 1
+watch([searchQuery, selectedTeamId], () => {
+  currentPage.value = 1
+  selectedIds.value = []
 })
 
-// 表格欄位
-const columns = [
+const columns: TableColumn<PlayerAnalysisItem>[] = [
   { accessorKey: 'select', header: '' },
   { accessorKey: 'name', header: '姓名' },
   { accessorKey: 'number', header: '背號' },
   { accessorKey: 'team_name', header: '球隊' },
   { accessorKey: 'training_count', header: '訓練次數' },
-  { accessorKey: 'total_pitches', header: '總投球數' },
+  { accessorKey: 'total_pitches', header: '投球數' },
   { accessorKey: 'last_training_date', header: '最近訓練日' },
   { accessorKey: 'avg_velocity', header: '平均球速' },
 ]
 
-// Checkbox 多選
-const rowSelection = ref<Record<string, boolean>>({})
-
-const selectedIds = computed(() => {
-  const ids: number[] = []
-  for (const [index, selected] of Object.entries(rowSelection.value)) {
-    if (selected) {
-      const item = pagedItems.value[Number(index)]
-      if (item)
-        ids.push(item.player_id)
-    }
+function toggleSelect(id: number) {
+  const idx = selectedIds.value.indexOf(id)
+  if (idx > -1) {
+    selectedIds.value.splice(idx, 1)
   }
-  return ids
-})
+  else {
+    selectedIds.value.push(id)
+  }
+}
 
-// 分頁變更時清除選取
-watch(page, () => {
-  rowSelection.value = {}
-})
+function isSelected(id: number) {
+  return selectedIds.value.includes(id)
+}
 
-// 批次刪除
-const isDeleteOpen = ref(false)
-const isSubmitting = ref(false)
+function handleSelectRow(_e: Event, row: { original: PlayerAnalysisItem }) {
+  router.push(`/analysis/${row.original.id}`)
+}
+
+// === 批次刪除 ===
+const isDeleteModalOpen = ref(false)
+const isDeleting = ref(false)
+
+function openBatchDelete() {
+  if (!selectedIds.value.length) {
+    toast.add({ title: '請選擇選手', description: '請先勾選要刪除分析的選手', color: 'warning' })
+    return
+  }
+  isDeleteModalOpen.value = true
+}
 
 async function handleBatchDelete() {
-  if (isSubmitting.value)
+  if (isDeleting.value)
     return
-
-  isSubmitting.value = true
+  isDeleting.value = true
   try {
     await $fetch('/api/player-analysis/batch-delete', {
       method: 'POST',
       body: { player_ids: selectedIds.value },
     })
     toast.add({ title: '選手分析已批次刪除', color: 'success' })
-    isDeleteOpen.value = false
-    rowSelection.value = {}
+    isDeleteModalOpen.value = false
+    selectedIds.value = []
     await refresh()
   }
-  catch {
-    toast.add({ title: '刪除失敗', color: 'error' })
+  catch (error: any) {
+    toast.add({ title: '刪除失敗', description: error?.data?.message || '操作失敗', color: 'error' })
   }
   finally {
-    isSubmitting.value = false
+    isDeleting.value = false
   }
-}
-
-// 點擊列導航
-function handleRowSelect(_e: Event, row: { original: PlayerAnalysisItem }) {
-  router.push(`/analysis/${row.original.id}`)
 }
 </script>
 
 <template>
-  <div data-testid="player-analysis-page" class="flex h-full flex-col">
-    <CommonPageHeader title="選手分析" description="查看選手投球分析數據" />
-
-    <!-- 工具列 -->
-    <div class="mb-4 flex flex-wrap items-center gap-3">
-      <UInput
-        v-model="searchQuery"
-        data-testid="analysis-search"
-        placeholder="搜尋選手姓名"
-        icon="i-heroicons-magnifying-glass"
-        class="w-52"
-      />
-
-      <USelect
-        v-model="filterTeam"
-        data-testid="analysis-filter-team"
-        :items="teamOptions"
-        value-key="value"
-        class="w-44"
-      />
-
-      <div class="flex-1" />
-
-      <UButton
-        v-if="selectedIds.length > 0"
-        data-testid="batch-delete-btn"
-        color="error"
-        variant="outline"
-        icon="i-heroicons-trash"
-        :label="`批次刪除 (${selectedIds.length})`"
-        @click="isDeleteOpen = true"
-      />
+  <div data-testid="analysis-page" class="flex h-full flex-col">
+    <!-- 標題列 -->
+    <div class="mb-6 flex shrink-0 flex-wrap items-center justify-between gap-3">
+      <h1 class="text-2xl font-bold text-neutral-900 dark:text-white">
+        選手分析
+      </h1>
+      <div class="flex items-center gap-3">
+        <UInput
+          v-model="searchQuery"
+          data-testid="player-analysis-search"
+          icon="i-heroicons-magnifying-glass"
+          placeholder="搜尋姓名..."
+          class="w-64"
+        />
+        <USelect
+          v-model="selectedTeamId"
+          data-testid="player-analysis-team-filter"
+          :items="teamFilterOptions"
+          value-key="value"
+          class="w-40"
+        />
+        <UButton
+          data-testid="batch-delete-btn"
+          icon="i-heroicons-trash"
+          color="error"
+          variant="outline"
+          :disabled="!selectedIds.length"
+          @click="openBatchDelete"
+        >
+          批次刪除 {{ selectedIds.length ? `(${selectedIds.length})` : '' }}
+        </UButton>
+      </div>
     </div>
 
     <!-- 列表 -->
-    <CommonListContainer
-      v-model:page="page"
-      :total="total"
-      :page-size="pageSize"
-      data-testid="player-analysis-pagination"
-    >
-      <UTable
-        v-model:row-selection="rowSelection"
-        data-testid="analysis-list"
-        :data="pagedItems"
-        :columns="columns"
-        class="w-full"
-        @select="handleRowSelect"
+    <UCard class="min-h-0 flex-1" :ui="{ body: 'h-full flex flex-col p-0' }">
+      <CommonListContainer
+        v-model:page="currentPage"
+        :total="totalItems"
+        :page-size="pageSize"
       >
-        <template #select-cell="{ row }">
-          <UCheckbox
-            :model-value="rowSelection[row.index] ?? false"
-            @update:model-value="(val: boolean | 'indeterminate') => rowSelection[row.index] = val === true"
-            @click.stop
-          />
-        </template>
+        <CommonEmptyState
+          v-if="!pagedItems.length"
+          icon="i-heroicons-chart-bar"
+          title="目前沒有選手分析資料"
+          description="選手有訓練紀錄後會自動產生分析資料"
+        />
+        <UTable
+          v-else
+          data-testid="player-analysis-list"
+          :data="pagedItems"
+          :columns="columns"
+          class="[&_td]:h-12 [&_th]:h-10"
+          :ui="{ tr: 'cursor-pointer hover:bg-elevated' }"
+          @select="handleSelectRow"
+        >
+          <template #select-cell="{ row }">
+            <div data-testid="player-analysis-row" @click.stop>
+              <UCheckbox
+                :model-value="isSelected(row.original.id)"
+                @update:model-value="toggleSelect(row.original.id)"
+              />
+            </div>
+          </template>
+          <template #avg_velocity-cell="{ row }">
+            {{ row.original.avg_velocity ? `${row.original.avg_velocity} km/h` : '-' }}
+          </template>
+        </UTable>
+      </CommonListContainer>
+    </UCard>
 
-        <template #name-cell="{ row }">
-          <span data-testid="analysis-row" class="text-neutral-900 dark:text-white">{{ row.original.name }}</span>
-        </template>
-
-        <template #number-cell="{ row }">
-          <span class="text-neutral-700 dark:text-neutral-300">{{ row.original.number }}</span>
-        </template>
-
-        <template #team_name-cell="{ row }">
-          <span class="text-neutral-700 dark:text-neutral-300">{{ row.original.team_name }}</span>
-        </template>
-
-        <template #training_count-cell="{ row }">
-          <span class="text-neutral-700 dark:text-neutral-300">{{ row.original.training_count }}</span>
-        </template>
-
-        <template #total_pitches-cell="{ row }">
-          <span class="text-neutral-700 dark:text-neutral-300">{{ row.original.total_pitches }}</span>
-        </template>
-
-        <template #last_training_date-cell="{ row }">
-          <span class="text-neutral-500 dark:text-neutral-400">{{ row.original.last_training_date }}</span>
-        </template>
-
-        <template #avg_velocity-cell="{ row }">
-          <span class="text-neutral-700 dark:text-neutral-300">
-            {{ row.original.avg_velocity != null ? `${row.original.avg_velocity} km/h` : '-' }}
-          </span>
-        </template>
-      </UTable>
-    </CommonListContainer>
-
-    <!-- 批次刪除確認 Modal -->
+    <!-- 批次刪除確認 -->
     <CommonConfirmModal
-      v-model:open="isDeleteOpen"
+      v-model:open="isDeleteModalOpen"
       title="確認刪除"
-      :description="`確定要刪除所選的 ${selectedIds.length} 筆選手分析嗎？此操作無法復原。`"
+      :description="`確定要刪除 ${selectedIds.length} 位選手的分析資料？此操作無法復原`"
       confirm-label="刪除"
       confirm-color="error"
-      :loading="isSubmitting"
+      :loading="isDeleting"
       @confirm="handleBatchDelete"
     />
   </div>

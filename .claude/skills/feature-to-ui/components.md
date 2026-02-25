@@ -211,12 +211,12 @@ const totalItems = computed(() => items.value.length)
 ```vue
 <UModal v-model:open="deleteModalOpen">
   <template #content>
-    <div data-testid="modal" class="p-6">
+    <div data-testid="confirm-modal" class="p-6">
       <h3 class="text-lg font-semibold text-neutral-900 dark:text-white">確認刪除</h3>
       <p class="mt-2 text-neutral-500 dark:text-neutral-400">此操作無法復原，確定要刪除嗎？</p>
       <div class="mt-6 flex justify-end gap-3">
         <UButton
-          data-testid="modal-cancel"
+          data-testid="confirm-cancel"
           color="neutral"
           variant="outline"
           @click="deleteModalOpen = false"
@@ -224,7 +224,7 @@ const totalItems = computed(() => items.value.length)
           取消
         </UButton>
         <UButton
-          data-testid="modal-confirm"
+          data-testid="confirm-ok"
           color="error"
           @click="confirmDelete"
         >

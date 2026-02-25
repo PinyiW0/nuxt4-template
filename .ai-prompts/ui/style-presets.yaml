@@ -1,159 +1,49 @@
 # 風格預設（Style Presets）
 # 在 Phase 2 時選擇，選擇後會自動套用到 ui-config.yaml > theme.colors
+#
+# NuxtUI 只支援 7 個語義色名：primary, secondary, success, info, warning, error, neutral
+# 每個顏色值可以是：
+#   - "#hex"   → 自訂色碼，Phase 2 會用 https://uicolors.app 產生 50-950 色階
+#                 寫入 main.css 的 :root / .dark + @theme inline
+#                 並在 app.config.ts 映射 {名稱}: '{名稱}'
+#   - "名稱"   → Tailwind 內建色（如 emerald, amber, red, blue）
+#                 Phase 2 只需在 app.config.ts 映射，不需產生 CSS
+#
+# 使用方式：
+#   1. 選擇 light-default 或 dark-default 作為基底
+#   2. 直接在 ui-config.yaml 的 theme.colors 填入自訂 hex 色碼
+#   3. Phase 2 會根據色碼自動產生完整色階
 
 # ---------------------------------------------------------------------------
-# 1. dark-default - Dracula 暖調霓虹風，深棕背景配粉紅強調、紫色輔助
-# ---------------------------------------------------------------------------
-dark-default:
-  name: "dark-default"
-  description: "Dracula 暖調霓虹風，深棕暖灰背景配粉紅強調色，適合開發者工具、創意類應用"
-  preview: "🧛"
-  prefersDark: true
-  colors:
-    primary: "#ff79c6"
-    secondary: "#bd93f9"
-    accent: "#ffb86c"
-    success: "#51fa7b"
-    warning: "#f1fa8c"
-    error: "#ff5555"
-    info: "#8be9fd"
-    neutral: "#414558"
-
-# ---------------------------------------------------------------------------
-# 2. light-default - 珊瑚柔暖風，淺藍灰背景配珊瑚紅主色、蜜桃色輔助
+# 1. light-default - 淺色主題基底
+# 適合大多數應用，背景為淺色系
 # ---------------------------------------------------------------------------
 light-default:
   name: "light-default"
-  description: "珊瑚柔暖風，淺藍灰背景配珊瑚紅主色、蜜桃色輔助，溫暖柔和適合通用型應用"
-  preview: "🪸"
+  description: "淺色主題基底，自行填入 hex 色碼定義品牌色彩"
   prefersDark: false
   colors:
-    primary: "#FF6F61"
-    secondary: "#FFAB91"
-    tertiary: "#E0E7EE"
-    accent: "#E0E7EE"
-    success: "#059669"
-    warning: "#d97708"
-    error: "#dc2626"
-    info: "#2563eb"
-    neutral: "#222831"
-  darkModeDefault: false
-  cardStyle: "soft"
+    primary: "#00ba7b"      # 主色（青綠）
+    secondary: "#7acc00"    # 輔色（萊姆綠）
+    neutral: "#314157"      # 中性色（深藍灰）
+    success: "#5ca300"      # 成功狀態（綠）
+    warning: "#f34700"      # 警告狀態（橘紅）
+    error: "#e50076"        # 錯誤狀態（桃紅）
+    info: "#0082ce"         # 資訊提示（藍）
 
 # ---------------------------------------------------------------------------
-# 3. dark-aqua - 深海青綠風，深藍背景配青綠主色、米黃點綴
+# 2. dark-default - 深色主題基底
+# 適合儀表板、開發工具等深色介面
 # ---------------------------------------------------------------------------
-dark-aqua:
-  name: "dark-aqua"
-  description: "深海青綠風，深藍背景配青綠主色，適合數據儀表板、專業工具"
-  preview: "🌊"
+dark-default:
+  name: "dark-default"
+  description: "深色主題基底，自行填入 hex 色碼定義品牌色彩"
   prefersDark: true
   colors:
-    primary: "#13ecf3"
-    secondary: "#966fb3"
-    tertiary: "#015355"
-    accent: "#ffe999"
-    success: "#18a34a"
-    warning: "#d97708"
-    error: "#ff7265"
-    info: "#2563eb"
-    neutral: "#05176c"
-  darkModeDefault: true
-  cardStyle: "glass"
-
-# ---------------------------------------------------------------------------
-# 4. dark-luxury-gold - 奢華金尊風，深色背景配白金主色、金色點綴
-# ---------------------------------------------------------------------------
-dark-luxury-gold:
-  name: "dark-luxury-gold"
-  description: "奢華金尊風，深色背景配白金主色、金色點綴，適合專業工具系統"
-  preview: "👑"
-  prefersDark: true
-  colors:
-    primary: "#ffffff"
-    secondary: "#152747"
-    tertiary: "#09090b"
-    accent: "#513448"
-    success: "#87d03a"
-    warning: "#e2d563"
-    error: "#ff6f6f"
-    info: "#67c6ff"
-    neutral: "#331800"
-
-# ---------------------------------------------------------------------------
-# 5. light-autumn - 秋日暖紅風，淺色背景配酒紅主色、暖棕點綴
-# ---------------------------------------------------------------------------
-light-autumn:
-  name: "light-autumn"
-  description: "秋日暖紅風，淺色背景配酒紅主色、暖棕點綴，適合企業級系統"
-  preview: "🍂"
-  prefersDark: false
-  colors:
-    primary: "#8c0327"
-    secondary: "#d85251"
-    accent: "#d59b6b"
-    success: "#499380"
-    warning: "#e97f16"
-    error: "#d40014"
-    info: "#44adbb"
-    neutral: "#826a5c"
-  darkModeDefault: false
-
-# ---------------------------------------------------------------------------
-# 6. light-caramellatte - 焦糖拿鐵風，淺色背景配深咖啡主色、橘紅點綴
-# ---------------------------------------------------------------------------
-light-caramellatte:
-  name: "light-caramellatte"
-  description: "焦糖拿鐵風，淺色背景配深咖啡主色、橘紅點綴，溫暖柔和"
-  preview: "☕"
-  prefersDark: false
-  colors:
-    primary: "#000000"
-    secondary: "#370a00"
-    accent: "#8c3f27"
-    success: "#006044"
-    warning: "#fcb700"
-    error: "#ff6266"
-    info: "#193ab7"
-    neutral: "#c93400"
-  darkModeDefault: false
-
-# ---------------------------------------------------------------------------
-# 7. light-lemonade-green - 檸檬綠意風，淺色背景配青綠主色、檸檬黃點綴
-# ---------------------------------------------------------------------------
-light-lemonade-green:
-  name: "light-lemonade-green"
-  description: "檸檬綠意風，淺色背景配青綠主色、檸檬黃點綴，清新活力"
-  preview: "🍋"
-  prefersDark: false
-  colors:
-    primary: "#419400"
-    secondary: "#bdc000"
-    accent: "#edd000"
-    success: "#b9dbc6"
-    warning: "#d7d3b0"
-    error: "#efc6c2"
-    info: "#b1d9e9"
-    neutral: "#343300"
-  darkModeDefault: false
-
-# ---------------------------------------------------------------------------
-# 8. light-winter - 冬日清爽風，淺色背景配寶藍主色、紫色次要色
-# ---------------------------------------------------------------------------
-light-winter:
-  name: "light-winter"
-  description: "冬日清爽風，淺色背景配寶藍主色、紫色次要色，乾淨俐落"
-  preview: "❄️"
-  prefersDark: false
-  colors:
-    primary: "#0069ff"
-    secondary: "#463aa2"
-    tertiary: "#0090b5"
-    accent: "#c148ac"
-    success: "#81cfd1"
-    warning: "#efd7bc"
-    error: "#e58b8b"
-    info: "#94e7fb"
-    neutral: "#021431"
-  darkModeDefault: false
-  cardStyle: "subtle"
+    primary: "#e50006"      # 主色（日落紅）
+    secondary: "#000000"    # 輔色（純黑）
+    neutral: "#09090b"      # 中性色（極深灰）
+    success: "#009764"      # 成功狀態（青綠）
+    warning: "#d08700"      # 警告狀態（琥珀）
+    error: "#c50035"        # 錯誤狀態（深紅）
+    info: "#135bf9"         # 資訊提示（寶藍）

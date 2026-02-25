@@ -1,3 +1,4 @@
+<!-- app/components/common/EmptyState.vue -->
 <script setup lang="ts">
 withDefaults(defineProps<{
   icon?: string

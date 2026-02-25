@@ -9,9 +9,9 @@
 ```
 .ai-prompts/ui/
 ├── README.md                    # 本文件（系統說明）
-├── ui-config-pm.yaml             # PM 填寫的設定檔（非技術人員）
-├── ui-config.yaml                # 工程師設定檔（技術細節）
-└── style-presets.yaml            # 風格預設（Phase 2 時選擇）
+├── ui-config-pm.yaml            # PM 填寫的設定檔（非技術人員）
+├── ui-config.yaml               # 工程師設定檔（技術細節）
+└── style-presets.yaml           # 風格預設（light/dark 預設色碼）
 
 .claude/skills/feature-to-ui/
 ├── SKILL.md                     # Skill 入口定義
@@ -28,8 +28,9 @@
 
 | 文件 | 填寫者 | 用途 |
 |------|--------|------|
-| `ui-config-pm.yaml` | PM | 專案名稱、風格選擇、UX 偏好、測試帳號 |
+| `ui-config-pm.yaml` | PM | 專案名稱、品牌色彩、UX 偏好、測試帳號 |
 | `ui-config.yaml` | 工程師 / AI 自動同步 | 技術細節、CSS class、組件配置 |
+| `style-presets.yaml` | 工程師 | light/dark 預設色碼（PM 未填時的 fallback） |
 
 ### PM → 工程師 同步對照表
 
@@ -38,11 +39,15 @@ ui-config-pm.yaml                    ui-config.yaml
 ─────────────────                    ──────────────
 project.name                    →    project.name
 project.description             →    project.description
-selectedPreset                  →    selectedPreset + theme.colors
+project.locale                  →    project.locale
+customColors.light.*            →    theme.colors.light.*（非空值覆蓋）
+customColors.dark.*             →    theme.colors.dark.*（非空值覆蓋）
+colorMode.default               →    colorMode.default
+colorMode.enableToggle          →    colorMode.enabled
 toast.displaySeconds            →    toast.duration（×1000）
 toast.position（中文）           →    toast.position（英文）
 table.itemsPerPage              →    table.pagination.defaultPageSize
-deleteConfirmation.*             →    delete.confirmation.*
+deleteConfirmation.*            →    delete.confirmation.*
 testAccounts                    →    testAccounts（Mock API 用）
 additionalFeatures.*            →    additionalPackages.*.required
 ```
@@ -52,75 +57,71 @@ additionalFeatures.*            →    additionalPackages.*.required
 ## 執行流程
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│  /feature-to-ui                                                 │
-└─────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│  Phase 0: 準備工作                                               │
-│  ┌─────────────────────────────────────────────────────────┐    │
-│  │ 1. 載入 /nuxt-ui skill                                   │    │
-│  │ 2. 讀取 ui-config-pm.yaml                                 │    │
-│  │ 3. 同步設定到 ui-config.yaml                               │    │
-│  │ 4. 讀取 nuxt-ui-page-builder.md                          │    │
-│  │ 5. 掃描 *.dsl.feature 檔案                                │    │
-│  │ 6. 產出功能清單 → 詢問用戶確認                              │    │
-│  └─────────────────────────────────────────────────────────┘    │
-└─────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│  Phase 1: 建立 Mock API                                         │
-│  ┌─────────────────────────────────────────────────────────┐    │
-│  │ 1. 從 .feature Background 提取測試資料                    │    │
-│  │ 2. 從 testAccounts 建立登入用假帳號                        │    │
-│  │ 3. 建立 API 端點（server/api/）                           │    │
-│  │ 4. 完成 → 詢問用戶確認                                     │    │
-│  └─────────────────────────────────────────────────────────┘    │
-└─────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│  Phase 2: 基礎架構設定                                            │
-│  ┌─────────────────────────────────────────────────────────┐    │
-│  │ 1. 詢問風格選擇（8 種預設風格）                             │    │
-│  │ 2. 設定色彩主題（app.config.ts + main.css）                │    │
-│  │ 3. 建立 Layout（default, auth）                          │    │
-│  │ 4. 建立共用組件                                           │    │
-│  │ 5. 套用 ui-config.yaml 設定到程式碼                         │    │
-│  │ 6. 詢問明暗模式 / Layout 風格偏好                           │    │
-│  │ 7. 完成 → 詢問用戶確認                                     │    │
-│  └─────────────────────────────────────────────────────────┘    │
-└─────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│  Phase 3: 逐一實作功能                                            │
-│  ┌─────────────────────────────────────────────────────────┐    │
-│  │ for each feature:                                       │    │
-│  │   1. 分析 .feature 內容                                  │    │
-│  │   2. 產生頁面 / composable / store                       │    │
-│  │   3. 完成 → 詢問用戶確認                                  │    │
-│  │   4. 確認後才進入下一個功能                                │    │
-│  └─────────────────────────────────────────────────────────┘    │
-└─────────────────────────────────────────────────────────────────┘
+/feature-to-ui
+│
+├── Phase 0: 準備工作
+│   ├── 讀取 ui-config-pm.yaml → 同步到 ui-config.yaml
+│   ├── 掃描 *.dsl.feature 檔案
+│   ├── 產出功能清單 + 路由規劃 + API 合約規格
+│   ├── 產生 route-map.yaml（後續 Phase 的唯一參照來源）
+│   └── 詢問用戶確認
+│
+├── Phase 1: Mock API
+│   ├── 從 .feature Background 提取測試資料
+│   ├── 建立 types/api/ 型別定義
+│   ├── 建立 server/api/ 端點
+│   └── 詢問用戶確認
+│
+├── Phase 2: 基礎設定（色彩主題）
+│   ├── 讀取 theme.colors.light + theme.colors.dark
+│   ├── 建立 app.config.ts（色彩映射）
+│   ├── 建立 main.css（:root / .dark + @theme inline 雙模式色階）
+│   └── 詢問用戶確認
+│
+├── Phase 3: 路由骨架
+│   ├── 根據 route-map.yaml 建立空白頁面檔案
+│   └── 詢問用戶確認
+│
+├── Phase 4: Layout 建置
+│   ├── 建立 layouts/（default, auth 等）
+│   ├── 更新 app.vue（加入 UApp + NuxtLayout）
+│   └── 詢問用戶確認
+│
+├── Phase 5: 共用元件
+│   ├── 建立 components/common/（PageHeader, ConfirmModal 等）
+│   └── 詢問用戶確認
+│
+└── Phase 6: 頁面實作
+    ├── 逐一實作功能頁面
+    ├── 每個頁面完成後詢問用戶確認
+    └── 確認後才進入下一個頁面
 ```
 
 ---
 
-## 風格預設一覽
+## 色彩系統
 
-| 代號 | 名稱 | 模式 | 適用場景 |
-|------|------|------|----------|
-| `tech-blue` | 科技藍 | 淺色 | 數據分析系統 |
-| `sport-orange` | 活力橘 | 淺色 | 運動訓練系統 |
-| `pro-purple` | 專業紫 | 淺色 | 企業級系統 |
-| `fresh-green` | 清新綠 | 淺色 | 健康管理系統 |
-| `pink` | 甜美粉 | 淺色 | 生活類應用 |
-| `dark-gold` | 暗夜金 | 深色 | 專業工具 |
-| `aqua` | 深海青 | 深色 | 數據儀表板 |
-| `winter` | 冬日風 | 淺色 | 通用型應用 |
+### 雙模式架構
+
+支援 light/dark 使用**完全不同的色相**，透過三層 CSS 結構實現：
+
+```
+ui-config.yaml (theme.colors.light / dark)
+  → main.css (:root + .dark + @theme inline)
+    → app.config.ts (語義色名映射)
+```
+
+### 技術細節
+
+- `:root` 定義 light 色值（`--raw-{色名}-50~950`）
+- `.dark` 覆蓋 dark 色值
+- `@theme inline` 用 `var()` 引用，讓 Tailwind utility class 隨模式切換
+- **必須用 `@theme inline`**（不是 `static`），否則 `.dark` 覆蓋無效
+- NuxtUI 透過 `.dark` class 切換深淺模式
+
+### 支援的語義色名（7 個）
+
+`primary` | `secondary` | `success` | `info` | `warning` | `error` | `neutral`
 
 ---
 
@@ -134,8 +135,13 @@ additionalFeatures.*            →    additionalPackages.*.required
 project:
   name: "我的專案"
   description: "專案描述"
+  locale: "zh-TW"
 
-selectedPreset: winter
+customColors:
+  light:
+    primary: "#00ba7b"
+  dark:
+    primary: "#e50006"
 
 testAccounts:
   - username: "admin"
@@ -151,27 +157,24 @@ testAccounts:
 
 ### 3. 逐步確認
 
-每個階段完成後，AI 會詢問確認，確認後才繼續下一步。
+每個 Phase 完成後，AI 會詢問確認，確認後才繼續下一步。
 
 ---
 
 ## 輸出結構
 
-執行完成後，產生以下檔案結構：
-
 ```
 app/
-├── app.vue                      # 根組件（含 Toast 設定）
-├── app.config.ts                 # 色彩主題設定
-├── assets/css/main.css          # 自定義色彩（如有）
+├── app.vue                      # 根組件（UApp + NuxtLayout）
+├── app.config.ts                # 色彩主題映射
+├── assets/css/main.css          # 雙模式色階（:root / .dark + @theme inline）
 ├── layouts/
-│   ├── default.vue              # 主要 Layout
+│   ├── default.vue              # 主要 Layout（含 Sidebar）
 │   └── auth.vue                 # 登入頁 Layout
-├── components/
-│   └── common/
-│       ├── ListContainer.vue    # 列表容器
-│       ├── ConfirmModal.vue      # 確認對話框
-│       └── ...
+├── components/common/
+│   ├── PageHeader.vue           # 頁面標題 + 操作按鈕
+│   ├── ConfirmModal.vue         # 確認對話框
+│   └── ...
 ├── pages/
 │   ├── index.vue                # 首頁
 │   ├── login.vue                # 登入頁
@@ -181,15 +184,8 @@ app/
 └── stores/
     └── auth.ts                  # 認證 store
 
-server/
-├── api/
-│   ├── auth/
-│   │   └── login.post.ts        # 登入 API
-│   └── ...                      # 其他 API
-└── mock/
-    └── data/
-        ├── users.ts             # 使用者假資料
-        └── ...                  # 其他假資料
+server/api/                      # Mock API 端點
+docs/route-map.yaml              # 路由對照表（Phase 0 產生）
 ```
 
 ---
@@ -197,6 +193,7 @@ server/
 ## 注意事項
 
 1. **每階段都會詢問確認**：不會跳過任何確認步驟
-2. **一次一個功能**：Phase 3 逐一實作，確認後才下一個
-3. **設定優先**：所有樣式從 `ui-config.yaml` 讀取
+2. **Phase 6 逐一實作**：每個頁面確認後才下一個
+3. **設定優先**：所有樣式從 `ui-config.yaml` 讀取，禁止寫死色彩值
 4. **Mock 優先**：先建 Mock API，UI 可完整測試
+5. **route-map.yaml 是唯一參照**：Phase 3-6 及後續迭代都以此為準

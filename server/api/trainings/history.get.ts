@@ -7,49 +7,45 @@ import { mockTrainings } from '../../mock/data/trainings'
 export default defineEventHandler((event: H3Event) => {
   const query = getQuery(event)
   const page = Number(query.page) || 1
-  const pageSize = Number(query.page_size) || 10
+  const perPage = Number(query.per_page) || 20
+  const dateFrom = query.date_from as string | undefined
+  const dateTo = query.date_to as string | undefined
   const teamId = query.team_id ? Number(query.team_id) : null
-  const dateFrom = (query.date_from as string) || null
-  const dateTo = (query.date_to as string) || null
 
-  const today = new Date().toISOString().slice(0, 10)
+  const today = new Date().toISOString().split('T')[0]!
 
-  let filtered = mockTrainings.filter(t => t.status === 'active' && t.date <= today)
+  // 今天及過去的訓練
+  let trainings = mockTrainings.filter(t => t.status === 'active' && t.date <= today)
 
-  if (teamId) {
-    filtered = filtered.filter(t => t.team_id === teamId)
-  }
   if (dateFrom) {
-    filtered = filtered.filter(t => t.date >= dateFrom)
+    trainings = trainings.filter(t => t.date >= dateFrom)
   }
   if (dateTo) {
-    filtered = filtered.filter(t => t.date <= dateTo)
+    trainings = trainings.filter(t => t.date <= dateTo)
+  }
+  if (teamId) {
+    trainings = trainings.filter(t => t.team_id === teamId)
   }
 
-  filtered.sort((a, b) => b.created_at.localeCompare(a.created_at))
+  // 依建立時間倒序
+  trainings = trainings.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
 
-  const withNames = filtered.map(t => ({
-    id: t.id,
-    date: t.date,
-    player_id: t.player_id,
-    player_name: mockPlayers.find(p => p.id === t.player_id)?.name || '',
-    team_id: t.team_id,
-    team_name: mockTeams.find(tm => tm.id === t.team_id)?.name || '',
-    pitch_count: t.pitch_count,
-    ai_status: t.ai_status,
-    created_by: t.created_by,
-    created_at: t.created_at,
-    status: t.status,
-  }))
+  const enriched = trainings.map((t) => {
+    const player = mockPlayers.find(p => p.id === t.player_id)
+    const team = mockTeams.find(tm => tm.id === t.team_id)
+    return {
+      ...t,
+      player_name: player?.name || '未知',
+      team_name: team?.name || '未知',
+    }
+  })
 
-  const start = (page - 1) * pageSize
-  const paged = withNames.slice(start, start + pageSize)
+  const start = (page - 1) * perPage
+  const paged = enriched.slice(start, start + perPage)
 
   return {
     status: 'success',
     data: paged,
-    total: withNames.length,
-    page,
-    page_size: pageSize,
+    meta: { total: enriched.length, page, per_page: perPage },
   }
 })

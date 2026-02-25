@@ -24,7 +24,7 @@ export default defineNuxtConfig({
   // Nuxt UI 配置
   ui: {
     theme: {
-      colors: ['primary', 'secondary', 'tertiary', 'accent', 'info', 'success', 'warning', 'error', 'neutral'],
+      colors: ['primary', 'secondary', 'info', 'success', 'warning', 'error', 'neutral'],
     },
   },
 

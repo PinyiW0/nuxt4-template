@@ -1,10 +1,11 @@
 ---
 name: create-skill
 description: 建立新的 Claude Code skill，分階段收集需求並生成 SKILL.md
-disable-model-invocation: true
-argument-hint: "[phase] [skill-name]"
-context: fork
-agent: general-purpose
+metadata:
+  disable-model-invocation: true
+  argument-hint: "[phase] [skill-name]"
+  context: fork
+  agent: general-purpose
 ---
 
 # 建立新 Skill

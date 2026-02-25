@@ -2,10 +2,17 @@
 
 ## Frontmatter 欄位
 
+### 頂層欄位（必填）
+
 | 欄位 | 類型 | 說明 | spec.yaml 對應 |
 |------|------|------|----------------|
 | `name` | string | 顯示名稱與指令名（小寫、連字號、≤64字元） | `name` |
 | `description` | string | 用途說明，AI 用來判斷何時使用 | `description` |
+
+### metadata 欄位（選填，嵌套在 `metadata:` 下）
+
+| 欄位 | 類型 | 說明 | spec.yaml 對應 |
+|------|------|------|----------------|
 | `argument-hint` | string | 自動完成提示，如 `[filename]` | `invocation.argument_hint` |
 | `disable-model-invocation` | bool | `true` = 禁止 AI 自動觸發 | `invocation.model = false` |
 | `user-invocable` | bool | `false` = 隱藏於 / 選單 | `invocation.user` |
@@ -73,12 +80,13 @@ description: 列出專案檔案
 ---
 name: <spec.name>
 description: <spec.description>
-argument-hint: <spec.invocation.argument_hint>        # 若非空
-disable-model-invocation: true                         # 若 model = false
-user-invocable: false                                  # 若 user = false
-context: <spec.execution.context>                      # 若為 fork
-agent: <spec.execution.agent>                          # 若有指定
-allowed-tools: "<spec.execution.allowed_tools | join>" # 若非空
+metadata:                                               # 以下皆選填
+  argument-hint: <spec.invocation.argument_hint>        # 若非空
+  disable-model-invocation: true                        # 若 model = false
+  user-invocable: false                                 # 若 user = false
+  context: <spec.execution.context>                     # 若為 fork
+  agent: <spec.execution.agent>                         # 若有指定
+  allowed-tools: "<spec.execution.allowed_tools | join>" # 若非空
 ---
 
 # <spec.name 轉標題>

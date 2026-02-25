@@ -14,12 +14,10 @@ export default defineEventHandler((event: H3Event) => {
   // 軟刪除球隊
   team.status = 'deleted'
 
-  // 連帶軟刪除所有球員
-  mockPlayers.forEach((p) => {
-    if (p.team_id === id) {
-      p.status = 'deleted'
-    }
-  })
+  // 級聯軟刪除球員
+  mockPlayers
+    .filter(p => p.team_id === id && p.status === 'active')
+    .forEach((p) => { p.status = 'deleted' })
 
   return { status: 'success', message: '球隊已刪除' }
 })

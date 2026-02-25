@@ -11,11 +11,12 @@
 
 ## 執行步驟
 
-1. **建立 API 合約型別**（`types/api/*.ts`）
+1. **建立 API 合約型別**（`app/types/api/*.ts`）
    - 從 Phase 0 的 API 合約規格產生 TypeScript 型別檔
-   - 每個資源一個檔案（如 `types/api/teams.ts`、`types/api/auth.ts`）
+   - 每個資源一個檔案（如 `app/types/api/teams.ts`、`app/types/api/auth.ts`）
    - 包含 Request body、Response data 的完整型別
-   - 建立 `types/api/index.ts` 統一 re-export
+   - 建立 `app/types/api/index.ts` 統一 re-export
+   - ⚠️ **必須建在 `app/types/api/`**，因為 Nuxt 4 的 `~` 別名解析到 `app/`，若建在根目錄的 `types/api/` 會導致 `~/types/api/` import 解析失敗
 2. **從 .feature Background 提取 mock 資料**
 3. **建立 mock data 檔案**（mock 資料結構必須符合 `types/api/` 定義）
 4. **確保 Mock 資料最低數量**
@@ -34,12 +35,13 @@
 ## 輸出結構
 
 ```
-types/
-└── api/
-    ├── index.ts           # 統一 re-export + 共用型別
-    ├── auth.ts            # LoginData, LoginRequest
-    ├── teams.ts           # TeamItem, CreateTeamBody
-    └── players.ts         # PlayerItem, CreatePlayerBody
+app/
+└── types/
+    └── api/
+        ├── index.ts           # 統一 re-export + 共用型別
+        ├── auth.ts            # LoginData, LoginRequest
+        ├── teams.ts           # TeamItem, CreateTeamBody
+        └── players.ts         # PlayerItem, CreatePlayerBody
 
 server/
 ├── mock/
@@ -60,7 +62,7 @@ server/
 ## API 合約型別範例
 
 ```typescript
-// types/api/teams.ts
+// app/types/api/teams.ts
 export interface TeamItem {
   id: number
   name: string
@@ -77,7 +79,7 @@ export interface CreateTeamBody {
 ```
 
 ```typescript
-// types/api/index.ts — 統一 re-export + 共用回傳型別
+// app/types/api/index.ts — 統一 re-export + 共用回傳型別
 export type { TeamItem, CreateTeamBody } from './teams'
 export type { LoginData, LoginRequest } from './auth'
 

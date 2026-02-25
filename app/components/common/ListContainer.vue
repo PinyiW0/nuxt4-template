@@ -1,3 +1,4 @@
+<!-- app/components/common/ListContainer.vue -->
 <script setup lang="ts">
 withDefaults(defineProps<{
   total: number

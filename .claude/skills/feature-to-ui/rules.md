@@ -89,6 +89,28 @@ UI 配色以 **primary 主色**搭配 **neutral（黑白灰）**為主，語意�
 
 ---
 
+## Zod v4 規範
+
+本專案使用 **Zod v4**（`zod@^4.x`），語法與 v3 不同。
+
+```typescript
+// ❌ Zod v3 語法（已移除）
+z.number({ required_error: '請輸入背號' })
+z.string({ required_error: '請輸入姓名' })
+
+// ✅ Zod v4 語法：用 error 取代 required_error
+z.number({ error: '請輸入背號' })
+z.string({ error: '請輸入姓名' })
+
+// ✅ 或直接用 validator message（推薦，更簡潔）
+z.string().min(1, '請輸入姓名')
+z.number().min(0, '背號必須為 0-999')
+```
+
+> ⚠️ **禁止使用 `required_error`、`invalid_type_error`**，這些是 Zod v3 專屬參數，v4 會產生型別錯誤。
+
+---
+
 ## Nuxt UI 類型規範
 
 ### UTable @select 事件簽名
@@ -147,6 +169,36 @@ import type { FormSubmitEvent } from '@nuxt/ui'
 async function onSubmit(event: FormSubmitEvent<MySchema>) {
   await $fetch('/api/items', { method: 'POST', body: event.data })
 }
+```
+
+---
+
+## 表單型別安全模式
+
+### USelect options 不標窄型別
+
+USelect 會從 items 的 value 型別推斷 v-model 型別。若 value 是窄型別（union type），v-model 也要求窄型別，但 Zod 的 `z.string()` 只輸出 `string`，會產生型別衝突。
+
+```typescript
+// ✅ options 用 string[]，USelect 推斷 v-model 為 string，和 Zod 一致
+const positionOptions = ['投手', '捕手', '一壘手', '游擊手']
+
+// ❌ 標了 Position[]，USelect 推斷 v-model 為 Position，和 Zod 的 string 打架
+const positionOptions: Position[] = ['投手', '捕手', '一壘手', '游擊手']
+```
+
+> Position、Status 等窄型別只用於 API 型別定義，不用於表單 options 宣告。
+
+### useFetch 陣列資料用 computed 明確標型別
+
+`useFetch` 回傳的巢狀陣列在 template 的 `v-for` 中可能被推斷為 `unknown`。用明確標型別的 `computed` 包一層避免此問題。
+
+```typescript
+import type { HeatMapPoint } from '~/types/api/analysis'
+
+// ❌ 直接在 template 用 v-for="point in analysis.heat_map_data"，point 可能是 unknown
+// ✅ 用 computed 明確標型別
+const heatMapPoints = computed<HeatMapPoint[]>(() => analysis.value?.heat_map_data ?? [])
 ```
 
 ---
@@ -256,7 +308,10 @@ await authStore.login(account, password)
 | 列表容器 | `team-list`, `player-list` |
 | 新增按鈕 | `team-create`, `player-create` |
 | 編輯/刪除 | `team-edit`, `team-delete` |
-| Modal 確認/取消 | `modal-confirm`, `modal-cancel` |
+| 確認彈窗容器 | `confirm-modal` |
+| 確認彈窗按鈕 | `confirm-ok`, `confirm-cancel` |
+
+> 確認彈窗 testid 以 `docs/e2e-flows/_common.flow.md` 為準，此處必須與其保持一致。
 
 ---
 

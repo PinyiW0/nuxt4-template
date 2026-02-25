@@ -1,3 +1,15 @@
+export type Position
+  = | '投手'
+    | '捕手'
+    | '一壘手'
+    | '二壘手'
+    | '三壘手'
+    | '游擊手'
+    | '左外野手'
+    | '中外野手'
+    | '右外野手'
+    | '指定打擊'
+
 export interface PlayerItem {
   id: number
   number: number

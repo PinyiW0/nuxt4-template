@@ -1,45 +1,75 @@
 <script setup lang="ts">
+import type { FormSubmitEvent, TableColumn } from '@nuxt/ui'
+import type { AiSystemStatus } from '~/types/api/ai'
 import type { PitchItem } from '~/types/api/pitches'
-import type { TrainingDetail, UpdateStrikeZoneBody } from '~/types/api/trainings'
+import type { TrainingDetail } from '~/types/api/trainings'
+import { z } from 'zod'
 
 definePageMeta({ layout: 'default' })
 
 const route = useRoute()
 const router = useRouter()
 const toast = useToast()
-
-const trainingId = computed(() => route.params.id as string)
+const trainingId = computed(() => Number(route.params.id))
 
 // 取得訓練詳情
-const { data: trainingData, refresh: refreshTraining } = await useFetch<{ status: string, data: TrainingDetail }>(
-  () => `/api/trainings/${trainingId.value}`,
-)
+const { data: trainingData, refresh: refreshTraining } = await useFetch<{
+  status: string
+  data: TrainingDetail
+}>(() => `/api/trainings/${trainingId.value}`)
+
 const training = computed(() => trainingData.value?.data)
 
 // 取得投球清單
-const { data: pitchesData } = await useFetch<{ status: string, data: PitchItem[] }>(
-  () => `/api/trainings/${trainingId.value}/pitches`,
-)
+const { data: pitchesData, refresh: _refreshPitches } = await useFetch<{
+  status: string
+  data: PitchItem[]
+}>(() => `/api/trainings/${trainingId.value}/pitches`)
+
 const pitches = computed(() => pitchesData.value?.data ?? [])
 
-// 即時統計：從 pitches 計算
-const totalPitches = computed(() => pitches.value.length)
-const strikeCount = computed(() => pitches.value.filter(p => p.is_strike).length)
-const ballCount = computed(() => pitches.value.filter(p => !p.is_strike).length)
-const strikeRate = computed(() => {
-  if (totalPitches.value === 0)
-    return 0
-  return Math.round((strikeCount.value / totalPitches.value) * 100)
-})
-const avgVelocity = computed(() => {
-  if (totalPitches.value === 0)
-    return 0
-  const sum = pitches.value.reduce((acc, p) => acc + p.velocity, 0)
-  return Number((sum / totalPitches.value).toFixed(1))
+// 取得 AI 狀態
+const { data: aiData, refresh: refreshAi } = await useFetch<{
+  status: string
+  data: AiSystemStatus
+}>('/api/ai/status')
+
+const aiStatus = computed(() => aiData.value?.data)
+
+// 即時統計（前端計算）
+const stats = computed(() => {
+  const list = pitches.value
+  if (!list.length) {
+    return { total: 0, strikes: 0, balls: 0, strikeRate: '0%', avgVelocity: '0' }
+  }
+  const strikes = list.filter(p => p.is_strike).length
+  const balls = list.length - strikes
+  const rate = Math.round((strikes / list.length) * 1000) / 10
+  const avgV = Math.round(list.reduce((sum, p) => sum + p.velocity, 0) / list.length * 100) / 100
+  return {
+    total: list.length,
+    strikes,
+    balls,
+    strikeRate: `${rate}%`,
+    avgVelocity: String(avgV),
+  }
 })
 
-// AI 狀態
-const aiStatus = computed(() => training.value?.ai_status ?? 'stopped')
+// 投球清單欄位
+const pitchColumns: TableColumn<PitchItem>[] = [
+  { accessorKey: 'sequence', header: '球序' },
+  { accessorKey: 'time', header: '投球時間' },
+  { accessorKey: 'velocity', header: '球速 (km/h)' },
+  { accessorKey: 'spin_rate', header: '轉速 (rpm)' },
+  { accessorKey: 'is_strike', header: '好壞球' },
+  { accessorKey: 'location', header: '落點 (x, y)' },
+]
+
+function handleSelectPitch(_e: Event, row: { original: PitchItem }) {
+  router.push(`/trainings/${trainingId.value}/pitches/${row.original.id}`)
+}
+
+// === AI 控制 ===
 const isAiLoading = ref(false)
 
 async function startAi() {
@@ -49,14 +79,13 @@ async function startAi() {
   try {
     await $fetch('/api/ai/start', {
       method: 'POST',
-      body: { training_id: Number(trainingId.value) },
+      body: { training_id: trainingId.value },
     })
-    toast.add({ title: 'AI 已啟動', color: 'success' })
-    await refreshTraining()
+    toast.add({ title: 'AI 系統已啟動', color: 'success' })
+    await Promise.all([refreshTraining(), refreshAi()])
   }
-  catch (err: unknown) {
-    const message = (err as { data?: { message?: string } })?.data?.message ?? '啟動失敗'
-    toast.add({ title: message, color: 'error' })
+  catch (error: any) {
+    toast.add({ title: '啟動失敗', description: error?.data?.message || '操作失敗', color: 'error' })
   }
   finally {
     isAiLoading.value = false
@@ -69,283 +98,298 @@ async function stopAi() {
   isAiLoading.value = true
   try {
     await $fetch('/api/ai/stop', { method: 'POST' })
-    toast.add({ title: 'AI 已停止', color: 'success' })
-    await refreshTraining()
+    toast.add({ title: 'AI 系統已關閉', color: 'success' })
+    await Promise.all([refreshTraining(), refreshAi()])
   }
-  catch (err: unknown) {
-    const message = (err as { data?: { message?: string } })?.data?.message ?? '停止失敗'
-    toast.add({ title: message, color: 'error' })
+  catch (error: any) {
+    toast.add({ title: '關閉失敗', description: error?.data?.message || '操作失敗', color: 'error' })
   }
   finally {
     isAiLoading.value = false
   }
 }
 
-// 投球清單表格欄位
-const columns = [
-  { accessorKey: 'sequence', header: '序號' },
-  { accessorKey: 'time', header: '時間' },
-  { accessorKey: 'velocity', header: '球速 (km/h)' },
-  { accessorKey: 'spin_rate', header: '轉速 (rpm)' },
-  { accessorKey: 'is_strike', header: '好壞球' },
-  { accessorKey: 'location_x', header: '落點 X' },
-  { accessorKey: 'location_y', header: '落點 Y' },
-]
-
-// 點擊投球列導航
-function handlePitchClick(_e: Event, row: { original: PitchItem }) {
-  router.push(`/trainings/${trainingId.value}/pitches/${row.original.id}`)
-}
-
-// 好球帶設定 Modal
+// === 好球帶設定 ===
 const isStrikeZoneModalOpen = ref(false)
-const strikeZoneTop = ref(0)
-const strikeZoneBottom = ref(0)
-const isSubmitting = ref(false)
+const isStrikeZoneSaving = ref(false)
+
+const strikeZoneSchema = z.object({
+  top: z.number({ error: '請輸入上緣' }).min(90, '上緣範圍 90-150').max(150, '上緣範圍 90-150'),
+  bottom: z.number({ error: '請輸入下緣' }).min(30, '下緣範圍 30-70').max(70, '下緣範圍 30-70'),
+})
+
+type StrikeZoneSchema = z.output<typeof strikeZoneSchema>
+
+const strikeZoneState = reactive<StrikeZoneSchema>({
+  top: 120,
+  bottom: 50,
+})
 
 function openStrikeZoneModal() {
-  strikeZoneTop.value = training.value?.strike_zone_top ?? 120
-  strikeZoneBottom.value = training.value?.strike_zone_bottom ?? 50
+  if (training.value) {
+    strikeZoneState.top = training.value.strike_zone_top
+    strikeZoneState.bottom = training.value.strike_zone_bottom
+  }
   isStrikeZoneModalOpen.value = true
 }
 
-async function saveStrikeZone() {
-  if (isSubmitting.value)
+async function onStrikeZoneSubmit(event: FormSubmitEvent<StrikeZoneSchema>) {
+  if (isStrikeZoneSaving.value)
     return
-  isSubmitting.value = true
-
+  if (event.data.top <= event.data.bottom) {
+    toast.add({ title: '驗證錯誤', description: '上緣必須大於下緣', color: 'error' })
+    return
+  }
+  isStrikeZoneSaving.value = true
   try {
-    const body: UpdateStrikeZoneBody = {
-      strike_zone_top: strikeZoneTop.value,
-      strike_zone_bottom: strikeZoneBottom.value,
-    }
     await $fetch(`/api/trainings/${trainingId.value}/strike-zone`, {
       method: 'PUT',
-      body,
+      body: event.data,
     })
     toast.add({ title: '好球帶設定已更新', color: 'success' })
     isStrikeZoneModalOpen.value = false
     await refreshTraining()
   }
-  catch (error: unknown) {
-    const message = error instanceof Error ? error.message : '更新失敗'
-    toast.add({ title: message, color: 'error' })
+  catch (error: any) {
+    toast.add({ title: '更新失敗', description: error?.data?.message || '操作失敗', color: 'error' })
   }
   finally {
-    isSubmitting.value = false
+    isStrikeZoneSaving.value = false
   }
 }
-
-// 統計卡片資料
-const statCards = computed(() => [
-  { label: '總投球數', value: totalPitches.value, testid: 'training-detail-total-pitches', unit: '球' },
-  { label: '好球數', value: strikeCount.value, testid: 'training-detail-strike-count', unit: '球' },
-  { label: '壞球數', value: ballCount.value, testid: 'training-detail-ball-count', unit: '球' },
-  { label: '好球率', value: `${strikeRate.value}%`, testid: 'training-detail-strike-rate', unit: '' },
-  { label: '平均球速', value: avgVelocity.value, testid: 'training-detail-avg-velocity', unit: 'km/h' },
-])
 </script>
 
 <template>
-  <div data-testid="training-detail-page" class="flex h-full flex-col gap-6 overflow-y-auto">
-    <!-- 頂部：返回 + 標題 -->
-    <div class="flex items-center gap-4">
-      <UButton
-        icon="i-heroicons-arrow-left"
-        color="neutral"
-        variant="ghost"
-        @click="router.push('/trainings')"
-      />
-      <h1 class="text-2xl font-bold text-neutral-900 dark:text-white">
-        訓練詳情
-      </h1>
-      <!-- AI 狀態與操作 -->
-      <div class="ml-auto flex items-center gap-2">
-        <UBadge
-          :color="aiStatus === 'running' ? 'success' : 'neutral'"
-          variant="subtle"
-        >
-          AI {{ aiStatus === 'running' ? '運行中' : '已停止' }}
-        </UBadge>
+  <div data-testid="training-detail-page" class="flex h-full flex-col gap-6">
+    <!-- 頂部：返回 + 標題 + AI 控制 -->
+    <div class="flex shrink-0 flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
         <UButton
+          icon="i-heroicons-arrow-left"
+          color="neutral"
+          variant="ghost"
+          @click="router.push('/trainings')"
+        />
+        <h1 class="text-2xl font-bold text-neutral-900 dark:text-white">
+          訓練詳情
+        </h1>
+      </div>
+      <div class="flex items-center gap-3">
+        <span data-testid="training-ai-status">
+          <UBadge
+            :color="aiStatus?.status === 'running' ? 'success' : 'neutral'"
+            variant="subtle"
+          >
+            AI {{ aiStatus?.status === 'running' ? '運行中' : '已關閉' }}
+          </UBadge>
+        </span>
+        <UButton
+          v-if="aiStatus?.status !== 'running'"
           data-testid="training-ai-start"
-          label="啟動 AI"
           icon="i-heroicons-play"
           color="success"
-          size="sm"
           :loading="isAiLoading"
           @click="startAi"
-        />
+        >
+          啟動 AI
+        </UButton>
         <UButton
+          v-else
           data-testid="training-ai-stop"
-          label="停止 AI"
           icon="i-heroicons-stop"
           color="error"
-          size="sm"
           :loading="isAiLoading"
           @click="stopAi"
-        />
+        >
+          關閉 AI
+        </UButton>
+        <UButton
+          icon="i-heroicons-chart-bar"
+          color="neutral"
+          variant="outline"
+          @click="router.push(`/trainings/${trainingId}/analysis`)"
+        >
+          查看分析
+        </UButton>
       </div>
     </div>
 
     <!-- 訓練基本資訊 -->
-    <div class="grid grid-cols-2 gap-4 rounded-lg border border-neutral-200 bg-white p-4 md:grid-cols-4 dark:border-neutral-800 dark:bg-neutral-900">
-      <div>
-        <p class="text-sm text-neutral-500 dark:text-neutral-400">
-          日期
-        </p>
-        <p data-testid="training-detail-date" class="font-medium text-neutral-900 dark:text-white">
-          {{ training?.date ?? '-' }}
-        </p>
-      </div>
-      <div>
-        <p class="text-sm text-neutral-500 dark:text-neutral-400">
-          球隊
-        </p>
-        <p data-testid="training-detail-team" class="font-medium text-neutral-900 dark:text-white">
-          {{ training?.team_name ?? '-' }}
-        </p>
-      </div>
-      <div>
-        <p class="text-sm text-neutral-500 dark:text-neutral-400">
-          選手
-        </p>
-        <p data-testid="training-detail-player" class="font-medium text-neutral-900 dark:text-white">
-          {{ training?.player_name ?? '-' }}
-        </p>
-      </div>
-      <div class="flex items-start justify-between">
+    <UCard v-if="training" data-testid="training-info">
+      <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
         <div>
-          <p class="text-sm text-neutral-500 dark:text-neutral-400">
-            好球帶範圍
+          <p class="text-sm text-neutral-500">
+            日期
           </p>
           <p class="font-medium text-neutral-900 dark:text-white">
-            <span data-testid="training-detail-strike-top">{{ training?.strike_zone_top ?? '-' }}</span>
-            ~
-            <span data-testid="training-detail-strike-bottom">{{ training?.strike_zone_bottom ?? '-' }}</span>
-            cm
+            {{ training.date }}
           </p>
         </div>
-        <UButton
-          data-testid="strike-zone-setting"
-          icon="i-heroicons-cog-6-tooth"
-          color="neutral"
-          variant="ghost"
-          size="sm"
-          @click="openStrikeZoneModal"
-        />
+        <div>
+          <p class="text-sm text-neutral-500">
+            受測選手
+          </p>
+          <p class="font-medium text-neutral-900 dark:text-white">
+            {{ training.player_name }}
+          </p>
+        </div>
+        <div>
+          <p class="text-sm text-neutral-500">
+            球隊
+          </p>
+          <p class="font-medium text-neutral-900 dark:text-white">
+            {{ training.team_name }}
+          </p>
+        </div>
+        <div class="flex items-center gap-2">
+          <div>
+            <p class="text-sm text-neutral-500">
+              好球帶
+            </p>
+            <p class="font-medium text-neutral-900 dark:text-white">
+              {{ training.strike_zone_top }} ~ {{ training.strike_zone_bottom }} cm
+            </p>
+          </div>
+          <UButton
+            data-testid="strike-zone-edit"
+            icon="i-heroicons-pencil"
+            color="neutral"
+            variant="ghost"
+            size="xs"
+            @click="openStrikeZoneModal"
+          />
+        </div>
       </div>
-    </div>
+    </UCard>
 
-    <!-- 即時統計卡片 -->
-    <div class="grid grid-cols-2 gap-4 md:grid-cols-5">
-      <div
-        v-for="stat in statCards"
-        :key="stat.testid"
-        :data-testid="stat.testid"
-        class="rounded-lg border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900"
-      >
-        <p class="text-sm text-neutral-500 dark:text-neutral-400">
-          {{ stat.label }}
-        </p>
-        <p class="mt-1 text-2xl font-bold text-neutral-900 dark:text-white">
-          {{ stat.value }}
-          <span v-if="stat.unit" class="text-sm font-normal text-neutral-500 dark:text-neutral-400">{{ stat.unit }}</span>
-        </p>
+    <!-- 即時統計 -->
+    <UCard data-testid="training-stats">
+      <div class="grid grid-cols-2 gap-4 sm:grid-cols-5">
+        <div class="text-center">
+          <p class="text-sm text-neutral-500">
+            總投球數
+          </p>
+          <p data-testid="training-total-pitches" class="text-2xl font-bold text-neutral-900 dark:text-white">
+            {{ stats.total }}
+          </p>
+        </div>
+        <div class="text-center">
+          <p class="text-sm text-neutral-500">
+            好球數
+          </p>
+          <p data-testid="training-strike-count" class="text-2xl font-bold text-success-600 dark:text-success-400">
+            {{ stats.strikes }}
+          </p>
+        </div>
+        <div class="text-center">
+          <p class="text-sm text-neutral-500">
+            壞球數
+          </p>
+          <p data-testid="training-ball-count" class="text-2xl font-bold text-error-600 dark:text-error-400">
+            {{ stats.balls }}
+          </p>
+        </div>
+        <div class="text-center">
+          <p class="text-sm text-neutral-500">
+            好球率
+          </p>
+          <p data-testid="training-strike-rate" class="text-2xl font-bold text-neutral-900 dark:text-white">
+            {{ stats.strikeRate }}
+          </p>
+        </div>
+        <div class="text-center">
+          <p class="text-sm text-neutral-500">
+            平均球速
+          </p>
+          <p data-testid="training-avg-velocity" class="text-2xl font-bold text-neutral-900 dark:text-white">
+            {{ stats.avgVelocity }}
+          </p>
+        </div>
       </div>
-    </div>
+    </UCard>
 
-    <!-- 投球清單表格 -->
-    <div class="flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
-      <div class="flex shrink-0 items-center justify-between border-b border-neutral-200 px-4 py-3 dark:border-neutral-800">
-        <h2 class="font-semibold text-neutral-900 dark:text-white">
-          投球清單
-        </h2>
-        <UButton
-          label="訓練分析"
-          icon="i-heroicons-chart-bar"
-          color="primary"
-          variant="soft"
-          size="sm"
-          @click="router.push(`/trainings/${trainingId}/analysis`)"
+    <!-- 投球清單 -->
+    <UCard class="min-h-0 flex-1" :ui="{ body: 'h-full flex flex-col p-0' }">
+      <div class="min-h-0 flex-1 overflow-auto">
+        <CommonEmptyState
+          v-if="!pitches.length"
+          icon="i-heroicons-clipboard-document-list"
+          title="尚無投球紀錄"
+          description="啟動 AI 系統開始偵測投球"
         />
-      </div>
-      <div data-testid="pitch-list" class="min-h-0 flex-1 overflow-auto">
         <UTable
+          v-else
+          data-testid="pitch-list"
           :data="pitches"
-          :columns="columns"
-          class="w-full"
-          @select="handlePitchClick"
+          :columns="pitchColumns"
+          class="[&_td]:h-12 [&_th]:h-10"
+          :ui="{ tr: 'cursor-pointer hover:bg-elevated' }"
+          @select="handleSelectPitch"
         >
           <template #is_strike-cell="{ row }">
             <UBadge
+              data-testid="pitch-row"
               :color="row.original.is_strike ? 'success' : 'error'"
               variant="subtle"
-              size="sm"
             >
               {{ row.original.is_strike ? '好球' : '壞球' }}
             </UBadge>
           </template>
+          <template #location-cell="{ row }">
+            ({{ row.original.location_x }}, {{ row.original.location_y }})
+          </template>
         </UTable>
       </div>
-    </div>
+    </UCard>
 
     <!-- 好球帶設定 Modal -->
     <UModal v-model:open="isStrikeZoneModalOpen">
       <template #content>
-        <div data-testid="strike-zone-modal" class="p-6">
-          <h3 class="mb-4 text-lg font-semibold text-neutral-900 dark:text-white">
+        <div data-testid="strike-zone-form-modal" class="p-6">
+          <h3 class="text-lg font-semibold text-neutral-900 dark:text-white">
             好球帶設定
           </h3>
-          <div class="space-y-4">
-            <div>
-              <label class="mb-1 block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                上緣 (cm)
-              </label>
+          <UForm
+            :schema="strikeZoneSchema"
+            :state="strikeZoneState"
+            class="mt-4 space-y-4"
+            @submit="onStrikeZoneSubmit"
+          >
+            <UFormField
+              label="上緣 (cm)"
+              name="top"
+              class="relative mb-8"
+              :ui="{ error: 'absolute top-full left-0 mt-1' }"
+            >
               <UInput
-                v-model.number="strikeZoneTop"
-                data-testid="strike-zone-top"
+                v-model.number="strikeZoneState.top"
+                data-testid="strike-zone-upper"
                 type="number"
-                placeholder="90-150"
-                :min="90"
-                :max="150"
+                class="w-full"
               />
-              <p class="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-                範圍：90 ~ 150 cm
-              </p>
-            </div>
-            <div>
-              <label class="mb-1 block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                下緣 (cm)
-              </label>
+            </UFormField>
+            <UFormField
+              label="下緣 (cm)"
+              name="bottom"
+              class="relative mb-8"
+              :ui="{ error: 'absolute top-full left-0 mt-1' }"
+            >
               <UInput
-                v-model.number="strikeZoneBottom"
-                data-testid="strike-zone-bottom"
+                v-model.number="strikeZoneState.bottom"
+                data-testid="strike-zone-lower"
                 type="number"
-                placeholder="30-70"
-                :min="30"
-                :max="70"
+                class="w-full"
               />
-              <p class="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-                範圍：30 ~ 70 cm
-              </p>
+            </UFormField>
+            <div class="flex justify-end gap-3">
+              <UButton color="neutral" variant="outline" :disabled="isStrikeZoneSaving" @click="isStrikeZoneModalOpen = false">
+                取消
+              </UButton>
+              <UButton type="submit" data-testid="strike-zone-save" color="primary" :loading="isStrikeZoneSaving">
+                儲存
+              </UButton>
             </div>
-          </div>
-          <div class="mt-6 flex justify-end gap-3">
-            <UButton
-              label="取消"
-              color="neutral"
-              variant="outline"
-              @click="isStrikeZoneModalOpen = false"
-            />
-            <UButton
-              data-testid="strike-zone-save"
-              label="儲存"
-              color="primary"
-              :loading="isSubmitting"
-              @click="saveStrikeZone"
-            />
-          </div>
+          </UForm>
         </div>
       </template>
     </UModal>

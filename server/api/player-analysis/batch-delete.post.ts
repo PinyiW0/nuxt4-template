@@ -4,22 +4,23 @@ import { mockPlayerAnalysis } from '../../mock/data/playerAnalysis'
 
 export default defineEventHandler(async (event: H3Event) => {
   const body = await readBody(event)
-  const { player_ids } = body
 
-  if (!player_ids || !Array.isArray(player_ids) || player_ids.length === 0) {
-    throw createError({ statusCode: 400, message: '請選擇要刪除的選手分析' })
+  if (!body.player_ids || !Array.isArray(body.player_ids) || body.player_ids.length === 0) {
+    throw createError({ statusCode: 400, message: '請選擇要刪除分析的選手' })
   }
 
-  // 從 mock 資料中移除（模擬清除分析數據）
-  player_ids.forEach((pid: number) => {
-    const index = mockPlayerAnalysis.findIndex(a => a.player_id === pid)
+  // 清除分析資料（保留球員基本資料）
+  for (const playerId of body.player_ids) {
+    const index = mockPlayerAnalysis.findIndex(a => a.player_id === playerId)
     if (index !== -1) {
-      const item = mockPlayerAnalysis[index]!
-      item.training_count = 0
-      item.total_pitches = 0
-      item.avg_velocity = null
+      const analysis = mockPlayerAnalysis[index]!
+      analysis.training_count = 0
+      analysis.total_pitches = 0
+      analysis.avg_velocity = 0
+      analysis.avg_spin_rate = 0
+      analysis.strike_rate = 0
     }
-  })
+  }
 
-  return { status: 'success', message: '選手分析已批次刪除' }
+  return { status: 'success', message: `已刪除 ${body.player_ids.length} 位選手的分析資料` }
 })

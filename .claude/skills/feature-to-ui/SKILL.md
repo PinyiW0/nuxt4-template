@@ -36,14 +36,14 @@ metadata:
 | Phase | 名稱 | 輸出 | 必讀規範 |
 |-------|------|------|----------|
 | 0 | 準備工作 | 功能清單、路由規劃、**route-map.yaml** | [phase-0](phases/phase-0-prep.md) |
-| 1 | Mock API | **types/api/**, server/mock/, server/api/ | [phase-1](phases/phase-1-mock-api.md) + [rules.md](rules.md) |
+| 1 | Mock API | **app/types/api/**, server/mock/, server/api/ | [phase-1](phases/phase-1-mock-api.md) + [rules.md](rules.md) |
 | 2 | 基礎設定 | app.config.ts, main.css | [phase-2](phases/phase-2-theme.md) + [style-presets.yaml](../../.ai-prompts/ui/style-presets.yaml) |
 | 3 | 路由骨架 | 所有 pages/*.vue 空殼（含 testid） | [phase-3](phases/phase-3-skeleton.md) + [rules.md](rules.md) |
 | 4 | Layout 建置 | layouts/*.vue | [phase-4](phases/phase-4-layout.md) + [rules.md](rules.md) + [responsive.md](responsive.md) |
 | 5 | 共用元件 | components/common/*.vue | [phase-5](phases/phase-5-components.md) + [components.md](components.md) + [rules.md](rules.md) |
 | 6 | 頁面實作 | 逐一填充 pages 內容 | [phase-6](phases/phase-6-pages.md) + [page-builder.md](page-builder.md) + [components.md](components.md) + [rules.md](rules.md) |
 
-**設計理念**：骨架優先，細節後填。每個 Phase 只載入必要的規範，避免 context 過載。`types/api/` 作為 API 合約的單一真相來源，串接 mock data、API endpoint、頁面三層。`route-map.yaml` 作為路由與 feature 對照的單一真相來源。`.flow.md` 作為 testid 的單一真相來源。
+**設計理念**：骨架優先，細節後填。每個 Phase 只載入必要的規範，避免 context 過載。`app/types/api/` 作為 API 合約的單一真相來源，串接 mock data、API endpoint、頁面三層。`route-map.yaml` 作為路由與 feature 對照的單一真相來源。`.flow.md` 作為 testid 的單一真相來源。
 
 ---
 
@@ -96,6 +96,15 @@ metadata:
 
 ---
 
+## 自動執行規則
+
+- 執行 `/feature-to-ui`（無參數或參數為 `0`）時，**直接開始 Phase 0，不要詢問使用者任何問題**
+- Phase 0 開始前，先讀取 `ui-config-pm.yaml`，按照 `phase-0-prep.md` 的「PM 設定同步邏輯」將資訊同步填入 `ui-config.yaml` 的對應欄位
+- 若 PM yaml 的 `customColors` 有填色碼（非空值），一併覆蓋 `ui-config.yaml` 的 `theme.colors` 對應欄位
+- 同步完成後直接執行 Phase 0 的步驟，不需額外確認
+
+---
+
 ## 注意事項
 
 - **每個 Phase 完成後都要詢問確認**
@@ -103,8 +112,8 @@ metadata:
 - **每個 Phase 開始時只讀取該 Phase 的 phase 檔 + rules.md**
 - 禁止自行決定網站名稱、色彩等設定
 - 所有設定從 `ui-config.yaml` 讀取
-- Phase 1 必須先建 `types/api/` 合約型別
-- Phase 6 禁止定義 local interface，必須 import `types/api/`
+- Phase 1 必須先建 `app/types/api/` 合約型別
+- Phase 6 禁止定義 local interface，必須 import `~/types/api/`
 - Phase 6 每個功能必須先讀取 API 原始碼、共用元件、store
 - **Phase 3/6 若 `docs/e2e-flows/pages/*.elements.md` 存在，testid 必須以該檔案為準**
 - **Phase 6 若 `docs/e2e-flows/*.flow.md` 存在，必須先讀取以了解操作流程和 testid**
