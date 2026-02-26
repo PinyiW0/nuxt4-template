@@ -41,9 +41,9 @@ meta:
 # -----------------------------------------------------------------------------
 theme:
   colors:
-    primary: ""      # 主色
-    secondary: ""    # 輔色
-    neutral: ""      # 中性色
+    primary: "#D7263D"      # 主色
+    secondary: "#FF5964"    # 輔色
+    neutral: "#1C1C1E"      # 中性色
     success: ""      # 成功狀態
     warning: ""      # 警告狀態
     error: ""        # 錯誤狀態

@@ -264,6 +264,30 @@ const totalItems = computed(() => items.value.length)
 />
 ```
 
+## 篩選下拉（「全部」選項）
+
+⚠️ Nuxt UI v3 的 USelect **禁止 `value: ''`**，「全部/不篩選」用 `undefined` + `placeholder` 實現。
+
+```vue
+<script setup lang="ts">
+// ✅ 用 undefined 代表「全部」
+const selectedTeamId = ref<string | undefined>(undefined)
+const teamOptions = computed(() =>
+  teams.value.map(t => ({ label: t.name, value: String(t.id) })),
+)
+</script>
+
+<template>
+  <USelect
+    v-model="selectedTeamId"
+    :items="teamOptions"
+    value-key="value"
+    placeholder="全部球隊"
+    class="w-40"
+  />
+</template>
+```
+
 ---
 
 ## 拖曳排序

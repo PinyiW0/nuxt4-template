@@ -5,9 +5,9 @@
 # 專案資訊（必填）
 # =============================================================================
 project:
-  name: "" # 網站名稱
-  description: "" # 網站描述
-  locale: "" # 語系
+  name: "鷹眼偵測系統" # 網站名稱
+  description: "智能訓練分析平台，提供即時動作偵測與數據分析" # 網站描述
+  locale: "zh-TW" # 語系
 
 # =============================================================================
 # 色彩主題
@@ -36,9 +36,9 @@ project:
 # =============================================================================
 theme:
   colors:
-    primary: ""      # 主色
-    secondary: ""    # 輔色
-    neutral: ""      # 中性色
+    primary: "#D7263D"      # 主色
+    secondary: "#FF5964"    # 輔色
+    neutral: "#1C1C1E"      # 中性色
     success: ""             # 成功狀態
     warning: ""             # 警告狀態
     error: ""               # 錯誤狀態
@@ -48,10 +48,18 @@ theme:
 # 測試帳號（從 ui-config-pm.yaml 同步）
 # =============================================================================
 testAccounts:
-  - username: ""
-    password: ""
-    role: ""
-    description: ""
+  - username: "admin"
+    password: "admin123"
+    role: "管理者"
+    description: "可存取所有功能"
+  - username: "coach1"
+    password: "coach123"
+    role: "教練"
+    description: "教練帳號（藍鷹隊）"
+  - username: "locked1"
+    password: "locked123"
+    role: "教練"
+    description: "已鎖定帳號（測試鎖定流程）"
 
 
 
@@ -235,7 +243,7 @@ responsive:
 # =============================================================================
 colorMode:
   enabled: true
-  default: "system"
+  default: "light"
 
 # =============================================================================
 # Icon 設定

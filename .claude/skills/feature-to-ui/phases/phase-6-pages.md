@@ -39,21 +39,39 @@
      - `docs/e2e-flows/pages/{對應頁面}.elements.md` — 取得該頁面所有 testid
      - `docs/e2e-flows/{NN}-{name}.flow.md` — 了解操作流程和涉及的 testid
      - `docs/e2e-flows/_common.flow.md` — 共用元素的 testid
-4. **實作頁面**（基於步驟 3 讀取的實際程式碼和 testid 定義，不是憑記憶）
+4. **⚠️ 實作前對照表（必須在寫 code 之前輸出！）**
+   - 逐一列出該頁面的每個 `.feature` 檔名 + Feature 標題
+   - 比對 DSL Command 關鍵字 → UI 元件（**必須**查 [page-builder.md](../page-builder.md) Command 對照表）
+   - 產出「Feature → UI 對照表」，格式如下：
+
+   ```
+   Feature → UI 對照表（/players）：
+   | Feature 檔 | DSL Command | UI 元件 | 備註 |
+   |-----------|-------------|---------|------|
+   | 07-查詢球員列表 | 查詢列表 | UTable + 搜尋框 | |
+   | 08-新增球員 | 建立 | Modal + 表單 | |
+   | 09-編輯球員 | 編輯 | Modal + 表單（預填） | 共用新增 Modal |
+   | 10-刪除球員 | 刪除 | 確認 Modal | |
+   | 11-調整球員排序 | 排序/調整順序 | vuedraggable | 拖曳排序 |
+   ```
+
+   > ⚠️ **此表是 code review 用的 checklist**：實作完成後，逐列打勾確認。若表中任何 Feature 沒有對應 UI，必須補做。
+
+5. **實作頁面**（基於步驟 3-4 的對照表和讀取的實際程式碼）
    - 所有 `data-testid` 必須與 `elements.md` 中定義的一致
    - 若 `.flow.md` 描述了特定操作步驟，確保 UI 元素的 testid 對應正確
-5. **⚠️ 功能覆蓋驗證（必須執行！）**
-   - 重新讀取該頁面的所有 `.feature` 檔
-   - 逐一列出每個 Scenario，比對是否有對應 UI 實作
-   - 比對 DSL Command 關鍵字 → UI 元件（參考 [page-builder.md](../page-builder.md) Command 表）
+   - **逐一檢查步驟 4 對照表，確保每個 Feature 都有對應的 UI 實作**
+6. **⚠️ 功能覆蓋驗證（必須執行！）**
+   - 拿步驟 4 的對照表，逐列標記 ✅ 或 ❌
+   - 若有任何 ❌ → 補做後重新驗證
    - 檢查 Mock 資料量是否 ≥ 11 筆，不足則補建
-6. **⚠️ 規範合規檢查（必須執行！）**
+7. **⚠️ 規範合規檢查（必須執行！）**
    - testid 是否全部對應 `elements.md`
    - 型別是否從 `types/api/` import（禁止定義 local interface）
    - 深淺模式是否正常（禁止寫死顏色值）
-7. **若步驟 5-6 發現缺漏 → 修復後重新驗證**
-8. **向用戶確認（必須使用下方結構化格式）**
-9. **確認後才進入下一個功能**
+8. **若步驟 6-7 發現缺漏 → 修復後重新驗證**
+9. **向用戶確認（必須使用下方結構化格式，包含步驟 4 的對照表）**
+10. **確認後才進入下一個功能**
 
 ## 實作順序建議
 

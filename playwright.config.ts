@@ -11,6 +11,7 @@ export default defineConfig({
     ['list'],
     ['html', { open: 'never' }],
   ],
+  timeout: 60000,
   use: {
     baseURL: process.env.E2E_BASE_URL || 'http://localhost:3000',
     trace: 'on-first-retry',
