@@ -165,6 +165,13 @@ export default defineAppConfig({
 @import "tailwindcss";
 @import "@nuxt/ui";
 
+/* Tailwind v4 preflight 將 button cursor 設為 default，覆蓋回 pointer */
+@layer base {
+  button, [role="button"] {
+    cursor: pointer;
+  }
+}
+
 /* 只有 ui-config.yaml 中填入 "#hex" 的顏色才需要產生色階 */
 /* 空值或 Tailwind 內建色名不需要產生 CSS */
 @theme static {

@@ -261,6 +261,20 @@ item.name = 'new'
 
 ---
 
+## 第三方元件必須手動 import
+
+Nuxt 只會自動註冊 `components/` 目錄下的元件和 Nuxt UI 元件。第三方套件的元件**必須在 `<script setup>` 中手動 import**。
+
+```typescript
+// ❌ 不會被自動註冊，渲染時找不到元件
+<Draggable v-model="items" />
+
+// ✅ 手動 import
+import Draggable from 'vuedraggable'
+```
+
+---
+
 ## Pinia Store 規範
 
 ### 必須明確 import
