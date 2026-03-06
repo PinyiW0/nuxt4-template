@@ -46,7 +46,7 @@ toast.position（中文）           →    toast.position（英文）
 table.itemsPerPage              →    table.pagination.defaultPageSize
 deleteConfirmation.*            →    delete.confirmation.*
 testAccounts                    →    testAccounts（Mock API 用）
-additionalFeatures.*            →    additionalPackages.*.required
+additionalFeatures.*            →    additionalFeatures.*.required
 ```
 
 ---

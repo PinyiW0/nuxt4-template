@@ -8,6 +8,18 @@ project:
   name: "鷹眼偵測系統" # 網站名稱
   description: "智能訓練分析平台，提供即時動作偵測與數據分析" # 網站描述
   locale: "zh-TW" # 語系
+  favicon: "/favicon.ico" # 網站圖示
+
+# =============================================================================
+# SEO 與社群分享（從 ui-config-pm.yaml 同步）
+# Phase 2 讀取後寫入 nuxt.config.ts 的 app.head
+# =============================================================================
+meta:
+  keywords: "" # SEO 關鍵字（逗號分隔）
+  author: "" # 網站作者或團隊名稱
+  og:
+    image: "/og-image.png" # 社群分享預覽圖（建議 1200x630 px）
+    type: "website" # 網站類型：website | article
 
 # =============================================================================
 # 色彩主題
@@ -97,25 +109,6 @@ table:
     icon: "i-heroicons-circle-stack"
     label: "目前沒有資料"
 
-# =============================================================================
-# 列表頁面佈局設定
-# =============================================================================
-listPage:
-  fullHeight: true
-  layout:
-    header:
-      shrink: true
-      marginBottom: "mb-6"
-    card:
-      flex: true
-      minHeight: "min-h-0"
-      bodyPadding: "p-0"
-      bodyOverflow: "overflow-auto"
-    pagination:
-      position: "bottom-right"
-      sticky: true
-      border: "border-t"
-      padding: "px-4 py-3"
 
 # =============================================================================
 # 表單設定
@@ -270,34 +263,31 @@ icons:
     menu: "i-heroicons-bars-3"
 
 # =============================================================================
-# 額外套件需求
+# 額外功能需求
 # =============================================================================
-additionalPackages:
+# ⚠️ 套件版本以 features.md 為準，此區塊僅供參考
+additionalFeatures:
   charts:
     required: false
-    package: "@nuxt/ui-pro"
+    package: "vue-chartjs chart.js"
     useCase: "數據視覺化、統計圖表"
-  draggable:
+  dragAndDrop:
     required: false
-    package: "vuedraggable"
+    package: "vuedraggable@next"
     useCase: "列表拖拽排序、看板拖拽"
   richTextEditor:
     required: false
-    package: "@tiptap/vue-3"
+    package: "@tiptap/vue-3 @tiptap/starter-kit @tiptap/extension-placeholder"
     useCase: "文章編輯、格式化內容"
-  dateTimePicker:
+  advancedDatePicker:
     required: false
-    package: "v-calendar"
+    package: "@vuepic/vue-datepicker"
     useCase: "日期範圍選擇、時間選擇"
   fileUpload:
     required: false
-    package: "vue-filepond"
+    package: "(無需額外套件)"
     useCase: "圖片上傳、檔案拖放上傳"
   infiniteScroll:
     required: false
-    package: "@vueuse/core"
+    package: "(無需額外套件，使用 IntersectionObserver)"
     useCase: "無限滾動列表"
-  virtualList:
-    required: false
-    package: "@tanstack/vue-virtual"
-    useCase: "渲染大量列表項目（1000+）"

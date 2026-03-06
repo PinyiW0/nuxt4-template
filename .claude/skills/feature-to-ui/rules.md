@@ -1,10 +1,13 @@
 # 共用規則（跨 Phase 權威來源）
 
 > 所有 Phase 共用的規則集中在此。各 phase 檔和 page-builder.md、components.md 引用此檔，不重複定義。
+>
+> **Phase Tag 說明**：每個段落標題標注 `[Px, Py]` 表示該段落適用的 Phase。
+> 各 Phase 只需讀取標有自己編號的段落，以節省 context window。
 
 ---
 
-## 配色策略
+## 配色策略 `[P2, P4, P5, P6]`
 
 UI 配色以 **primary + neutral** 為主（佔 90%），語意色只用在狀態回饋（佔 10%）。
 
@@ -30,7 +33,7 @@ UI 配色以 **primary + neutral** 為主（佔 90%），語意色只用在狀�
 
 ---
 
-## 深淺模式與對比色
+## 深淺模式與對比色 `[P2, P4, P5, P6]`
 
 所有顏色必須使用響應式 Tailwind class，不可寫死單一模式。
 
@@ -59,7 +62,7 @@ UI 配色以 **primary + neutral** 為主（佔 90%），語意色只用在狀�
 
 ---
 
-## Zod v4 規範
+## Zod v4 規範 `[P6]`
 
 ```typescript
 // ❌ Zod v3（禁止 required_error、invalid_type_error）
@@ -72,7 +75,7 @@ z.string().min(1, '請輸入姓名')  // 推薦
 
 ---
 
-## Nuxt UI 類型規範
+## Nuxt UI 類型規範 `[P5, P6]`
 
 ### TableColumn
 
@@ -129,7 +132,7 @@ async function onSubmit(event: FormSubmitEvent<MySchema>) { ... }
 
 ---
 
-## 表單型別安全模式
+## 表單型別安全模式 `[P5, P6]`
 
 ### USelect options 不標窄型別
 
@@ -152,7 +155,7 @@ const heatMapPoints = computed<HeatMapPoint[]>(() => analysis.value?.heat_map_da
 
 ---
 
-## API 規範
+## API 規範 `[P6]`
 
 實作頁面前，**必須先 `glob server/api/**/*.ts` 確認實際 API 路徑**。
 
@@ -173,7 +176,7 @@ const heatMapPoints = computed<HeatMapPoint[]>(() => analysis.value?.heat_map_da
 
 ---
 
-## Server API 類型規範
+## Server API 類型規範 `[P1]`
 
 ```typescript
 // event 必須標 H3Event
@@ -185,9 +188,31 @@ const item = items[index]!
 item.name = 'new'
 ```
 
+### Mock API 回傳慣例 `[P1]`（穩定迭代核心規則）
+
+> ⚠️ 此規則確保 `types/api/` ↔ `mock data` ↔ `API 回傳` ↔ `頁面消費` 四層永遠對齊。
+> 不管全量模式或 sync 模式，都必須遵循。
+
+**API 端點直接回傳 mock data，禁止手動 `.map()` 挑選欄位：**
+
+```typescript
+// ✅ 直接回傳（型別自動對齊 types/api/）
+const paged = items.slice(start, start + pageSize)
+return { status: 'success' as const, data: paged, meta: { total, page, page_size } }
+
+// ❌ 禁止手動 map（容易和型別定義不一致，導致 TypeScript 報錯）
+return { status: 'success' as const, data: paged.map(m => ({ id: m.id, ... })) }
+```
+
+**對齊鏈路：**
+1. `types/api/*.ts` 定義型別（single source of truth）
+2. `server/mock/data/*.ts` 的 mock 資料結構必須與型別一致
+3. `server/api/**/*.ts` 直接回傳 mock data，不做欄位轉換
+4. `app/pages/*.vue` import 型別後直接使用，無需 workaround
+
 ---
 
-## 第三方元件必須手動 import
+## 第三方元件必須手動 import `[P5, P6]`
 
 Nuxt 不自動註冊第三方套件元件，必須手動 import：
 
@@ -197,7 +222,7 @@ import Draggable from 'vuedraggable'
 
 ---
 
-## Pinia Store 規範
+## Pinia Store 規範 `[P6]`
 
 ```typescript
 // ❌ 依賴 auto-import → "useAuthStore is not defined"
@@ -213,7 +238,13 @@ await authStore.login(account, password)
 
 ---
 
-## testid 規範
+## TypeCheck 規範 `[P6]`
+
+頁面實作完成後，**必須執行 `npx nuxi typecheck`** 確認無型別錯誤。若有錯誤，修復後重新檢查。
+
+---
+
+## testid 規範 `[P3, P6]`
 
 ### 來源優先級
 
@@ -234,7 +265,7 @@ await authStore.login(account, password)
 
 ---
 
-## Layout 規範
+## Layout 規範 `[P4]`
 
 ### Sidebar
 

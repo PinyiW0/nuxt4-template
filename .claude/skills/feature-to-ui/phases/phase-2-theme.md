@@ -6,6 +6,8 @@
 僅需讀取：
 - ui-config.yaml > theme.colors（色彩設定）
 - ui-config.yaml > colorMode（深淺模式設定）
+- ui-config.yaml > project（name, description, locale, favicon）
+- ui-config.yaml > meta（keywords, author, og）
 ```
 
 ## 執行步驟
@@ -15,7 +17,14 @@
 3. **建立 main.css**（自訂色階）：
    - 有 `"#hex"` → 用 `@theme static` 寫入 `--color-{名稱}-50~950`
    - 有 `"名稱"` 或空值 → 不產生 CSS
-4. **詢問用戶確認**
+4. **設定 SEO / Meta**（寫入 `nuxt.config.ts` 的 `app.head`）：
+   - `project.name` → `<title>`
+   - `project.description` → `<meta name="description">`
+   - `project.favicon` → `<link rel="icon">`
+   - `meta.keywords` → `<meta name="keywords">`（非空值才產生）
+   - `meta.author` → `<meta name="author">`（非空值才產生）
+   - `meta.og.*` → `<meta property="og:*">`（含 `og:title`、`og:description`、`og:image`、`og:type`）
+5. **詢問用戶確認**
 
 ## 色彩翻譯規則
 

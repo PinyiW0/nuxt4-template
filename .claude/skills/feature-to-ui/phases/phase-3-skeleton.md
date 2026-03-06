@@ -5,15 +5,57 @@
 ```
 僅需讀取：
 - docs/route-map.yaml（Phase 0 產生的路由對照表）
+- rules.md [P3] 段落（testid 規範）
 
 若存在，額外讀取（testid 來源）：
 - docs/e2e-flows/pages/*.elements.md（各頁面的 testid 定義）
+
+Sync 模式額外讀取：
+- docs/sync-report.md（變更報告的「路由變更」段落）
 ```
 
 > ⚠️ 若 `pages/*.elements.md` 存在，頁面骨架的 `data-testid` **必須**使用該檔案定義的 testid，不可自行命名。
 > 若不存在，按 [rules.md](../rules.md) > testid 規範 的命名規則自行定義。
 
-## 執行步驟
+---
+
+## 增量模式判斷
+
+Phase 3 開始前，先檢查 `docs/sync-report.md` 是否存在：
+
+| 條件 | 模式 | 行為 |
+|------|------|------|
+| `sync-report.md` **不存在** | **全量模式** | 執行下方「全量模式執行步驟」（現有流程不動） |
+| `sync-report.md` **存在** | **增量模式** | 讀取報告，只處理新增的路由 |
+
+### 增量模式步驟
+
+1. **讀取 sync-report.md** 的「路由變更」表格
+2. **新增的路由** → 建立空殼頁面（與全量模式相同範本）
+3. **已存在的路由** → 跳過（不修改現有頁面骨架）
+4. **刪除的路由** → **不執行刪除**，列在確認清單提醒用戶
+5. **詢問用戶確認**
+
+增量確認格式：
+```
+Phase 3 增量更新完成
+
+新建頁面：
+- ✅ app/pages/coaches/index.vue（空殼，含 testid）
+
+跳過（已存在）：
+- ⏭️ app/pages/login.vue
+- ⏭️ app/pages/teams/index.vue
+
+待刪除（不自動執行）：
+- （無）
+
+確認後繼續？
+```
+
+---
+
+## 全量模式執行步驟
 
 1. **讀取路由規劃表**（`docs/route-map.yaml`）
 2. **檢查 `docs/e2e-flows/pages/` 是否存在 elements.md 檔案**
@@ -24,6 +66,17 @@
 5. **詢問用戶確認**
 
 ## 頁面空殼範例
+
+```vue
+<!-- app/pages/index.vue（根路由：Phase 6 填入實際導向目標） -->
+<script setup lang="ts">
+// Phase 6 實作：navigateTo('/<目標路由>', { redirectCode: 302 })
+</script>
+
+<template>
+  <div />
+</template>
+```
 
 ```vue
 <!-- app/pages/login.vue -->

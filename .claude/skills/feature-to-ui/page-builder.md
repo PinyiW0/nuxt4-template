@@ -96,7 +96,7 @@ And 系統顯示 "帳號或密碼錯誤"
 | 直接用 `color="blue"` | 用語意化 `color="primary"` |
 | 查詢頁沒搜尋框 | 「查詢」必須有搜尋框 |
 | 手動定義 `--ui-color-*` / `--ui-*` 變數 | Nuxt UI plugin 自動從 `--color-*` 橋接，禁止手動覆蓋 |
-| UFormField 不預留錯誤訊息空間 | 加上 `class="relative mb-8"` 和 `:ui="{ error: 'absolute top-full left-0 mt-1' }"` |
+| UFormField 錯誤訊息樣式不確定 | 依 `/nuxt-ui` MCP 文檔的 UFormField 用法為準 |
 
 > 完整禁止事項清單 → 詳見 [rules.md](rules.md)
 
@@ -216,11 +216,10 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
     class="space-y-4"
     @submit="onSubmit"
   >
+    <!-- UFormField 用法依 /nuxt-ui MCP 文檔為準 -->
     <UFormField
       label="帳號"
       name="account"
-      class="relative mb-8"
-      :ui="{ error: 'absolute top-full left-0 mt-1' }"
     >
       <UInput
         v-model="state.account"
@@ -231,8 +230,6 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
     <UFormField
       label="密碼"
       name="password"
-      class="relative mb-8"
-      :ui="{ error: 'absolute top-full left-0 mt-1' }"
     >
       <UInput
         v-model="state.password"

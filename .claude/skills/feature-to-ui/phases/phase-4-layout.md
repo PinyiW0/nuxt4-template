@@ -8,13 +8,27 @@
 - ui-config.yaml > colorMode（深淺模式）
 - ui-config.yaml > responsive.sidebar（響應式設定）
 - ui-config.yaml > icons.common（常用 icon）
+- docs/route-map.yaml > routes（所有路由，用於建立 sidebar 導航項目）
 - responsive.md（響應式規範）
-- rules.md > 配色策略、深淺模式、Layout 規範
+- rules.md [P4] 段落（配色策略、深淺模式與對比色、Layout 規範）
 
 執行 /nuxt-ui 載入組件文檔
 ```
 
-## 執行步驟
+## 模式判斷
+
+Phase 4 開始前，先檢查 `docs/sync-report.md` 是否存在：
+
+| 條件 | 模式 | 行為 |
+|------|------|------|
+| `sync-report.md` **不存在** | **全量模式** | 執行下方「全量模式執行步驟」 |
+| `sync-report.md` **存在** | **Sync 模式** | 只讀取現有 `default.vue`，比對 `route-map.yaml` 新路由，將缺少的導航項目加入 `navigation` 陣列（使用 Edit）。不重建 Layout、不問偏好。 |
+
+> ⚠️ **Phase 4 是導航同步的主責 Phase**。全量模式建立完整導航，Sync 模式補齊新路由。Phase 6 僅做 fallback 防漏檢查。
+
+---
+
+## 全量模式執行步驟
 
 1. **載入 NuxtUI 文檔**：執行 `/nuxt-ui`
 2. **詢問用戶 Layout 偏好**

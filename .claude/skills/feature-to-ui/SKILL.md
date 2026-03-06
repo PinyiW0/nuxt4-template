@@ -25,6 +25,32 @@ metadata:
 /feature-to-ui 6 [功能名]   # Phase 6: 頁面實作（指定功能）
 ```
 
+## 全量模式 vs Sync 模式
+
+`/feature-to-ui` 自動偵測當前狀態，決定執行模式：
+
+| 條件 | 模式 | 說明 |
+|------|------|------|
+| `docs/route-map.yaml` **不存在** | **全量模式** | 從零建立所有 UI（首次使用） |
+| `docs/route-map.yaml` **存在** | **Sync 模式** | 增量偵測 feature 變更，只更新受影響的部分 |
+
+### Sync 模式運作方式
+
+1. **Phase 0** 比對新舊 `.dsl.feature` 的 `content_hash`，產出 `docs/sync-report.md`（變更報告）
+2. **後續 Phase** 讀取此報告，決定增量行為：
+   - Phase 1：只新增/修改受影響的型別和端點
+   - Phase 3：只建立新增路由的空殼頁面
+   - Phase 6：按 build（新增）/ patch（修改）/ rebuild（重大變更）分別處理
+
+### Sync 模式注意事項
+
+- sync 模式下 Phase **必須按順序執行**，不可跳過有「✅ 執行」建議的 Phase
+- Phase 2/4/5 在 sync 模式下**通常可跳過**（除非 sync-report 指出需要）
+- sync 完成後可刪除 `docs/sync-report.md`（下次 sync 會重新產生）
+- 刪除項目**不會自動執行**，需使用者手動處理
+
+---
+
 ## 現有 Feature 檔案
 
 !`ls -1 docs/gherkin-spec/features/*.feature 2>/dev/null || echo "(無)"`
@@ -35,13 +61,13 @@ metadata:
 
 | Phase | 名稱 | 輸出 | 必讀規範 |
 |-------|------|------|----------|
-| 0 | 準備工作 | 功能清單、路由規劃、**route-map.yaml** | [phase-0](phases/phase-0-prep.md) |
-| 1 | Mock API | **app/types/api/**, server/mock/, server/api/ | [phase-1](phases/phase-1-mock-api.md) + [rules.md](rules.md) |
-| 2 | 基礎設定 | app.config.ts, main.css | [phase-2](phases/phase-2-theme.md) |
-| 3 | 路由骨架 | 所有 pages/*.vue 空殼（含 testid） | [phase-3](phases/phase-3-skeleton.md) + [rules.md](rules.md) |
-| 4 | Layout 建置 | layouts/*.vue | [phase-4](phases/phase-4-layout.md) + [rules.md](rules.md) + [responsive.md](responsive.md) |
-| 5 | 共用元件 | components/common/*.vue | [phase-5](phases/phase-5-components.md) + [components.md](components.md) + [rules.md](rules.md) |
-| 6 | 頁面實作 | 逐一填充 pages 內容 | [phase-6](phases/phase-6-pages.md) + [page-builder.md](page-builder.md) + [components.md](components.md) + [rules.md](rules.md) |
+| 0 | 準備工作 | 功能清單、路由規劃、**route-map.yaml**、**app/types/api/**（sync：**變更報告**） | [phase-0](phases/phase-0-prep.md) |
+| 1 | Mock API | server/mock/, server/api/（驗證 app/types/api/） | [phase-1](phases/phase-1-mock-api.md) + [rules.md `[P1]`](rules.md) |
+| 2 | 基礎設定 | app.config.ts, main.css, nuxt.config.ts（SEO head） | [phase-2](phases/phase-2-theme.md) |
+| 3 | 路由骨架 | 所有 pages/*.vue 空殼（含 testid） | [phase-3](phases/phase-3-skeleton.md) + [rules.md `[P3]`](rules.md) |
+| 4 | Layout 建置 | layouts/*.vue | [phase-4](phases/phase-4-layout.md) + [rules.md `[P4]`](rules.md) + [responsive.md](responsive.md) |
+| 5 | 共用元件 | components/common/*.vue（+ additionalFeature 元件） | [phase-5](phases/phase-5-components.md) + [components.md](components.md) + [features.md](features.md) + [rules.md `[P5]`](rules.md) |
+| 6 | 頁面實作 | 逐一填充 pages 內容 | [phase-6](phases/phase-6-pages.md) + [page-builder.md](page-builder.md) + [components.md](components.md) + [features.md](features.md) + [rules.md `[P6]`](rules.md) |
 
 **設計理念**：骨架優先，細節後填。每個 Phase 只載入必要的規範，避免 context 過載。`app/types/api/` 作為 API 合約的單一真相來源，串接 mock data、API endpoint、頁面三層。`route-map.yaml` 作為路由與 feature 對照的單一真相來源。`.flow.md` 作為 testid 的單一真相來源。
 
@@ -82,7 +108,7 @@ metadata:
 
 1. **Phase 0**：分析所有 .feature，產出功能清單、路由規劃、**route-map.yaml**
 2. **Phase 1**：建立 Mock API 和測試資料
-3. **Phase 2**：設定色彩主題（app.config.ts + main.css）
+3. **Phase 2**：設定色彩主題 + SEO/Meta（app.config.ts + main.css + nuxt.config.ts）
 
 ### Phase 3-5：架構骨架
 
@@ -100,7 +126,7 @@ metadata:
 
 - 執行 `/feature-to-ui`（無參數或參數為 `0`）時，**直接開始 Phase 0，不要詢問使用者任何問題**
 - Phase 0 開始前，先讀取 `ui-config-pm.yaml`，按照 `phase-0-prep.md` 的「PM 設定同步邏輯」將資訊同步填入 `ui-config.yaml` 的對應欄位
-- 若 PM yaml 的 `customColors` 有填色碼（非空值），一併覆蓋 `ui-config.yaml` 的 `theme.colors` 對應欄位
+- 若 PM yaml 的 `theme.colors` 有填色碼（非空值），一併覆蓋 `ui-config.yaml` 的 `theme.colors` 對應欄位
 - 同步完成後直接執行 Phase 0 的步驟，不需額外確認
 
 ---
@@ -112,7 +138,7 @@ metadata:
 - **每個 Phase 開始時只讀取該 Phase 的 phase 檔 + rules.md**
 - 禁止自行決定網站名稱、色彩等設定
 - 所有設定從 `ui-config.yaml` 讀取
-- Phase 1 必須先建 `app/types/api/` 合約型別
+- Phase 0 建立 `app/types/api/` 合約型別，Phase 1 驗證並建立 mock data + API
 - Phase 6 禁止定義 local interface，必須 import `~/types/api/`
 - Phase 6 每個功能必須先讀取 API 原始碼、共用元件、store
 - **Phase 3/6 若 `docs/e2e-flows/pages/*.elements.md` 存在，testid 必須以該檔案為準**

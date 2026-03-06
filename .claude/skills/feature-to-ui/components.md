@@ -53,11 +53,32 @@ const schema = z.object({
 
 | 規則 | 說明 |
 |------|------|
-| 每頁固定 10 筆 | 不提供筆數選擇器 |
+| 預設每頁 10 筆 | 可依 feature 需求加入筆數選擇器（見下方範例） |
 | Pagination 右下角 | `justify-end` |
 | 容器滿高 | `flex h-full flex-col` |
 | Pagination 永遠顯示 | 即使只有一頁 |
 | Mock 資料 ≥ 11 筆 | 確保分頁可測試 |
+
+### 筆數選擇器（選用）
+
+當 feature 需要可調整每頁筆數時，使用 `pageSizeStr`（string）+ `pageSize`（computed number）模式：
+
+```typescript
+// ⚠️ USelect v-model 必須是 string，pageSize 需 computed 轉為 number
+const pageSizeStr = ref('20')
+const pageSize = computed(() => Number(pageSizeStr.value))
+const pageSizeOptions = [
+  { label: '10 筆/頁', value: '10' },
+  { label: '20 筆/頁', value: '20' },
+  { label: '50 筆/頁', value: '50' },
+]
+```
+
+```vue
+<USelect v-model="pageSizeStr" :items="pageSizeOptions" value-key="value" class="w-32" />
+```
+
+> ⚠️ 篩選條件（含 pageSizeStr）變更時必須重設 `page = 1`。
 
 ### 完整範本
 

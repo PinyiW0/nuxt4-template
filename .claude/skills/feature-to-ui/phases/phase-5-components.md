@@ -10,19 +10,43 @@
 - ui-config.yaml > table（表格設定）
 - ui-config.yaml > delete.confirmation（刪除確認）
 - ui-config.yaml > colorMode（深淺模式）
+- docs/route-map.yaml > enabled_features（PM 啟用的額外功能）
 - components.md（元件使用規範）
-- rules.md > Nuxt UI 類型規範
+- features.md（額外功能的元件模板，僅 enabled_features 有啟用時需讀取）
+- rules.md [P5] 段落（配色策略、深淺模式、Nuxt UI 類型規範、表單型別安全、第三方元件 import）
 
 執行 /nuxt-ui 載入組件文檔（若尚未載入）
 ```
 
-## 執行步驟
+## 增量模式判斷
+
+Phase 5 開始前，先檢查 `docs/sync-report.md` 是否存在：
+
+| 條件 | 模式 | 行為 |
+|------|------|------|
+| `sync-report.md` **不存在** | **全量模式** | 執行下方「全量模式執行步驟」 |
+| `sync-report.md` **存在** | **Sync 模式** | 只處理 `enabled_features` 有新增的功能元件；已存在的共用元件（ListContainer 等）跳過不覆蓋 |
+
+### Sync 模式步驟
+
+1. **讀取 sync-report.md**，確認 `enabled_features` 是否有新增項目
+2. **新增的功能** → 建立對應 wrapper 元件（同全量模式範本）
+3. **已存在的元件** → 跳過（不修改、不覆蓋）
+4. **若無新增項目** → 整個 Phase 5 跳過，通知用戶
+
+---
+
+## 全量模式執行步驟
 
 1. **建立 ListContainer.vue**
 2. **建立 ConfirmModal.vue**
 3. **建立 PageHeader.vue**
 4. **建立 EmptyState.vue**
-5. **詢問用戶確認**
+5. **建立 additionalFeature 元件**（若 `enabled_features` 有啟用項目）
+   - 讀取 `features.md` 中對應功能的元件模板
+   - 每個啟用的功能建立對應的 wrapper 元件（如 `ChartWrapper.vue`、`DraggableList.vue`）
+   - 若功能需要第三方套件，在確認清單中提醒用戶安裝
+6. **詢問用戶確認**
 
 ## 輸出結構
 
