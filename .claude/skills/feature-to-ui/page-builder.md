@@ -293,8 +293,8 @@ const showPassword = ref(false)
 ### Tailwind v4 !important
 
 ```
-❌ 舊語法：[&_td]:!h-12
-✅ 新語法：[&_td]:h-12!
+[X] 舊語法：[&_td]:!h-12
+[O] 新語法：[&_td]:h-12!
 ```
 
 ### Icons 套件

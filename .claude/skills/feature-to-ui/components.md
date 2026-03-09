@@ -202,10 +202,10 @@ const totalItems = computed(() => items.value.length)
 所有 hover 元素必須同時加上 `cursor-pointer` 和 `duration-300`：
 
 ```html
-<!-- ✅ 正確 -->
+<!-- [O] 正確 -->
 <div class="cursor-pointer transition-colors duration-300 hover:bg-neutral-100">
 
-<!-- ❌ 錯誤 -->
+<!-- [X] 錯誤 -->
 <div class="hover:bg-neutral-100">
 ```
 
@@ -291,7 +291,7 @@ const totalItems = computed(() => items.value.length)
 
 ```vue
 <script setup lang="ts">
-// ✅ 用 undefined 代表「全部」
+// [O] 用 undefined 代表「全部」
 const selectedTeamId = ref<string | undefined>(undefined)
 const teamOptions = computed(() =>
   teams.value.map(t => ({ label: t.name, value: String(t.id) })),
@@ -358,6 +358,6 @@ NuxtUI v4 只支援：
   footer: 'class...',
 }"
 
-// ❌ 不支援，改用 class
+// [X] 不支援，改用 class
 :ui="{ ring: 'ring-0' }"  // → class="ring-0"
 ```

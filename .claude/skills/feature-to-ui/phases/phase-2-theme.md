@@ -65,22 +65,22 @@ Nuxt UI plugin 會根據 `app.config.ts` 的映射值去尋找 `--color-{value}-
 
 | ui-config.yaml 值 | main.css 是否有定義色階 | app.config.ts 映射 |
 |-------------------|----------------------|-------------------|
-| `"#hex"` | ✅ 有（`@theme` 定義了 `--color-{名稱}-*`） | `'{語義色名}'`（映射到自訂色） |
-| `"red"` | ❌ 沒有（沿用 Tailwind 內建） | `'red'`（映射到 Tailwind 內建色） |
-| `""` | ❌ 沒有（空值 fallback） | 查預設對應表 |
+| `"#hex"` | 有（`@theme` 定義了 `--color-{名稱}-*`） | `'{語義色名}'`（映射到自訂色） |
+| `"red"` | 沒有（沿用 Tailwind 內建） | `'red'`（映射到 Tailwind 內建色） |
+| `""` | 沒有（空值 fallback） | 查預設對應表 |
 
 ```typescript
-// ❌ error 沒有在 main.css 定義色階，卻映射到 'error'
+// [X] error 沒有在 main.css 定義色階，卻映射到 'error'
 // Tailwind 沒有內建叫 'error' 的顏色 → bg-error 無色！
 error: 'error',
 
-// ✅ 沒有自訂色階 → 映射到 Tailwind 內建色名
+// [O] 沒有自訂色階 → 映射到 Tailwind 內建色名
 error: 'red',
 warning: 'amber',
 success: 'green',
 info: 'blue',
 
-// ✅ 有在 main.css 用 @theme 自訂色階 → 映射到自身名稱
+// [O] 有在 main.css 用 @theme 自訂色階 → 映射到自身名稱
 primary: 'primary',
 secondary: 'secondary',
 neutral: 'neutral',
@@ -220,31 +220,31 @@ export default defineAppConfig({
 ## 常見錯誤
 
 ```typescript
-// ❌ 沒有自訂色階卻映射到語義名稱 — Tailwind 沒有 'error' 這個內建色！
+// [X] 沒有自訂色階卻映射到語義名稱 — Tailwind 沒有 'error' 這個內建色！
 error: 'error',        // NuxtUI 去找 --color-error-*，找不到 → bg-error 無色
 warning: 'warning',    // NuxtUI 去找 --color-warning-*，找不到 → bg-warning 無色
 
-// ✅ 沒有自訂色階 → 映射到 Tailwind 內建色名
-error: 'red',          // NuxtUI 去找 --color-red-*，Tailwind 內建有 ✅
-warning: 'amber',      // NuxtUI 去找 --color-amber-*，Tailwind 內建有 ✅
+// [O] 沒有自訂色階 → 映射到 Tailwind 內建色名
+error: 'red',          // NuxtUI 去找 --color-red-*，Tailwind 內建有
+warning: 'amber',      // NuxtUI 去找 --color-amber-*，Tailwind 內建有
 ```
 
 ```typescript
-// ❌ app.config 映射名稱和 CSS 變數名稱不一致
+// [X] app.config 映射名稱和 CSS 變數名稱不一致
 primary: 'rose',       // NuxtUI 去找 --color-rose-*，找不到自訂色！
 
-// ✅ 自訂 hex 時，映射到自身名稱
-primary: 'primary',    // NuxtUI 去找 --color-primary-*，對上自訂色 ✅
+// [O] 自訂 hex 時，映射到自身名稱
+primary: 'primary',    // NuxtUI 去找 --color-primary-*，對上自訂色
 ```
 
 ```typescript
-// ❌ 使用 NuxtUI 不支援的語義色名
+// [X] 使用 NuxtUI 不支援的語義色名
 tertiary: 'slate',     // NuxtUI 元件沒有 color="tertiary"
 accent: 'slate',       // NuxtUI 元件沒有 color="accent"
 ```
 
 ```css
-/* ❌ 手動定義 --ui-color-* 和 --ui-*（會和 Nuxt UI plugin 衝突） */
+/* [X] 手動定義 --ui-color-* 和 --ui-*（會和 Nuxt UI plugin 衝突） */
 :root {
   --ui-color-primary-500: #00BA7B;
   --ui-primary: var(--ui-color-primary-500);
@@ -252,7 +252,7 @@ accent: 'slate',       // NuxtUI 元件沒有 color="accent"
   --ui-bg: white;
 }
 
-/* ✅ 只定義 Tailwind 層（--color-*），Nuxt UI 自動處理其餘 */
+/* [O] 只定義 Tailwind 層（--color-*），Nuxt UI 自動處理其餘 */
 @theme static {
   --color-primary-500: #00BA7B;
 }

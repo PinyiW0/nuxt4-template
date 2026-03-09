@@ -120,8 +120,8 @@ Phase 6 開始前，先檢查 `docs/sync-report.md` 是否存在：
    - **逐一檢查步驟 4 對照表，確保每個 Feature 都有對應的 UI 實作**
    - **⚠️ build 模式（fallback 防漏）：檢查 Layout 導航是否已包含此路由**。Phase 4 應已處理導航同步，此處僅做最終確認。讀取 `app/layouts/default.vue`，確認 `navigation` 陣列是否有此頁面的連結。若無 → 加入導航項目（label、icon、to）
 6. **⚠️ 功能覆蓋驗證（必須執行！）**
-   - 拿步驟 4 的對照表，逐列標記 ✅ 或 ❌
-   - 若有任何 ❌ → 補做後重新驗證
+   - 拿步驟 4 的對照表，逐列標記 OK 或 FAIL
+   - 若有任何 FAIL → 補做後重新驗證
    - 檢查 Mock 資料量是否 ≥ 11 筆，不足則補建
 7. **⚠️ 規範合規檢查（必須執行！）**
    - testid 是否全部對應 `elements.md`
@@ -148,7 +148,7 @@ Phase 6 開始前，先檢查 `docs/sync-report.md` 是否存在：
 
 ## 單一功能完成後的確認格式（必須使用）
 
-> ⚠️ 若覆蓋表有任何 ❌，**必須先修復再向用戶確認**。
+> ⚠️ 若覆蓋表有任何 FAIL，**必須先修復再向用戶確認**。
 
 ```
 「XXX」功能已完成
@@ -160,15 +160,15 @@ Phase 6 開始前，先檢查 `docs/sync-report.md` 是否存在：
 Scenario 覆蓋：
 | Scenario | 對應 UI | 狀態 |
 |----------|---------|------|
-| 查詢球員列表 | UTable + 搜尋框 | ✅ |
-| 建立球員 | Modal + 表單 | ✅ |
-| 調整球員順序 | vuedraggable | ✅ |
-| 刪除球員 | 確認 Modal | ✅ |
+| 查詢球員列表 | UTable + 搜尋框 | OK |
+| 建立球員 | Modal + 表單 | OK |
+| 調整球員順序 | vuedraggable | OK |
+| 刪除球員 | 確認 Modal | OK |
 
 資料驗證：
-- Mock 資料：12 筆（≥11 ✅）
-- API 路徑：全部確認 ✅
-- testid：對應 elements.md ✅
+- Mock 資料：12 筆（≥11 OK）
+- API 路徑：全部確認 OK
+- testid：對應 elements.md OK
 
 確認後繼續實作下一個功能？
 ```
@@ -192,8 +192,8 @@ Scenario 覆蓋：
 4. **讀取相關資源**（types/api、API 端點、共用元件、store、flow）
 5. **定位驗證**（確認 patch 目標程式碼存在）
    - 針對每個預計修改的區塊，用 Grep 確認現有程式碼中存在預期的目標（如 schema 變數名、函式名、template 區塊）
-   - ✅ 找到 → 繼續 Edit
-   - ❌ 找不到 → **自動升級為 rebuild**，向用戶說明原因
+   - 找到 → 繼續 Edit
+   - 找不到 → **自動升級為 rebuild**，向用戶說明原因
    - 常見定位目標：`const schema = z.object`、`function openCreate`、`<UFormField label=`、`data-testid=`
 6. **逐項 Edit**（使用 Edit tool，不 Write 整個檔案）
 7. **完成後確認**（一次確認即可）
@@ -211,9 +211,9 @@ Scenario 覆蓋：
    Scenario 覆蓋（含未變更 feature）：
    | Scenario | 狀態 | 備註 |
    |----------|------|------|
-   | 查詢球隊列表 | ✅ 未動 | 03 無變化 |
-   | 建立球隊 | ✅ 已更新 | 新增 description |
-   | 刪除球隊 | ✅ 未動 | 05 無變化 |
+   | 查詢球隊列表 | OK 未動 | 03 無變化 |
+   | 建立球隊 | OK 已更新 | 新增 description |
+   | 刪除球隊 | OK 未動 | 05 無變化 |
 
    確認後繼續？
    ```

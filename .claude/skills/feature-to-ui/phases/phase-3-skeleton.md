@@ -41,11 +41,11 @@ Phase 3 開始前，先檢查 `docs/sync-report.md` 是否存在：
 Phase 3 增量更新完成
 
 新建頁面：
-- ✅ app/pages/coaches/index.vue（空殼，含 testid）
+- [done] app/pages/coaches/index.vue（空殼，含 testid）
 
 跳過（已存在）：
-- ⏭️ app/pages/login.vue
-- ⏭️ app/pages/teams/index.vue
+- [skip] app/pages/login.vue
+- [skip] app/pages/teams/index.vue
 
 待刪除（不自動執行）：
 - （無）

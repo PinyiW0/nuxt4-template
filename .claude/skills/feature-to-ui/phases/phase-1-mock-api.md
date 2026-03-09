@@ -43,13 +43,13 @@ Phase 1 開始前，先檢查 `docs/sync-report.md` 是否存在：
 Phase 1 增量更新完成
 
 型別變更：
-- ✅ app/types/api/teams.ts：CreateTeamBody 新增 description 欄位
-- ✅ app/types/api/coaches.ts：新建（CoachItem, CreateCoachBody）
+- [done] app/types/api/teams.ts：CreateTeamBody 新增 description 欄位
+- [done] app/types/api/coaches.ts：新建（CoachItem, CreateCoachBody）
 
 端點變更：
-- ✅ server/api/teams/index.post.ts：調整 body 結構
-- ✅ server/api/coaches/index.get.ts：新建
-- ✅ server/api/coaches/index.post.ts：新建
+- [done] server/api/teams/index.post.ts：調整 body 結構
+- [done] server/api/coaches/index.get.ts：新建
+- [done] server/api/coaches/index.post.ts：新建
 
 待刪除（不自動執行）：
 - ⚠️ server/api/teams/[id].delete.ts（05-刪除球隊 已移除）
@@ -201,7 +201,7 @@ export default defineEventHandler((event: H3Event) => {
   const start = (page - 1) * pageSize
   const paged = items.slice(start, start + pageSize)
 
-  // ✅ 直接回傳 paged，不做 .map() 轉換
+  // [O] 直接回傳 paged，不做 .map() 轉換
   return {
     status: 'success' as const,
     data: paged,

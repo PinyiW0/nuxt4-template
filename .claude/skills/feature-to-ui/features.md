@@ -4,54 +4,31 @@
 > Phase 5 建立 wrapper 元件，Phase 6 在頁面中使用。
 > 只有 `route-map.yaml > enabled_features` 中列出的功能才需要實作。
 >
-> **套件版本以本檔為準**，`ui-config.yaml` 只決定功能是否啟用。
+> **Phase 5 流程**：列出套件選項 → 開發者確認 → 安裝 → 依選定套件實作 wrapper 內部邏輯。
+> **Phase 6 只使用 Wrapper API**，不直接 import 第三方套件。
 
 ---
 
 ## charts — 統計圖表
 
-### 套件
+### Wrapper API（Phase 6 消費介面）
 
-```bash
-npm install vue-chartjs chart.js
-```
+元件名：`ChartWrapper.vue`
 
-### Phase 5 建立元件
+| Prop | Type | 說明 |
+|------|------|------|
+| type | `'bar' \| 'line' \| 'doughnut'` | 圖表類型 |
+| data | `{ labels: string[], datasets: { label: string, data: number[], backgroundColor?: string \| string[] }[] }` | 圖表資料 |
+| options | `Record<string, unknown>` | 圖表選項（選填） |
 
-```vue
-<!-- app/components/common/ChartWrapper.vue -->
-<script setup lang="ts">
-import { Bar, Doughnut, Line } from 'vue-chartjs'
-import {
-  ArcElement,
-  BarElement,
-  CategoryScale,
-  Chart as ChartJS,
-  Legend,
-  LinearScale,
-  LineElement,
-  PointElement,
-  Title,
-  Tooltip,
-} from 'chart.js'
+### 套件選項（Phase 5 詢問開發者）
 
-ChartJS.register(Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale, PointElement, LineElement, ArcElement)
+| 套件 | 說明 |
+|------|------|
+| vue-chartjs + chart.js | 最廣泛使用，基於 Chart.js |
+| vue-echarts + echarts | 功能更豐富，適合複雜視覺化 |
 
-defineProps<{
-  type: 'bar' | 'line' | 'doughnut'
-  data: { labels: string[], datasets: { label: string, data: number[], backgroundColor?: string | string[] }[] }
-  options?: Record<string, unknown>
-}>()
-</script>
-
-<template>
-  <div class="relative">
-    <Bar v-if="type === 'bar'" :data="data" :options="options" />
-    <Line v-else-if="type === 'line'" :data="data" :options="options" />
-    <Doughnut v-else-if="type === 'doughnut'" :data="data" :options="options" />
-  </div>
-</template>
-```
+> 選定後 Phase 5 實作 wrapper，需處理：元件 register（chart.js）或全域設定（echarts）。
 
 ### Phase 6 使用方式
 
@@ -70,11 +47,30 @@ defineProps<{
 
 ## dragAndDrop — 拖曳排序
 
-### 套件
+### Wrapper API（Phase 6 消費介面）
 
-```bash
-npm install vuedraggable@next
-```
+元件名：`DraggableList.vue`
+
+| Prop | Type | 說明 |
+|------|------|------|
+| items (v-model) | `{ id: number, [key: string]: unknown }[]` | 可拖曳的項目列表 |
+| itemKey | `string` | 項目唯一鍵（預設 `'id'`） |
+| handle | `string` | 拖曳把手的 CSS selector（選填） |
+
+| Emit | Payload | 說明 |
+|------|---------|------|
+| sorted | `number[]` | 排序後的 id 陣列 |
+
+| Slot | Scope | 說明 |
+|------|-------|------|
+| default | `{ element }` | 每個項目的渲染內容 |
+
+### 套件選項（Phase 5 詢問開發者）
+
+| 套件 | 說明 |
+|------|------|
+| vuedraggable@4.1 | Vue 3 拖曳，基於 SortableJS，社群廣泛使用 |
+| @formkit/drag-and-drop | 輕量替代，無 SortableJS 依賴 |
 
 ### Phase 1 影響
 
@@ -89,43 +85,6 @@ export default defineEventHandler(async (event: H3Event) => {
   // 更新 mock 資料的排序
   return { status: 'success' as const, message: '排序已更新' }
 })
-```
-
-### Phase 5 建立元件
-
-```vue
-<!-- app/components/common/DraggableList.vue -->
-<script setup lang="ts">
-import Draggable from 'vuedraggable'
-
-const items = defineModel<{ id: number, [key: string]: unknown }[]>('items', { required: true })
-
-defineProps<{
-  itemKey?: string
-  handle?: string
-}>()
-
-const emit = defineEmits<{
-  sorted: [ids: number[]]
-}>()
-
-function onEnd() {
-  emit('sorted', items.value.map(item => item.id))
-}
-</script>
-
-<template>
-  <Draggable
-    v-model="items"
-    :item-key="itemKey ?? 'id'"
-    :handle="handle"
-    @end="onEnd"
-  >
-    <template #item="{ element }">
-      <slot :element="element" />
-    </template>
-  </Draggable>
-</template>
 ```
 
 ### Phase 6 使用方式
@@ -145,63 +104,27 @@ function onEnd() {
 
 ## richTextEditor — 富文本編輯器
 
-### 套件
+### Wrapper API（Phase 6 消費介面）
 
-```bash
-npm install @tiptap/vue-3 @tiptap/starter-kit @tiptap/extension-placeholder
-```
+元件名：`RichTextEditor.vue`
 
-### Phase 5 建立元件
+| Prop | Type | 說明 |
+|------|------|------|
+| modelValue (v-model) | `string` | HTML 內容 |
+| placeholder | `string` | 提示文字（選填） |
 
-```vue
-<!-- app/components/common/RichTextEditor.vue -->
-<script setup lang="ts">
-import Placeholder from '@tiptap/extension-placeholder'
-import StarterKit from '@tiptap/starter-kit'
-import { EditorContent, useEditor } from '@tiptap/vue-3'
+### 套件選項（Phase 5 詢問開發者）
 
-const props = defineProps<{
-  placeholder?: string
-}>()
+| 套件 | 說明 |
+|------|------|
+| @tiptap/vue-3 + @tiptap/starter-kit | 模組化架構，可按需擴充 |
+| @vueup/vue-quill | 基於 Quill，較簡單但客製化空間較小 |
 
-const content = defineModel<string>({ default: '' })
+> 選定後 Phase 5 實作 wrapper，需包含基本工具列（粗體、斜體、列表）。
 
-const editor = useEditor({
-  content: content.value,
-  extensions: [
-    StarterKit,
-    Placeholder.configure({ placeholder: props.placeholder ?? '請輸入內容...' }),
-  ],
-  onUpdate: ({ editor: e }) => {
-    content.value = e.getHTML()
-  },
-})
+### Phase 1 影響
 
-watch(content, (val) => {
-  if (editor.value && editor.value.getHTML() !== val) {
-    editor.value.commands.setContent(val)
-  }
-})
-</script>
-
-<template>
-  <div class="rounded-md border border-neutral-200 dark:border-neutral-800">
-    <!-- 工具列 -->
-    <div v-if="editor" class="flex gap-1 border-b border-neutral-200 p-2 dark:border-neutral-800">
-      <UButton size="xs" variant="ghost" color="neutral" :class="{ 'bg-neutral-100 dark:bg-neutral-800': editor.isActive('bold') }" @click="editor.chain().focus().toggleBold().run()">
-        B
-      </UButton>
-      <UButton size="xs" variant="ghost" color="neutral" :class="{ 'bg-neutral-100 dark:bg-neutral-800': editor.isActive('italic') }" @click="editor.chain().focus().toggleItalic().run()">
-        I
-      </UButton>
-      <UButton size="xs" variant="ghost" color="neutral" :class="{ 'bg-neutral-100 dark:bg-neutral-800': editor.isActive('bulletList') }" @click="editor.chain().focus().toggleBulletList().run()">
-        •
-      </UButton>
-    </div>
-    <EditorContent :editor="editor" class="prose prose-sm max-w-none p-3 dark:prose-invert" />
-  </div>
-</template>
-```
+確保對應 API 欄位使用 `string` 型別（存放 HTML 內容）。
 
 ### Phase 6 使用方式
 
@@ -209,46 +132,25 @@ watch(content, (val) => {
 <RichTextEditor v-model="formData.content" placeholder="請輸入文章內容..." />
 ```
 
-### Phase 1 影響
-
-確保對應 API 欄位使用 `string` 型別（存放 HTML 內容）。
-
 ---
 
 ## advancedDatePicker — 進階日期時間選擇器
 
-### 套件
+### Wrapper API（Phase 6 消費介面）
 
-```bash
-npm install @vuepic/vue-datepicker
-```
+元件名：`DateRangePicker.vue`
 
-### Phase 5 建立元件
+| Prop | Type | 說明 |
+|------|------|------|
+| modelValue (v-model) | `[Date, Date] \| null` | 日期範圍 |
+| placeholder | `string` | 提示文字（選填） |
 
-```vue
-<!-- app/components/common/DateRangePicker.vue -->
-<script setup lang="ts">
-import VueDatePicker from '@vuepic/vue-datepicker'
-import '@vuepic/vue-datepicker/dist/main.css'
+### 套件選項（Phase 5 詢問開發者）
 
-const dateRange = defineModel<[Date, Date] | null>({ default: null })
-
-defineProps<{
-  placeholder?: string
-}>()
-</script>
-
-<template>
-  <VueDatePicker
-    v-model="dateRange"
-    range
-    :placeholder="placeholder ?? '選擇日期範圍'"
-    :enable-time-picker="false"
-    auto-apply
-    class="w-full"
-  />
-</template>
-```
+| 套件 | 說明 |
+|------|------|
+| @vuepic/vue-datepicker | 功能完整，支援範圍選擇、時間選擇 |
+| v-calendar | 輕量日曆元件，支援範圍選擇 |
 
 ### Phase 6 使用方式
 
@@ -259,6 +161,10 @@ defineProps<{
 ---
 
 ## fileUpload — 檔案上傳
+
+### 不需額外套件
+
+使用原生 `FormData` + `$fetch` + `DragEvent`。
 
 ### Phase 1 影響
 
@@ -361,7 +267,7 @@ function onDrop(e: DragEvent) {
 
 ### 不需額外套件
 
-使用 `IntersectionObserver` 原生 API。
+使用原生 `IntersectionObserver` API。
 
 ### Phase 5 建立元件
 

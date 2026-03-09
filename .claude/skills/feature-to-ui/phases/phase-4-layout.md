@@ -9,7 +9,6 @@
 - ui-config.yaml > responsive.sidebar（響應式設定）
 - ui-config.yaml > icons.common（常用 icon）
 - docs/route-map.yaml > routes（所有路由，用於建立 sidebar 導航項目）
-- responsive.md（響應式規範）
 - rules.md [P4] 段落（配色策略、深淺模式與對比色、Layout 規範）
 
 執行 /nuxt-ui 載入組件文檔

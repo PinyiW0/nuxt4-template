@@ -1,16 +1,26 @@
 ---
 name: feature-to-ui
-description: 根據 .feature 檔搭配 NuxtUI 產生完整 UI 畫面（分階段：骨架優先，細節後填）
-metadata:
-  disable-model-invocation: true
-  argument-hint: "[phase]"
-  context: fork
-  agent: general-purpose
+description: 根據 .feature 檔搭配 NuxtUI 產生完整 UI 畫面（分階段：骨架優先，細節後填）。Use when 需要從 .dsl.feature 規格檔產生前端介面、建立 Mock API、Layout、共用元件或頁面實作。
+argument-hint: "[phase]"
+context: fork
+agent: general-purpose
 ---
 
 # Feature to UI 工作流程
 
 根據 .feature 規格檔，使用 NuxtUI 產生完整的前端介面。
+
+## Workflow
+
+```mermaid
+flowchart LR
+    P0[Phase 0: 準備] --> P1[Phase 1: Mock API]
+    P1 --> P2[Phase 2: 基礎設定]
+    P2 --> P3[Phase 3: 路由骨架]
+    P3 --> P4[Phase 4: Layout]
+    P4 --> P5[Phase 5: 共用元件]
+    P5 --> P6[Phase 6: 頁面實作]
+```
 
 ## 使用方式
 
@@ -44,7 +54,7 @@ metadata:
 
 ### Sync 模式注意事項
 
-- sync 模式下 Phase **必須按順序執行**，不可跳過有「✅ 執行」建議的 Phase
+- sync 模式下 Phase **必須按順序執行**，不可跳過有「執行」建議的 Phase
 - Phase 2/4/5 在 sync 模式下**通常可跳過**（除非 sync-report 指出需要）
 - sync 完成後可刪除 `docs/sync-report.md`（下次 sync 會重新產生）
 - 刪除項目**不會自動執行**，需使用者手動處理
@@ -65,7 +75,7 @@ metadata:
 | 1 | Mock API | server/mock/, server/api/（驗證 app/types/api/） | [phase-1](phases/phase-1-mock-api.md) + [rules.md `[P1]`](rules.md) |
 | 2 | 基礎設定 | app.config.ts, main.css, nuxt.config.ts（SEO head） | [phase-2](phases/phase-2-theme.md) |
 | 3 | 路由骨架 | 所有 pages/*.vue 空殼（含 testid） | [phase-3](phases/phase-3-skeleton.md) + [rules.md `[P3]`](rules.md) |
-| 4 | Layout 建置 | layouts/*.vue | [phase-4](phases/phase-4-layout.md) + [rules.md `[P4]`](rules.md) + [responsive.md](responsive.md) |
+| 4 | Layout 建置 | layouts/*.vue | [phase-4](phases/phase-4-layout.md) + [rules.md `[P4]`](rules.md) |
 | 5 | 共用元件 | components/common/*.vue（+ additionalFeature 元件） | [phase-5](phases/phase-5-components.md) + [components.md](components.md) + [features.md](features.md) + [rules.md `[P5]`](rules.md) |
 | 6 | 頁面實作 | 逐一填充 pages 內容 | [phase-6](phases/phase-6-pages.md) + [page-builder.md](page-builder.md) + [components.md](components.md) + [features.md](features.md) + [rules.md `[P6]`](rules.md) |
 
@@ -81,7 +91,7 @@ metadata:
 - **[phases/](phases/)** - 各 Phase 的執行步驟與模板（**每個 Phase 開始前讀取對應的 phase 檔**）
 - [page-builder.md](page-builder.md) - DSL 解析 + 表單範本（Phase 6 需要）
 - [components.md](components.md) - 元件使用規範（Phase 5, 6 需要）
-- [responsive.md](responsive.md) - 響應式規範（Phase 4, 5, 6 需要）
+
 
 ### E2E 測試元素定義（Phase 3, 6 需要）
 

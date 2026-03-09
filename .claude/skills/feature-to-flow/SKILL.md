@@ -1,11 +1,10 @@
 ---
 name: feature-to-flow
 description: 將 .feature 規格轉換為 .flow.md 操作流程（E2E testid 的 single source of truth）
-metadata:
-  disable-model-invocation: true
-  argument-hint: "[phase | <feature> | batch <start> <end> | auto]"
-  context: fork
-  agent: general-purpose
+disable-model-invocation: true
+argument-hint: "[phase | <feature> | batch <start> <end> | auto]"
+context: fork
+agent: general-purpose
 ---
 
 # Feature to Flow 工作流程

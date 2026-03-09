@@ -39,8 +39,3 @@ export interface UpdatePlayerBody {
   height?: number
   position?: string
 }
-
-export interface SortPlayersBody {
-  team_id: number
-  player_ids: number[]
-}

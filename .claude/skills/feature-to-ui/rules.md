@@ -20,12 +20,12 @@ UI 配色以 **primary + neutral** 為主（佔 90%），語意色只用在狀�
 | `warning` | toast 警告、注意 badge |
 
 ```vue
-<!-- ✅ 主要按鈕 primary，次要 neutral，刪除 error -->
+<!-- 主要按鈕 primary，次要 neutral，刪除 error -->
 <UButton color="primary">儲存</UButton>
 <UButton color="neutral" variant="outline">取消</UButton>
 <UButton color="error" @click="handleDelete">刪除</UButton>
 
-<!-- ✅ hover 用 primary -->
+<!-- hover 用 primary -->
 <NuxtLink class="hover:bg-primary-50 hover:text-primary-600 dark:hover:bg-primary-950 dark:hover:text-primary-400">
 ```
 
@@ -51,10 +51,10 @@ UI 配色以 **primary + neutral** 為主（佔 90%），語意色只用在狀�
 | Error 文字 | `text-error-600 dark:text-error-400` |
 
 ```vue
-<!-- ❌ 固定 500 在某個模式下對比不足 -->
+<!-- [X] 固定 500 在某個模式下對比不足 -->
 <span class="text-primary-500">文字</span>
 
-<!-- ✅ 600/400 組合確保雙模式 WCAG AA -->
+<!-- [O] 600/400 組合確保雙模式 WCAG AA -->
 <span class="text-primary-600 dark:text-primary-400">文字</span>
 ```
 
@@ -65,10 +65,10 @@ UI 配色以 **primary + neutral** 為主（佔 90%），語意色只用在狀�
 ## Zod v4 規範 `[P6]`
 
 ```typescript
-// ❌ Zod v3（禁止 required_error、invalid_type_error）
+// [X] Zod v3（禁止 required_error、invalid_type_error）
 z.number({ required_error: '請輸入背號' })
 
-// ✅ Zod v4：用 error 或 validator message
+// [O] Zod v4：用 error 或 validator message
 z.number({ error: '請輸入背號' })
 z.string().min(1, '請輸入姓名')  // 推薦
 ```
@@ -81,29 +81,29 @@ z.string().min(1, '請輸入姓名')  // 推薦
 
 ```typescript
 import type { TableColumn } from '@nuxt/ui'
-// ✅ v3+：accessorKey + header
+// [O] v3+：accessorKey + header
 const columns: TableColumn<MyItem>[] = [{ accessorKey: 'name', header: '名稱' }]
-// ❌ v2：id + label
+// [X] v2：id + label
 ```
 
 ### UTable @select
 
 ```typescript
-// ✅ 接收 (event, row) 兩個參數
+// [O] 接收 (event, row) 兩個參數
 function handleSelect(_e: Event, row: { original: MyItem }) { ... }
 ```
 
 ### UButton color 類型
 
 ```typescript
-// ✅ 用 union type，不用 string
+// [O] 用 union type，不用 string
 confirmColor?: 'primary' | 'secondary' | 'success' | 'info' | 'warning' | 'error' | 'neutral'
 ```
 
 ### UCheckbox @update:model-value
 
 ```typescript
-// ✅ 參數必須包含 'indeterminate'
+// [O] 參數必須包含 'indeterminate'
 (val: boolean | 'indeterminate') => selection[row.index] = val === true
 ```
 
@@ -112,8 +112,8 @@ confirmColor?: 'primary' | 'secondary' | 'success' | 'info' | 'warning' | 'error
 Nuxt UI v3 的 `<USelect>` **禁止** `value: ''`。「全部/不篩選」用 `undefined` + `placeholder`：
 
 ```typescript
-// ❌ { label: '全部球隊', value: '' }  → 報錯
-// ✅
+// [X] { label: '全部球隊', value: '' }  → 報錯
+// [O]
 const selected = ref<string | undefined>(undefined)
 ```
 
@@ -139,9 +139,9 @@ async function onSubmit(event: FormSubmitEvent<MySchema>) { ... }
 USelect 從 items 的 value 推斷 v-model 型別。窄型別會和 Zod 的 `string` 衝突。
 
 ```typescript
-// ✅ 用 string[]
+// [O] 用 string[]
 const positionOptions = ['投手', '捕手', '一壘手', '游擊手']
-// ❌ 標 Position[] → 和 Zod 的 string 打架
+// [X] 標 Position[] → 和 Zod 的 string 打架
 ```
 
 > 窄型別（Position、Status）只用於 `types/api/` 定義，不用於表單 options。
@@ -149,7 +149,7 @@ const positionOptions = ['投手', '捕手', '一壘手', '游擊手']
 ### useFetch 陣列資料用 computed 標型別
 
 ```typescript
-// ✅ 避免 template v-for 推斷為 unknown
+// [O] 避免 template v-for 推斷為 unknown
 const heatMapPoints = computed<HeatMapPoint[]>(() => analysis.value?.heat_map_data ?? [])
 ```
 
@@ -196,11 +196,11 @@ item.name = 'new'
 **API 端點直接回傳 mock data，禁止手動 `.map()` 挑選欄位：**
 
 ```typescript
-// ✅ 直接回傳（型別自動對齊 types/api/）
+// [O] 直接回傳（型別自動對齊 types/api/）
 const paged = items.slice(start, start + pageSize)
 return { status: 'success' as const, data: paged, meta: { total, page, page_size } }
 
-// ❌ 禁止手動 map（容易和型別定義不一致，導致 TypeScript 報錯）
+// [X] 禁止手動 map（容易和型別定義不一致，導致 TypeScript 報錯）
 return { status: 'success' as const, data: paged.map(m => ({ id: m.id, ... })) }
 ```
 
@@ -225,14 +225,14 @@ import Draggable from 'vuedraggable'
 ## Pinia Store 規範 `[P6]`
 
 ```typescript
-// ❌ 依賴 auto-import → "useAuthStore is not defined"
+// [X] 依賴 auto-import → "useAuthStore is not defined"
 const authStore = useAuthStore()
 
-// ✅ 明確 import
+// [O] 明確 import
 import { useAuthStore } from '~/stores/auth'
 const authStore = useAuthStore()
 
-// ✅ 登入用 store 方法（狀態自動 persist），不直接 $fetch
+// [O] 登入用 store 方法（狀態自動 persist），不直接 $fetch
 await authStore.login(account, password)
 ```
 
@@ -278,3 +278,15 @@ await authStore.login(account, password)
 
 - **禁止** `fixed`/`absolute` 定位漢堡按鈕
 - 使用 in-flow（`lg:hidden`）+ `shrink-0` + `border-b`
+
+---
+
+## 響應式禁止事項 `[P6]`
+
+| 禁止 | 正確做法 |
+|------|----------|
+| 固定寬度 `w-[500px]` | `w-full max-w-md` |
+| 表格不處理小螢幕 | 隱藏次要欄位或水平滾動 |
+| Modal 固定寬度 | `w-full sm:max-w-md` |
+| 忽略行動裝置 | 實作響應式 |
+| Sidebar 不可存取 | 提供漢堡選單 |

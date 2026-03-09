@@ -2,16 +2,332 @@
 # 由 /feature-to-ui Phase 0 自動產生
 # ⚠️ 可手動修改，修改後以此為準
 
-generated_at: 2026-02-26
-version: 1
+generated_at: 2026-03-06
+version: 3
+
+# API 合約規格
+api_contract:
+  # 回傳格式慣例
+  response_conventions:
+    list: "{ status: 'success', data: T[], meta: { total, page, page_size } }"
+    single: "{ status: 'success', data: T }"
+    action: "{ status: 'success', message: '...' }"
+    error: 'throw createError({ statusCode, message })'
+
+  # 型別欄位快照（鏡像 app/types/api/*.ts，作為 Sync diff 基準）
+  types:
+    LoginRequest:
+      file: auth.ts
+      fields:
+        account: string
+        password: string
+    LoginUser:
+      file: auth.ts
+      fields:
+        id: number
+        account: string
+        role: string
+    LoginData:
+      file: auth.ts
+      fields:
+        access_token: string
+        refresh_token: string
+        user: LoginUser
+    RefreshRequest:
+      file: auth.ts
+      fields:
+        refresh_token: string
+    RefreshData:
+      file: auth.ts
+      fields:
+        access_token: string
+    TeamItem:
+      file: teams.ts
+      fields:
+        id: number
+        name: string
+        description: string
+        player_count: number
+        created_by: string
+        created_at: string
+        status: "'active' | 'deleted'"
+    CreateTeamBody:
+      file: teams.ts
+      fields:
+        name: string
+        description: string?
+    UpdateTeamBody:
+      file: teams.ts
+      fields:
+        name: string
+        description: string?
+    PlayerItem:
+      file: players.ts
+      fields:
+        id: number
+        number: number
+        name: string
+        height: number
+        position: string
+        team_id: number
+        team_name: string
+        sort_order: number
+        created_at: string
+        status: "'active' | 'deleted'"
+    CreatePlayerBody:
+      file: players.ts
+      fields:
+        team_id: number
+        number: number
+        name: string
+        height: number
+        position: string
+    UpdatePlayerBody:
+      file: players.ts
+      fields:
+        number: number?
+        name: string?
+        height: number?
+        position: string?
+    TrainingItem:
+      file: trainings.ts
+      fields:
+        id: number
+        date: string
+        player_name: string
+        team_name: string
+        pitch_count: number
+        ai_status: "'running' | 'stopped'"
+        created_by: string
+        created_at: string
+    TrainingDetail:
+      file: trainings.ts
+      fields:
+        id: number
+        date: string
+        player_name: string
+        team_name: string
+        strike_zone_top: number
+        strike_zone_bottom: number
+        pitch_count: number
+        ai_status: "'running' | 'stopped'"
+        created_by: string
+        created_at: string
+    CreateTrainingBody:
+      file: trainings.ts
+      fields:
+        date: string
+        player_id: number
+        strike_zone_top: number?
+        strike_zone_bottom: number?
+    UpdateStrikeZoneBody:
+      file: trainings.ts
+      fields:
+        top: number
+        bottom: number
+    BatchDeleteBody:
+      file: trainings.ts
+      fields:
+        ids: 'number[]'
+    PitchItem:
+      file: pitches.ts
+      fields:
+        id: number
+        sequence: number
+        time: string
+        velocity: number
+        spin_rate: number
+        is_strike: boolean
+        location_x: number
+        location_y: number
+    PitchDetail:
+      file: pitches.ts
+      fields:
+        id: number
+        sequence: number
+        time: string
+        velocity: number
+        spin_rate: number
+        is_strike: boolean
+        location_x: number
+        location_y: number
+        trajectory_data: 'Record<string, unknown>'
+    TrainingAnalysis:
+      file: analysis.ts
+      fields:
+        total_pitches: number
+        strike_count: number
+        ball_count: number
+        strike_rate: number
+        avg_velocity: number
+        max_velocity: number
+        min_velocity: number
+        avg_spin_rate: number
+        heat_map: 'HeatMapPoint[]'
+    HeatMapPoint:
+      file: analysis.ts
+      fields:
+        x: number
+        y: number
+        density: number
+    PlayerAnalyticsItem:
+      file: analysis.ts
+      fields:
+        id: number
+        name: string
+        number: number
+        team_name: string
+        training_count: number
+        total_pitches: number
+        last_training_date: string
+        avg_velocity: number
+    PlayerStatsData:
+      file: analysis.ts
+      fields:
+        avg_velocity: number
+        avg_spin_rate: number
+        strike_rate: number
+        total_pitches: number
+        heat_map: 'HeatMapPoint[]'
+        period_start: string
+        period_end: string
+    BatchDeletePlayersAnalysisBody:
+      file: analysis.ts
+      fields:
+        player_ids: 'number[]'
+
+  # 端點規格
+  endpoints:
+    - method: POST
+      path: /api/auth/login
+      request: LoginRequest
+      response: LoginData
+    - method: POST
+      path: /api/auth/refresh
+      request: RefreshRequest
+      response: RefreshData
+    - method: POST
+      path: /api/auth/logout
+      request: null
+      response: '{ message: string }'
+    - method: GET
+      path: /api/teams
+      request: 'query: { page?, page_size? }'
+      response: 'TeamItem[]'
+    - method: POST
+      path: /api/teams
+      request: CreateTeamBody
+      response: TeamItem
+    - method: PUT
+      path: '/api/teams/[id]'
+      request: UpdateTeamBody
+      response: TeamItem
+    - method: DELETE
+      path: '/api/teams/[id]'
+      request: null
+      response: '{ message: string }'
+    - method: GET
+      path: /api/players
+      request: 'query: { team_id?, search?, page?, page_size? }'
+      response: 'PlayerItem[]'
+    - method: POST
+      path: /api/players
+      request: CreatePlayerBody
+      response: PlayerItem
+    - method: PUT
+      path: '/api/players/[id]'
+      request: UpdatePlayerBody
+      response: PlayerItem
+    - method: DELETE
+      path: '/api/players/[id]'
+      request: null
+      response: '{ message: string }'
+    - method: GET
+      path: /api/trainings
+      request: 'query: { date_from?, date_to?, page?, page_size? }'
+      response: 'TrainingItem[]'
+    - method: POST
+      path: /api/trainings
+      request: CreateTrainingBody
+      response: TrainingItem
+    - method: DELETE
+      path: '/api/trainings/[id]'
+      request: null
+      response: '{ message: string }'
+    - method: GET
+      path: '/api/trainings/[id]'
+      request: null
+      response: TrainingDetail
+    - method: POST
+      path: '/api/trainings/[id]/ai/start'
+      request: null
+      response: '{ message: string }'
+    - method: POST
+      path: '/api/trainings/[id]/ai/stop'
+      request: null
+      response: '{ message: string }'
+    - method: GET
+      path: '/api/trainings/[id]/pitches'
+      request: null
+      response: 'PitchItem[]'
+    - method: GET
+      path: '/api/trainings/[id]/pitches/stream'
+      request: null
+      response: SSE stream
+    - method: GET
+      path: '/api/pitches/[id]'
+      request: null
+      response: PitchDetail
+    - method: PUT
+      path: '/api/trainings/[id]/strike-zone'
+      request: UpdateStrikeZoneBody
+      response: '{ message: string }'
+    - method: GET
+      path: /api/trainings/history
+      request: 'query: { page?, page_size? }'
+      response: 'TrainingItem[]'
+    - method: POST
+      path: /api/trainings/batch-delete
+      request: BatchDeleteBody
+      response: '{ message: string }'
+    - method: GET
+      path: '/api/trainings/[id]/analysis'
+      request: null
+      response: TrainingAnalysis
+    - method: GET
+      path: /api/analytics/players
+      request: 'query: { page?, page_size? }'
+      response: 'PlayerAnalyticsItem[]'
+    - method: POST
+      path: /api/analytics/players/batch-delete
+      request: BatchDeletePlayersAnalysisBody
+      response: '{ message: string }'
+    - method: GET
+      path: '/api/analytics/players/[id]'
+      request: 'query: { period_start?, period_end? }'
+      response: PlayerStatsData
+    - method: GET
+      path: /api/trainings/history/export
+      request: 'query: { date_from?, date_to? }'
+      response: CSV file download
 
 routes:
+  - path: /
+    page: app/pages/index.vue
+    layout: default
+    features: []
+    api_endpoints: []
+    components: []
+    store: null
+
   - path: /login
     page: app/pages/login.vue
     layout: auth
     features:
-      - 01-使用者登入.dsl.feature
-      - 02-使用者登出.dsl.feature
+      - file: 01-使用者登入.dsl.feature
+        content_hash: 4764635dbe271962a22531d22521a11a8bb371c1fbdda4a3e342a990d50d694d
+      - file: 02-使用者登出.dsl.feature
+        content_hash: 559f24398b473eb98a1d8e4b8424063e8e8f6eaff1af2deff8aedd11a30f9736
     api_endpoints:
       - POST /api/auth/login
       - POST /api/auth/refresh
@@ -23,10 +339,14 @@ routes:
     page: app/pages/teams/index.vue
     layout: default
     features:
-      - 03-查詢球隊列表.dsl.feature
-      - 04-建立球隊.dsl.feature
-      - 05-編輯球隊.dsl.feature
-      - 06-刪除球隊.dsl.feature
+      - file: 03-查詢球隊列表.dsl.feature
+        content_hash: 64fb65fc149c55d769d6993a6c2a29ccb60f9f0b0e723ae9ea246ed4b1be0971
+      - file: 04-建立球隊.dsl.feature
+        content_hash: 1f68edf926941dfce0a50778cc90deb23b24924efe7231c5085c89d49ec6e31e
+      - file: 05-編輯球隊.dsl.feature
+        content_hash: 481a961fd033890b7e6eea4a172edc95ca8dc113c5c4fe859f237bd85f80ef98
+      - file: 06-刪除球隊.dsl.feature
+        content_hash: 15327be56818c6554eef874705c4a071e6428448585de0a0de97a54d343edd30
     api_endpoints:
       - GET /api/teams
       - POST /api/teams
@@ -42,17 +362,19 @@ routes:
     page: app/pages/players/index.vue
     layout: default
     features:
-      - 07-查詢球員列表.dsl.feature
-      - 08-新增球員.dsl.feature
-      - 09-編輯球員.dsl.feature
-      - 10-刪除球員.dsl.feature
-      - 11-調整球員排序.dsl.feature
+      - file: 07-查詢球員列表.dsl.feature
+        content_hash: 864eac1f416bffe7da0ab6e807b38592b414b1bfa2f0595dd7bb7fa0c4554a6d
+      - file: 08-新增球員.dsl.feature
+        content_hash: eee6d12282a882695c054670da77d186832dd1af1f14616ec1d29c3360b0b647
+      - file: 09-編輯球員.dsl.feature
+        content_hash: 3cde62493105b5677c21b28bfa0c666c87f6ef893d71a0ac8c80985e4127b7ce
+      - file: 10-刪除球員.dsl.feature
+        content_hash: 439125fabfba1a20b5cd8297a4f0c34cfeeae3c35baf5797aa62f8e8a99a09ba
     api_endpoints:
       - GET /api/players
       - POST /api/players
       - 'PUT /api/players/[id]'
       - 'DELETE /api/players/[id]'
-      - PUT /api/players/sort
     components:
       - PageHeader
       - ListContainer
@@ -63,9 +385,12 @@ routes:
     page: app/pages/trainings/index.vue
     layout: default
     features:
-      - 12-查詢訓練列表.dsl.feature
-      - 13-建立訓練.dsl.feature
-      - 14-刪除訓練.dsl.feature
+      - file: 12-查詢訓練列表.dsl.feature
+        content_hash: 0c457e45f42517300ccc9cb0e2a87604081a0f28e1d63c1a0e75472e4b371aad
+      - file: 13-建立訓練.dsl.feature
+        content_hash: 2188f491d90c457def8ccb356e4f812f7cccf89167bc742768f2cc0ba77723be
+      - file: 14-刪除訓練.dsl.feature
+        content_hash: 998004280a93c2688626a7d9b9c69bb4be46b75ce466e601125e8b0ffac66803
     api_endpoints:
       - GET /api/trainings
       - POST /api/trainings
@@ -80,12 +405,18 @@ routes:
     page: 'app/pages/trainings/[id].vue'
     layout: default
     features:
-      - 15-啟動AI系統.dsl.feature
-      - 16-關閉AI系統.dsl.feature
-      - 17-查看訓練紀錄.dsl.feature
-      - 18-查詢投球清單.dsl.feature
-      - 19-查看單球儀表板.dsl.feature
-      - 20-設定好球帶範圍.dsl.feature
+      - file: 15-啟動AI系統.dsl.feature
+        content_hash: 7d177f851e3f5d95175ba0069539a0836955245201ea835a34b37c1176f8a088
+      - file: 16-關閉AI系統.dsl.feature
+        content_hash: b7b9d6040f54851f922520f4cd4bc6ed61ccfeaad8af8ee1efe895262e096c2c
+      - file: 17-查看訓練紀錄.dsl.feature
+        content_hash: 3049af1e0970cc69d21bced5369cd0a674aafec049e6483854c6fcbbf3107265
+      - file: 18-查詢投球清單.dsl.feature
+        content_hash: 0a2f424967324784c0b2351a0e95742d4da1ea58b6c987731589fcbe285d843a
+      - file: 19-查看單球儀表板.dsl.feature
+        content_hash: fc6fb43d563e94be3ca24c096381ac1edeed97f743993329baa8e589e73e0b08
+      - file: 20-設定好球帶範圍.dsl.feature
+        content_hash: efcf725bd5c302f3f2ae005d9254355033743de377bb22e3d357295f18209771
     api_endpoints:
       - 'GET /api/trainings/[id]'
       - 'POST /api/trainings/[id]/ai/start'
@@ -102,11 +433,16 @@ routes:
     page: app/pages/history/index.vue
     layout: default
     features:
-      - 21-查詢歷史訓練列表.dsl.feature
-      - 22-批次刪除訓練.dsl.feature
+      - file: 21-查詢歷史訓練列表.dsl.feature
+        content_hash: c262d2e95c50b8d785c15a5f839b6cbad683e43c32bc35ad3859736867e656ac
+      - file: 22-批次刪除訓練.dsl.feature
+        content_hash: 2afadca1c51d5450ad91e2721ba5afdf900666ef0c8ea513c88a4b656c3889a3
+      - file: 27-匯出訓練報告.dsl.feature
+        content_hash: d80a26079dbd9f52838d96ea3dd05e74b81c014960264c493befedfe184ee6ac
     api_endpoints:
       - GET /api/trainings/history
       - POST /api/trainings/batch-delete
+      - GET /api/trainings/history/export
     components:
       - PageHeader
       - ListContainer
@@ -117,7 +453,8 @@ routes:
     page: 'app/pages/history/[id].vue'
     layout: default
     features:
-      - 23-查看訓練分析.dsl.feature
+      - file: 23-查看訓練分析.dsl.feature
+        content_hash: 8c17c5b724bb90a360a8789431fa773208cf873f6a640d3eb0b3146fa2a61aaf
     api_endpoints:
       - 'GET /api/trainings/[id]/analysis'
     components:
@@ -128,8 +465,10 @@ routes:
     page: app/pages/analytics/index.vue
     layout: default
     features:
-      - 24-查詢選手分析列表.dsl.feature
-      - 25-批次刪除選手分析.dsl.feature
+      - file: 24-查詢選手分析列表.dsl.feature
+        content_hash: 2fc103aeac45e546fcbd58552b0f8680afef9d102e660da648a9165f5f04a933
+      - file: 25-批次刪除選手分析.dsl.feature
+        content_hash: 3eba9a374464ce3fb6a9a01e97ef7bcf7c3feb8ea5b4de5c6cacc897256e0c5a
     api_endpoints:
       - GET /api/analytics/players
       - POST /api/analytics/players/batch-delete
@@ -143,7 +482,8 @@ routes:
     page: 'app/pages/analytics/[id].vue'
     layout: default
     features:
-      - 26-查看選手統計.dsl.feature
+      - file: 26-查看選手統計.dsl.feature
+        content_hash: a4c9a637f76defaeff61ecf0c4f1dcea7fb7b85d2bdf9a1dbb564d40eac7b742
     api_endpoints:
       - 'GET /api/analytics/players/[id]'
     components:

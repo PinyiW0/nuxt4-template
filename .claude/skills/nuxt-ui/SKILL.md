@@ -1,8 +1,7 @@
 ---
 name: nuxt-ui
 description: 載入 NuxtUI 官方文檔，用於查詢組件、API 和使用方式
-metadata:
-  argument-hint: "[component-name]"
+argument-hint: "[component-name]"
 ---
 
 # NuxtUI 文檔
